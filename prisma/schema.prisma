@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               String           @id @default(uuid()) @db.Uuid
+  email            String           @unique
+  passwordHash     String
+  role             UserRole
+  firstName        String
+  lastName         String
+  isActive         Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  lastActive       DateTime         @default(now())
+  mfaEnabled       Boolean          @default(false)
+  mfaSecret        String?
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  receivedMessages Message[]        @relation("ReceivedMessages")
+  sentMessages     Message[]        @relation("SentMessages")
+  patientProfile   PatientProfile?
+  providerProfile  ProviderProfile?
+  aiMessages       AiChatMessage[]
+
+  @@map("users")
+}
+
+model PatientProfile {
+  id                 String           @id @default(uuid()) @db.Uuid
+  userId             String           @unique @db.Uuid
+  dateOfBirth        DateTime
+  phone              String
+  address            String
+  emergencyContact   String
+  assignedProviderId String?          @db.Uuid
+  appointments       Appointment[]
+  assessments        Assessment[]
+  assignedProvider   ProviderProfile? @relation("ProviderPatients", fields: [assignedProviderId], references: [id])
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices           PaymentInvoice[]
+
+  @@map("patient_profiles")
+}
+
+model ProviderProfile {
+  id            String           @id @default(uuid()) @db.Uuid
+  userId        String           @unique @db.Uuid
+  specialty     String
+  licenseNumber String
+  appointments  Appointment[]
+  assessments   Assessment[]
+  availability  Availability[]
+  patients      PatientProfile[] @relation("ProviderPatients")
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("provider_profiles")
+}
+
+model Availability {
+  id         String          @id @default(uuid()) @db.Uuid
+  providerId String          @db.Uuid
+  day        String
+  startTime  String
+  endTime    String
+  isActive   Boolean         @default(true)
+  provider   ProviderProfile @relation(fields: [providerId], references: [id])
+
+  @@map("availability")
+}
+
+model Appointment {
+  id            String            @id @default(uuid()) @db.Uuid
+  patientId     String            @db.Uuid
+  providerId    String            @db.Uuid
+  scheduledAt   DateTime
+  status        AppointmentStatus @default(PENDING)
+  notes         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  paymentStatus String            @default("UNPAID")
+  receiptData   String?
+  patient       PatientProfile    @relation(fields: [patientId], references: [id])
+  provider      ProviderProfile   @relation(fields: [providerId], references: [id])
+
+  @@map("appointments")
+}
+
+model Assessment {
+  id                  String          @id @default(uuid()) @db.Uuid
+  patientId           String          @db.Uuid
+  providerId          String          @db.Uuid
+  type                AssessmentType
+  data                Json
+  patientSignatureUrl String?
+  createdAt           DateTime        @default(now())
+  patient             PatientProfile  @relation(fields: [patientId], references: [id])
+  provider            ProviderProfile @relation(fields: [providerId], references: [id])
+
+  @@map("assessments")
+}
+
+model Message {
+  id         String    @id @default(uuid()) @db.Uuid
+  senderId   String    @db.Uuid
+  receiverId String    @db.Uuid
+  content    String
+  createdAt  DateTime  @default(now())
+  read       Boolean   @default(false)
+  isDeleted  Boolean   @default(false)
+  isEdited   Boolean   @default(false)
+  readAt     DateTime?
+  type       String    @default("TEXT")
+  deletedBy  String[]  @default([])
+  receiver   User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender     User      @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@map("messages")
+}
+
+model PaymentInvoice {
+  id         String         @id @default(uuid()) @db.Uuid
+  patientId  String         @db.Uuid
+  amount     Float
+  status     PaymentStatus  @default(PENDING)
+  receiptUrl String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  patient    PatientProfile @relation(fields: [patientId], references: [id])
+
+  @@map("payment_invoices")
+}
+
+enum UserRole {
+  ADMIN
+  PROVIDER
+  PATIENT
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  SCHEDULED
+}
+
+enum AssessmentType {
+  VITALS
+  PHQ9
+  SDOH
+  COMPLEX
+}
+
+enum PaymentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model AiKnowledgeBase {
+  id                String   @id @default(uuid())
+  systemIdentity    String   @db.Text
+  coreKnowledge     String   @db.Text
+  strictRules       String   @db.Text
+  modelPreference   String   @default("openai/gpt-4o-mini")
+  updatedAt         DateTime @updatedAt
+}
+
+model AiChatMessage {
+  id        String   @id @default(uuid())
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id])
+  role             String   // 'user' or 'assistant'
+  content          String   @db.Text
+  promptTokens     Int?     @default(0)
+  completionTokens Int?     @default(0)
+  totalTokens      Int?     @default(0)
+  createdAt        DateTime @default(now())
+}
+
+model ConsultationInquiry {
+  id                String   @id @default(uuid())
+  firstName         String
+  lastName          String
+  email             String
+  phone             String
+  referralSource    String?  // e.g., "Existing Member", "Physician Referral", "Other"
+  inquiryDetails    String?  @db.Text
+  status            String   @default("PENDING") // PENDING, REVIEWED, INVITED, REJECTED
+  createdAt        DateTime @default(now())
+
+  @@map("consultation_inquiries")
+}
