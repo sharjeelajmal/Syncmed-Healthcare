@@ -134,6 +134,18 @@ export default function NewProviderPage() {
                     className="input-premium"
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="consultationFee" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Consultation Fee ($)</Label>
+                  <Input 
+                    id="consultationFee" 
+                    name="consultationFee" 
+                    type="number"
+                    step="0.01"
+                    placeholder="150.00" 
+                    required 
+                    className="input-premium"
+                  />
+                </div>
               </div>
 
               <div className="pt-8 border-t border-slate-100 flex flex-col items-start">

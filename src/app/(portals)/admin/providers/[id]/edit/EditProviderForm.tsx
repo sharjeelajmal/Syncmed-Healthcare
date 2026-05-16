@@ -100,12 +100,24 @@ export function EditProviderForm({ provider }: { provider: any }) {
                     className="input-premium"
                   />
                 </div>
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-2">
                   <Label htmlFor="licenseNumber" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">License Number</Label>
                   <Input 
                     id="licenseNumber" 
                     name="licenseNumber" 
                     defaultValue={provider.providerProfile?.licenseNumber}
+                    required 
+                    className="input-premium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="consultationFee" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Consultation Fee ($)</Label>
+                  <Input 
+                    id="consultationFee" 
+                    name="consultationFee" 
+                    type="number"
+                    step="0.01"
+                    defaultValue={provider.providerProfile?.consultationFee || 150}
                     required 
                     className="input-premium"
                   />

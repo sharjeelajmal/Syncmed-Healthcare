@@ -93,7 +93,7 @@ function BlogContent() {
                 }}
               >
                 <img 
-                  src="/3d-stethoscope.png" 
+                  src="/blogbanner.png" 
                   alt="Background" 
                   className="w-full h-full object-cover md:object-contain object-right md:object-right"
                 />
@@ -165,7 +165,7 @@ function BlogContent() {
 
       {/* Featured Blog Section */}
       {featuredPost && (
-        <section className="py-6 md:py-10 bg-white">
+        <section className="py-6 bg-white">
           <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
             <motion.div 
               {...fadeUp}
@@ -235,7 +235,7 @@ function BlogContent() {
       </section>
 
       {/* Blog Grid Section */}
-      <section className="py-6 md:py-10 bg-white min-h-[400px] relative">
+      <section className="py-6 bg-white min-h-[400px] relative">
         <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           {isLoading ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm z-50">
@@ -249,61 +249,62 @@ function BlogContent() {
                 initial="initial"
                 whileInView="whileInView"
                 viewport={{ once: false, amount: 0.1 }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10"
+                className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-10"
               >
                 {gridPosts.map((post) => (
-                  <motion.div
-                    key={post.id}
-                    variants={fadeUp}
-                    className="group flex flex-col h-full bg-white border border-slate-100 rounded-[2.5rem] p-5 hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 hover:-translate-y-2"
-                  >
-                    <div className="relative aspect-[16/10] rounded-[2rem] overflow-hidden mb-6 shadow-lg shadow-slate-100">
-                      <img 
-                        src={post.image} 
-                        alt={post.title}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                      />
-                      <div className="absolute top-4 left-4">
-                        <span className="px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-sm text-[#67BA2E] text-[9px] font-black uppercase tracking-[0.2em] shadow-sm">
-                          {post.category}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex-grow space-y-4 px-2">
-                      <div className="flex items-center gap-4 text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">
-                        <span className="flex items-center gap-1.5">
-                          <Calendar size={12} className="text-[#67BA2E]" />
-                          {post.date}
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <Clock size={12} className="text-[#67BA2E]" />
-                          {post.readTime}
-                        </span>
-                      </div>
-                      <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-tight group-hover:text-[#67BA2E] transition-colors">
-                        {post.title}
-                      </h3>
-                      <p className="text-[11px] md:text-sm text-slate-500 leading-relaxed line-clamp-3 font-medium">
-                        {post.excerpt}
-                      </p>
-                    </div>
-
-                    <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between px-2">
-                      <div className="flex items-center gap-2">
-                        <div className="size-8 rounded-full bg-slate-100 flex items-center justify-center text-[#67BA2E] font-black text-[10px]">
-                          {post.author.split(' ').map(n => n[0]).join('')}
+                  <Link key={post.id} href={`/blog/${post.id}`} className="block h-full">
+                    <motion.div
+                      variants={fadeUp}
+                      className="group flex flex-col h-full bg-white border border-slate-100 rounded-[1.5rem] md:rounded-[2.5rem] p-3 md:p-5 hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 hover:-translate-y-2"
+                    >
+                      <div className="relative aspect-[16/10] rounded-[1.2rem] md:rounded-[2rem] overflow-hidden mb-4 md:mb-6 shadow-lg shadow-slate-100">
+                        <img 
+                          src={post.image} 
+                          alt={post.title}
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        />
+                        <div className="absolute top-2 left-2 md:top-4 md:left-4 max-w-[85%]">
+                          <span className="px-1.5 py-0.5 md:px-3 md:py-1.5 rounded-full bg-white/95 backdrop-blur-sm text-[#67BA2E] text-[6px] md:text-[9px] font-black uppercase tracking-[0.1em] md:tracking-[0.2em] shadow-sm leading-tight inline-block text-center">
+                            {post.category}
+                          </span>
                         </div>
-                        <span className="text-[10px] font-black text-slate-900 uppercase tracking-tighter">{post.author}</span>
                       </div>
-                      <Link href={`/blog/${post.id}`}>
-                        <button className="text-[10px] font-black uppercase tracking-[0.2em] text-[#67BA2E] flex items-center gap-1.5 group-hover:gap-2.5 transition-all">
-                          Insight
-                          <ArrowRight size={14} />
-                        </button>
-                      </Link>
-                    </div>
-                  </motion.div>
+                      
+                      <div className="flex-grow space-y-2 md:space-y-4 px-1 md:px-2">
+                        <div className="flex items-center gap-2 md:gap-4 text-slate-400 text-[7px] md:text-[9px] font-black uppercase tracking-[0.2em]">
+                          <span className="flex items-center gap-1 md:gap-1.5">
+                            <Calendar size={10} className="text-[#67BA2E]" />
+                            {post.date}
+                          </span>
+                          <span className="flex items-center gap-1 md:gap-1.5">
+                            <Clock size={10} className="text-[#67BA2E]" />
+                            {post.readTime}
+                          </span>
+                        </div>
+                        <h3 className="text-xs md:text-2xl font-black text-slate-900 tracking-tight leading-tight group-hover:text-[#67BA2E] transition-colors line-clamp-2 md:line-clamp-none">
+                          {post.title}
+                        </h3>
+                        <p className="text-[9px] md:text-sm text-slate-500 leading-relaxed line-clamp-2 md:line-clamp-3 font-medium">
+                          {post.excerpt}
+                        </p>
+                      </div>
+
+                      <div className="mt-4 md:mt-8 pt-3 md:pt-6 border-t border-slate-50 flex items-center justify-between px-1 md:px-2 gap-2">
+                        <div className="flex items-center gap-1.5 md:gap-2 min-w-0 flex-1">
+                          <div className="size-5 md:size-8 rounded-full bg-slate-100 flex items-center justify-center text-[#67BA2E] font-black text-[7px] md:text-[10px] flex-shrink-0">
+                            {post.author.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <span className="text-[8px] md:text-[10px] font-black text-slate-900 uppercase tracking-tighter truncate min-w-0">
+                            {post.author}
+                          </span>
+                        </div>
+                        <div className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] text-[#67BA2E] flex items-center gap-1 md:gap-1.5 group-hover:gap-2.5 transition-all flex-shrink-0">
+                          <span className="hidden sm:inline">Insight</span>
+                          <ArrowRight size={10} className="md:size-3.5" />
+                        </div>
+                      </div>
+                    </motion.div>
+                  </Link>
                 ))}
               </motion.div>
 
@@ -324,22 +325,55 @@ function BlogContent() {
                   </Button>
                   
                   <div className="flex gap-2">
-                    {[...Array(totalPages)].map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => {
-                          setCurrentPage(i + 1);
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        className={`size-12 rounded-2xl text-xs font-black transition-all ${
-                          currentPage === i + 1 
-                            ? "bg-[#67BA2E] text-white shadow-xl shadow-[#67BA2E]/20" 
-                            : "bg-slate-50 text-slate-400 hover:bg-slate-100"
-                        }`}
-                      >
-                        {i + 1}
-                      </button>
-                    ))}
+                    {/* Desktop Pagination */}
+                    <div className="hidden md:flex gap-2">
+                      {[...Array(totalPages)].map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            setCurrentPage(i + 1);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className={`size-12 rounded-2xl text-xs font-black transition-all ${
+                            currentPage === i + 1 
+                              ? "bg-[#67BA2E] text-white shadow-xl shadow-[#67BA2E]/20" 
+                              : "bg-slate-50 text-slate-400 hover:bg-slate-100"
+                          }`}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Mobile Pagination (2 numbers) */}
+                    <div className="flex md:hidden gap-2">
+                      {(() => {
+                        let pagesToShow = [];
+                        if (currentPage + 1 <= totalPages) {
+                          pagesToShow = [currentPage, currentPage + 1];
+                        } else if (currentPage > 1) {
+                          pagesToShow = [currentPage - 1, currentPage];
+                        } else {
+                          pagesToShow = [1];
+                        }
+                        return pagesToShow.map((pageNum) => (
+                          <button
+                            key={pageNum}
+                            onClick={() => {
+                              setCurrentPage(pageNum);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className={`size-12 rounded-2xl text-xs font-black transition-all ${
+                              currentPage === pageNum 
+                                ? "bg-[#67BA2E] text-white shadow-xl shadow-[#67BA2E]/20" 
+                                : "bg-slate-50 text-slate-400 hover:bg-slate-100"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        ));
+                      })()}
+                    </div>
                   </div>
 
                   <Button

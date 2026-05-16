@@ -4,10 +4,16 @@ import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
-export async function createAssessmentAction(patientId: string, providerId: string, data: any, signatureBase64?: string) {
+export async function createAssessmentAction(
+  patientId: string, 
+  providerId: string, 
+  data: any, 
+  signatureBase64?: string,
+  additionalCharges: number = 0
+) {
   try {
     // 1. Create the assessment record in Prisma with signature
-    await prisma.assessment.create({
+    const assessment = await prisma.assessment.create({
       data: {
         patientId,
         providerId,
@@ -16,6 +22,45 @@ export async function createAssessmentAction(patientId: string, providerId: stri
         patientSignatureUrl: signatureBase64 || null,
       }
     })
+
+    // 2. Find the active appointment for this patient/provider to update the billing amount
+    // We look for a PENDING or SCHEDULED appointment for today
+    const now = new Date()
+    const startOfDay = new Date(now.setHours(0, 0, 0, 0))
+    const endOfDay = new Date(now.setHours(23, 59, 59, 999))
+
+    const activeAppointment = await prisma.appointment.findFirst({
+      where: {
+        patientId,
+        providerId,
+        scheduledAt: {
+          gte: startOfDay,
+          lte: endOfDay
+        },
+        status: { in: ["PENDING", "SCHEDULED", "CONFIRMED"] }
+      }
+    })
+
+    if (activeAppointment) {
+      await prisma.appointment.update({
+        where: { id: activeAppointment.id },
+        data: {
+          status: "COMPLETED" // Mark as completed when assessment is done
+        }
+      })
+    }
+
+    // 3. Automate Secondary Invoices: If additionalCharges > 0, create a brand new PaymentInvoice
+    if (additionalCharges > 0) {
+      await prisma.paymentInvoice.create({
+        data: {
+          patientId,
+          amount: additionalCharges,
+          status: "PENDING", // Maps to UNPAID/Outstanding
+        }
+      })
+    }
+
 
     // 2. Revalidate paths
     revalidatePath(`/provider/patients/${patientId}`)

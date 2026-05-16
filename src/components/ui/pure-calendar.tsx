@@ -58,7 +58,7 @@
  
    if (view === 'year') {
      return (
-       <div className="p-4 bg-white rounded-md w-[280px]">
+       <div className="p-4 bg-white rounded-md w-full max-w-[320px] mx-auto">
          <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 text-center">Select Year</div>
          <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
            {years.map((year) => {
@@ -87,7 +87,7 @@
  
    if (view === 'month') {
      return (
-       <div className="p-4 bg-white rounded-md w-[280px]">
+       <div className="p-4 bg-white rounded-md w-full max-w-[320px] mx-auto">
          <div className="flex items-center justify-between mb-4">
            <button onClick={() => setView('year')} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
              <ChevronLeft size={16} className="text-slate-400" />
@@ -129,7 +129,7 @@
    const blanks = Array.from({ length: firstDayOfMonth }, (_, i) => i)
  
    return (
-     <div className="p-4 bg-white rounded-md w-[280px]">
+     <div className="p-4 bg-white rounded-md w-full max-w-[320px] mx-auto">
        <div className="flex items-center justify-between mb-4">
          <button onClick={() => setView('month')} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
            <ChevronLeft size={16} className="text-slate-400" />

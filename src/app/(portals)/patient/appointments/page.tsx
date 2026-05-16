@@ -9,17 +9,25 @@ import { Card, CardContent } from "@/components/ui/card"
 import { AppointmentsListClient } from "./AppointmentsListClient"
 import { AppointmentsTableClient } from "./AppointmentsTableClient"
 
+import { auth } from "@/../auth"
+import { redirect } from "next/navigation"
+
 export default async function PatientAppointmentsPage({
   searchParams,
 }: {
   searchParams: Promise<{ query?: string }>
 }) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    redirect("/login")
+  }
+
   const params = await searchParams
   const query = params?.query || ""
 
-  // MOCK AUTH: Strictly fetch the oldest patient profile for deterministic portal state
-  const patient = await prisma.patientProfile.findFirst({
-    orderBy: { user: { createdAt: 'asc' } },
+  // Fetch the real patient profile associated with the logged-in user
+  const patient = await prisma.patientProfile.findUnique({
+    where: { userId: (session.user as any).id },
     include: { user: true }
   });
 

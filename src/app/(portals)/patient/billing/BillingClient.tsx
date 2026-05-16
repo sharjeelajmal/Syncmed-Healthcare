@@ -17,16 +17,28 @@ import {
 } from "@/components/ui/table"
 import { DebouncedSearch } from "@/components/ui/debounced-search"
 
-interface BillingClientProps {
-  appointments: any[]
+interface BillingItem {
+  id: string
+  type: "APPOINTMENT" | "SECONDARY"
+  date: Date
+  amount: number
+  status: string // UNPAID, PAID, VERIFICATION_PENDING, REJECTED
+  clinician: string
+  specialty: string
+  initials: string
 }
 
-export function BillingClient({ appointments }: BillingClientProps) {
-  const [selectedAppointment, setSelectedAppointment] = React.useState<any | null>(null)
+interface BillingClientProps {
+  invoices: BillingItem[]
+}
+
+export function BillingClient({ invoices }: BillingClientProps) {
+  const [selectedInvoice, setSelectedInvoice] = React.useState<BillingItem | null>(null)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
 
-  const unpaidCount = appointments.filter(a => a.paymentStatus === "UNPAID").length
-  const totalOutstanding = unpaidCount * 150
+  const totalOutstanding = invoices
+    .filter(a => a.status === "UNPAID")
+    .reduce((sum, item) => sum + item.amount, 0)
 
   return (
     <div className="space-y-10">
@@ -55,7 +67,7 @@ export function BillingClient({ appointments }: BillingClientProps) {
               <div className="flex flex-col">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pending Verification</span>
                 <span className="text-3xl font-black text-slate-800 tracking-tighter">
-                  {appointments.filter(a => a.paymentStatus === "VERIFICATION_PENDING").length} Visits
+                  {invoices.filter(a => a.status === "VERIFICATION_PENDING").length} Items
                 </span>
               </div>
             </div>
@@ -71,7 +83,7 @@ export function BillingClient({ appointments }: BillingClientProps) {
               <div className="flex flex-col">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Last Payment Date</span>
                 <span className="text-lg font-black text-slate-800 tracking-tight">
-                  {appointments.some(a => a.paymentStatus === "PAID") ? "Yesterday" : "No Payments Found"}
+                  {invoices.some(a => a.status === "PAID") ? "Yesterday" : "No Payments Found"}
                 </span>
               </div>
             </div>
@@ -84,7 +96,7 @@ export function BillingClient({ appointments }: BillingClientProps) {
         <DebouncedSearch placeholder="Search by clinician, specialty or Invoice ID..." />
         <div className="flex items-center">
            <Badge variant="outline" className="h-10 bg-slate-50 text-slate-400 border-slate-200 font-black text-[9px] uppercase tracking-tighter px-4 rounded-xl whitespace-nowrap shadow-sm">
-             {appointments.length} Invoices Found
+             {invoices.length} Invoices Found
            </Badge>
         </div>
       </div>
@@ -96,32 +108,32 @@ export function BillingClient({ appointments }: BillingClientProps) {
           <div className="h-[2px] flex-1 bg-slate-100 rounded-full" />
         </h2>
 
-        {appointments.length > 0 ? (
+        {invoices.length > 0 ? (
           <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-slate-50/50">
                   <TableRow className="hover:bg-transparent border-slate-100">
                     <TableHead className="w-[300px] text-[10px] font-black text-slate-400 uppercase tracking-widest py-5 px-8">Service Date</TableHead>
-                    <TableHead className="text-[10px] font-black text-slate-400 uppercase tracking-widest py-5">Clinician</TableHead>
+                    <TableHead className="text-[10px] font-black text-slate-400 uppercase tracking-widest py-5">Clinician / Service</TableHead>
                     <TableHead className="text-[10px] font-black text-slate-400 uppercase tracking-widest py-5">Amount</TableHead>
                     <TableHead className="text-[10px] font-black text-slate-400 uppercase tracking-widest py-5">Status</TableHead>
                     <TableHead className="text-right text-[10px] font-black text-slate-400 uppercase tracking-widest py-5 px-8">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {appointments.map((appt) => (
-                    <TableRow key={appt.id} className="group hover:bg-slate-50/50 transition-colors border-slate-100">
+                  {invoices.map((item) => (
+                    <TableRow key={item.id} className="group hover:bg-slate-50/50 transition-colors border-slate-100">
                       <TableCell className="px-8 py-5">
                         <div className="flex items-center gap-4">
                           <div className="size-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shadow-inner">
                              <Bell className="size-5" />
                           </div>
                           <div className="flex flex-col">
-                             <span className="font-bold text-slate-700 text-sm">{format(new Date(appt.scheduledAt), "MMMM dd, yyyy")}</span>
+                             <span className="font-bold text-slate-700 text-sm">{format(new Date(item.date), "MMMM dd, yyyy")}</span>
                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-1">
                                <Clock className="size-3" />
-                               Invoice: #{appt.id.slice(-6).toUpperCase()}
+                               {item.type === "APPOINTMENT" ? "Visit Invoice" : "Secondary Charges"}: #{item.id.slice(-6).toUpperCase()}
                              </span>
                           </div>
                         </div>
@@ -129,50 +141,55 @@ export function BillingClient({ appointments }: BillingClientProps) {
                       <TableCell>
                          <div className="flex items-center gap-3">
                             <div className="size-10 rounded-2xl bg-[#67BA2E]/10 flex items-center justify-center text-[#67BA2E] font-black text-sm border border-[#67BA2E]/20 shadow-inner">
-                              {appt.provider.user.firstName[0]}{appt.provider.user.lastName[0]}
+                              {item.initials}
                             </div>
                             <div className="flex flex-col">
-                              <span className="font-bold text-slate-800 text-base leading-tight">Dr. {appt.provider.user.firstName} {appt.provider.user.lastName}</span>
-                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{appt.provider.specialty || 'General Practitioner'}</span>
+                              <span className="font-bold text-slate-800 text-base leading-tight">{item.clinician}</span>
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{item.specialty}</span>
                             </div>
                          </div>
                       </TableCell>
                       <TableCell>
-                         <span className="text-base font-black text-slate-700 tracking-tighter">$150.00</span>
+                         <span className="text-base font-black text-slate-700 tracking-tighter">${item.amount.toLocaleString()}</span>
                       </TableCell>
                       <TableCell>
-                         {appt.paymentStatus === "UNPAID" && (
+                         {item.status === "UNPAID" && (
                             <Badge variant="outline" className="bg-red-50 text-red-500 border-red-100 font-black px-3 py-1.5 rounded-full text-[10px] tracking-widest uppercase">
-                               Outstanding
+                                Outstanding
                             </Badge>
                          )}
-                         {appt.paymentStatus === "VERIFICATION_PENDING" && (
+                         {item.status === "VERIFICATION_PENDING" && (
                             <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-100 font-black px-3 py-1.5 rounded-full text-[10px] tracking-widest uppercase">
-                               Reviewing
+                                Reviewing
                             </Badge>
                          )}
-                         {appt.paymentStatus === "PAID" && (
+                         {item.status === "PAID" && (
                             <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-100 font-black px-3 py-1.5 rounded-full text-[10px] tracking-widest uppercase">
-                               Cleared
+                                Cleared
+                            </Badge>
+                         )}
+                         {item.status === "REJECTED" && (
+                            <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200 font-black px-3 py-1.5 rounded-full text-[10px] tracking-widest uppercase">
+                                Rejected
                             </Badge>
                          )}
                       </TableCell>
                       <TableCell className="text-right px-8">
                         <div className="flex justify-end">
-                          {appt.paymentStatus === 'UNPAID' && (
+                          {item.status === 'UNPAID' && (
                             <Button 
-                              onClick={() => { setSelectedAppointment(appt); setIsModalOpen(true); }}
+                              onClick={() => { setSelectedInvoice(item); setIsModalOpen(true); }}
                               className="h-9 px-4 bg-[#67BA2E] hover:bg-[#67BA2E]/90 text-white font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider"
                             >
                               <ChevronRight className="size-3.5" />
                               Upload Receipt
                             </Button>
                           )}
-                          {appt.paymentStatus === 'VERIFICATION_PENDING' && (
+                          {item.status === 'VERIFICATION_PENDING' && (
                              <span className="text-amber-500 font-black text-[10px] uppercase tracking-widest bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100">Reviewing</span>
                           )}
-                          {appt.paymentStatus === 'PAID' && (
-                            <span className="text-[#67BA2E] font-black text-[10px] uppercase tracking-widest bg-[#67BA2E]/10 px-3 py-1.5 rounded-lg border border-[#67BA2E]/20">Receipt Verified</span>
+                          {item.status === 'PAID' && (
+                            <span className="text-[#67BA2E] font-black text-[10px] uppercase tracking-widest bg-[#67BA2E]/10 px-3 py-1.5 rounded-lg border border-[#67BA2E]/20">Verified</span>
                           )}
                         </div>
                       </TableCell>
@@ -190,12 +207,12 @@ export function BillingClient({ appointments }: BillingClientProps) {
         )}
       </div>
 
-      {selectedAppointment && (
+      {selectedInvoice && (
         <ReceiptUploadModal 
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          appointmentId={selectedAppointment.id}
-          amountToPay={150}
+          appointmentId={selectedInvoice.id}
+          amountToPay={selectedInvoice.amount}
         />
       )}
     </div>

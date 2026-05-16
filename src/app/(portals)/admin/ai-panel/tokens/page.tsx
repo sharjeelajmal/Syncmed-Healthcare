@@ -58,7 +58,7 @@ export default function AiTokensPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Lifetime Burn</span>
                 <div className="text-xl font-black text-slate-900 flex items-center gap-1">

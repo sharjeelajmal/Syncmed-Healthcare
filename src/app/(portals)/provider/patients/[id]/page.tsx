@@ -14,7 +14,8 @@ import {
   ArrowLeft,
   PlusCircle,
   Stethoscope,
-  ChevronRight
+  ChevronRight,
+  Shield
 } from "lucide-react"
 import { format, differenceInYears } from "date-fns"
 
@@ -56,6 +57,10 @@ export default async function PatientChartPage({ params }: PageProps) {
             include: { user: true }
           }
         }
+      },
+      appointments: {
+        orderBy: { scheduledAt: 'desc' },
+        take: 1
       }
     }
   })
@@ -63,6 +68,9 @@ export default async function PatientChartPage({ params }: PageProps) {
   if (!patient) {
     notFound()
   }
+
+  const latestAppointment = patient.appointments[0]
+  const isLocked = latestAppointment ? latestAppointment.paymentStatus !== "PAID" : false
 
   const age = differenceInYears(new Date(), new Date(patient.dateOfBirth))
 
@@ -100,12 +108,24 @@ export default async function PatientChartPage({ params }: PageProps) {
             </div>
           </div>
 
-          <Link href={`/provider/assessments/new?patientId=${patient.id}`}>
-            <Button className="h-10 px-6 bg-[#67BA2E] hover:bg-[#5aa827] text-white rounded-lg font-black shadow-md shadow-emerald-50 transition-all flex items-center gap-2 w-full md:w-auto text-xs uppercase tracking-wider">
-              <PlusCircle className="size-4" />
-              Start New Assessment
-            </Button>
-          </Link>
+          {isLocked ? (
+            <div className="flex flex-col md:items-end gap-1">
+              <Button disabled className="h-10 px-6 bg-slate-100 text-slate-400 rounded-lg font-black border border-slate-200 flex items-center gap-2 w-full md:w-auto text-xs uppercase tracking-wider">
+                <Shield className="size-4" />
+                Assessment Locked
+              </Button>
+              <Badge variant="outline" className="bg-red-50 text-red-500 border-red-100 font-black text-[9px] uppercase tracking-[0.2em] px-3 py-0.5 rounded-full self-center md:self-auto">
+                Payment Pending
+              </Badge>
+            </div>
+          ) : (
+            <Link href={`/provider/assessments/new?patientId=${patient.id}`}>
+              <Button className="h-10 px-6 bg-[#67BA2E] hover:bg-[#5aa827] text-white rounded-lg font-black shadow-md shadow-emerald-50 transition-all flex items-center gap-2 w-full md:w-auto text-xs uppercase tracking-wider">
+                <PlusCircle className="size-4" />
+                Start New Assessment
+              </Button>
+            </Link>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -137,9 +157,9 @@ export default async function PatientChartPage({ params }: PageProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-8">
-                <SnapshotItem title="Active Medications" />
-                <SnapshotItem title="Allergies" />
-                <SnapshotItem title="Chronic Conditions" />
+                <SnapshotItem title="Active Medications" items={patient.activeMedications} />
+                <SnapshotItem title="Allergies" items={patient.allergies} />
+                <SnapshotItem title="Chronic Conditions" items={patient.chronicConditions} />
               </CardContent>
             </Card>
           </div>
@@ -186,15 +206,23 @@ function InfoItem({ icon, label, value }: { icon: React.ReactNode, label: string
   )
 }
 
-function SnapshotItem({ title }: { title: string }) {
+function SnapshotItem({ title, items }: { title: string, items: string[] }) {
   return (
     <div className="space-y-3">
       <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center justify-between">
         {title}
         <ChevronRight size={14} className="text-slate-300" />
       </h4>
-      <div className="p-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 text-center">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No clinical records found</p>
+      <div className="p-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50">
+        {items && items.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {items.map((item, i) => (
+              <Badge key={i} variant="outline" className="bg-white border-slate-200 text-slate-700 font-bold">{item}</Badge>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[10px] text-center font-black text-slate-400 uppercase tracking-widest">No clinical records found</p>
+        )}
       </div>
     </div>
   )

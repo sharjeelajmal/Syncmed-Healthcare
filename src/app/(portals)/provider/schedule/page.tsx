@@ -1,29 +1,32 @@
 import * as React from "react"
 import { 
-  Bell, 
   Clock, 
   Settings2, 
-  ShieldCheck,
   AlertCircle,
   History
 } from "lucide-react"
-
+import { auth } from "@/../auth"
 import prisma from "@/lib/prisma"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { AvailabilityTable } from "./AvailabilityTable"
+import { ScheduleForm } from "./ScheduleForm"
+import { redirect } from "next/navigation"
 
 export default async function ProviderSchedulePage() {
-  // Deterministic Provider (Mock Auth Consistency)
-  const provider = await prisma.providerProfile.findFirst({
-    orderBy: { user: { createdAt: 'asc' } },
+  const session = await auth()
+  
+  if (!session?.user?.id) {
+    redirect("/login")
+  }
+
+  const provider = await prisma.providerProfile.findUnique({
+    where: { userId: session.user.id },
     include: { user: true }
   })
 
   if (!provider) {
-    console.error("[SCHEDULE_DEBUG]: No provider profiles found in database.")
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <p className="text-slate-500 font-bold uppercase tracking-widest">No Provider Records Found</p>
+        <p className="text-slate-500 font-bold uppercase tracking-widest">Provider Records Not Found</p>
       </div>
     )
   }
@@ -51,27 +54,27 @@ export default async function ProviderSchedulePage() {
   ])
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-20">
+    <div className="max-w-5xl mx-auto space-y-4 sm:space-y-8 pb-20 px-2 sm:px-0">
       {/* Header */}
-      <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-black text-slate-800 tracking-tight">Weekly Availability</h1>
-        <p className="text-slate-500 font-medium italic">Configure your clinical working hours and manage appointment blocks.</p>
+      <div className="flex flex-col gap-1 px-2 sm:px-0 mt-4 sm:mt-0">
+        <h1 className="text-xl sm:text-3xl font-black text-slate-800 tracking-tight uppercase sm:normal-case">Schedule</h1>
+        <p className="text-[10px] sm:text-sm text-slate-500 font-medium italic">Configure clinical working hours.</p>
       </div>
 
-      <Card className="rounded-[2.5rem] border-slate-200 shadow-xl bg-white overflow-hidden">
-        <CardHeader className="bg-slate-50/50 border-b border-slate-100 p-8">
+      <Card className="rounded-[1.5rem] sm:rounded-[2.5rem] border-slate-200 shadow-lg sm:shadow-xl bg-white overflow-hidden border-0">
+        <CardHeader className="bg-slate-50/50 border-b border-slate-100 p-4 sm:p-8">
            <div className="flex items-center gap-3">
-              <div className="size-10 rounded-xl bg-[#67BA2E] flex items-center justify-center text-white shadow-lg shadow-emerald-100">
-                 <Settings2 className="size-5" />
+              <div className="size-8 sm:size-10 rounded-lg sm:rounded-xl bg-[#67BA2E] flex items-center justify-center text-white shadow-lg shadow-emerald-100">
+                 <Settings2 className="size-4 sm:size-5" />
               </div>
               <div>
-                <CardTitle className="text-lg font-black text-slate-800">Operational Hours</CardTitle>
-                <CardDescription className="text-xs font-bold text-slate-400 uppercase tracking-widest">Define your active clinical windows</CardDescription>
+                <CardTitle className="text-sm sm:text-lg font-black text-slate-800">Operational Hours</CardTitle>
+                <CardDescription className="text-[9px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest">Define clinical windows</CardDescription>
               </div>
            </div>
         </CardHeader>
-        <CardContent className="p-0">
-           <AvailabilityTable providerId={providerId} initialAvailability={availability} />
+        <CardContent className="p-3 sm:p-8">
+           <ScheduleForm initialAvailability={availability} />
         </CardContent>
       </Card>
 
@@ -89,7 +92,7 @@ export default async function ProviderSchedulePage() {
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex flex-col">
                        <span className="text-xs font-black text-slate-800">{apt.patient.user.firstName} {apt.patient.user.lastName}</span>
-                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Appointment ID: {apt.id.slice(0, 8)}</span>
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {apt.id.slice(-6).toUpperCase()}</span>
                     </div>
                     <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
                        <Clock className="size-3 text-amber-500" />

@@ -131,7 +131,7 @@ export function AppointmentBookingModal({ isOpen, onClose, patientId, providers 
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-[95vw] md:max-w-2xl p-0 overflow-hidden border-0 bg-slate-50 sm:rounded-[2.5rem] max-h-[90vh] flex flex-col shadow-2xl">
+      <DialogContent className="w-[95vw] md:max-w-3xl p-0 overflow-hidden border-0 bg-slate-50 sm:rounded-[2.5rem] max-h-[90vh] flex flex-col shadow-2xl">
         <DialogHeader className="bg-white p-6 sm:p-8 border-b border-slate-100 shrink-0">
           <div className="flex items-center justify-between">
             <div className="space-y-1 pr-4">

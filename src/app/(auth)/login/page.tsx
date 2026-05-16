@@ -65,14 +65,16 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      // 1. Single Atomic Call: Direct NextAuth ko credentials pass karo
+      // 1. Standard Redirect Approach: Let NextAuth handle the routing
+      // This is much more robust for slow database connections
       const result = await signIn("credentials", {
         email: data.email,
         password: data.password,
-        redirect: false,
+        redirect: false, // Keeping false to show a custom success toast first
       })
 
       if (result?.error) {
+        console.error("Login Result Error:", result.error)
         toast.error("Access Denied", { description: "Invalid email or password." })
         setIsLoading(false)
         return
@@ -80,19 +82,18 @@ export default function LoginPage() {
 
       toast.success("Identity Verified", { description: "Connecting to your workspace..." })
 
-      // 2. Fetch the newly created session to get the user's role securely
+      // 2. Refresh and Redirect manually to ensure session is active
+      // Using window.location.href is the "nuclear option" to clear stale states
       const sessionRes = await fetch("/api/auth/session")
       const sessionData = await sessionRes.json()
-      const role = sessionData?.user?.role || "PATIENT"
-
-      // 3. Hard redirect to the correct dashboard based on role
-      setTimeout(() => {
-        window.location.replace(getRedirectPath(role))
-      }, 500)
+      const role = sessionData?.user?.role || "ADMIN"
+      
+      window.location.href = getRedirectPath(role)
 
     } catch (err) {
+      console.error("Client Login Crash:", err)
       setIsLoading(false)
-      toast.error("System Error", { description: "Authentication failed." })
+      toast.error("System Error", { description: "Check console for details." })
     }
   }
 
@@ -168,7 +169,7 @@ export default function LoginPage() {
                     <FormItem className="space-y-1">
                       <div className="flex items-center justify-between ml-1">
                         <FormLabel className="text-slate-700 font-bold text-[11px] uppercase tracking-wider">Password</FormLabel>
-                        <Link href="#" className="text-[10px] font-bold text-green-600 hover:text-green-700 transition-colors">Forgot Password?</Link>
+                        <Link href="/forgot-password" className="text-[10px] font-bold text-green-600 hover:text-green-700 transition-colors">Forgot Password?</Link>
                       </div>
                       <FormControl>
                         <div className="relative group">

@@ -78,7 +78,7 @@ export default function ServicesPage() {
                   }}
                 >
                   <img 
-                    src="/3d-stethoscope.png" 
+                    src="/services.png" 
                     alt="Background" 
                     className="w-full h-full object-cover md:object-contain object-right md:object-right"
                   />

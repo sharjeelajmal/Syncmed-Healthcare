@@ -115,6 +115,10 @@ export async function sendPasswordResetOTP(email: string) {
       }
     });
 
+    // Send the actual email
+    const { sendOTPEmail } = await import("@/lib/mail")
+    await sendOTPEmail(email, otp);
+
     console.log(`[AUTH] Password Reset OTP for ${email}: ${otp}`);
     return { success: true };
   } catch (error) {

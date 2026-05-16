@@ -5,5 +5,9 @@ export default function PortalRootLayout({
 }: {
   children: React.ReactNode
 }) {
-  return <>{children}</>
+  return (
+    <>
+      {children}
+    </>
+  )
 }

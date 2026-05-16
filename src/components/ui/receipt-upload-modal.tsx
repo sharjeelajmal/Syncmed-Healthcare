@@ -102,6 +102,37 @@ export function ReceiptUploadModal({
         </DialogHeader>
 
         <div className="p-6 space-y-4">
+          {/* Premium Bank Details Card */}
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Official Payment Gateway</span>
+              <div className="size-2 w-2 rounded-full bg-[#67BA2E] animate-pulse" />
+            </div>
+            <div className="grid grid-cols-2 gap-y-4">
+              <div className="flex flex-col">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Bank Name</span>
+                <span className="text-xs font-bold text-slate-700">Chase Premium Banking</span>
+              </div>
+              <div className="flex flex-col text-right">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Account Title</span>
+                <span className="text-xs font-bold text-slate-700">SyncMed Concierge Care</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Routing Number</span>
+                <span className="text-xs font-bold text-slate-700">021000021</span>
+              </div>
+              <div className="flex flex-col text-right">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Account Number</span>
+                <span className="text-xs font-bold text-slate-700">9988776655</span>
+              </div>
+            </div>
+            <div className="pt-2">
+               <p className="text-[10px] font-bold text-slate-500 bg-white border border-slate-100 rounded-lg p-2 text-center leading-relaxed">
+                 Please transfer exactly <span className="text-[#67BA2E] font-black">${amountToPay.toLocaleString()}</span> to the account above and upload the confirmation receipt.
+               </p>
+            </div>
+          </div>
+
           <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center justify-between">
             <div className="flex flex-col">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount Due</span>

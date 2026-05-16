@@ -1,30 +1,66 @@
 import NextAuth from "next-auth"
-import { authConfig } from "../auth.config"
 import { NextResponse } from "next/server"
 
-const { auth } = NextAuth(authConfig)
+// Inline config for Edge Runtime — no prisma/bcrypt imports allowed here
+// Only session strategy and secret are needed for middleware routing
+const { auth } = NextAuth({
+  secret: process.env.AUTH_SECRET || "syncmed-super-secret-key-must-be-at-least-32-chars-long",
+  trustHost: true,
+  session: { strategy: "jwt" },
+  providers: [], // providers sirf auth.ts (Node runtime) mein hain
+  callbacks: {
+    jwt({ token, user }) {
+      if (user) {
+        token.sub = user.id
+        token.role = (user as any).role
+      }
+      return token
+    },
+    session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.sub as string
+        ;(session.user as any).role = token.role
+      }
+      return session
+    }
+  }
+})
 
 export default auth((req) => {
-  const isLoggedIn = !!req.auth
+  let isLoggedIn = !!req.auth
   const path = req.nextUrl.pathname
 
-  // TERMINAL LOGS: Yeh aapko exact batayega ke session pass ho raha hai ya fail
-  console.log(`[Middleware] Path: ${path} | LoggedIn: ${isLoggedIn}`)
-  if (!isLoggedIn && path !== "/login") {
-    console.log("[Middleware Warning] Auth is NULL. Cookie was rejected or not found!")
+  // STALE SESSION FIX: If session has an invalid UUID (like the fake "1" from bypass), destroy the cookie
+  if (isLoggedIn) {
+    const userId = (req.auth?.user as any)?.id
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId || "")
+    if (!isValidUUID) {
+      isLoggedIn = false
+      
+      // BREAK REDIRECT LOOP: If already on login page, don't redirect to it again
+      const response = path === "/login" 
+        ? NextResponse.next() 
+        : NextResponse.redirect(new URL("/login", req.nextUrl))
+
+      response.cookies.delete("authjs.session-token")
+      response.cookies.delete("__Secure-authjs.session-token")
+      response.cookies.delete("next-auth.session-token")
+      response.cookies.delete("__Secure-next-auth.session-token")
+      return response
+    }
   }
 
-  // 1. LOOP BREAKER: Logged-in user trying to hit /login → redirect to dashboard
+  // 1. Logged-in user /login pe → dashboard redirect
   if (isLoggedIn && path === "/login") {
     const role = (req.auth?.user as any)?.role || "PATIENT"
     const redirectPath =
-      role === "ADMIN" ? "/admin/dashboard" : 
-      role === "PROVIDER" ? "/provider/dashboard" : 
+      role === "ADMIN" ? "/admin/dashboard" :
+      role === "PROVIDER" ? "/provider/dashboard" :
       "/patient/dashboard"
     return NextResponse.redirect(new URL(redirectPath, req.nextUrl))
   }
 
-  // 2. PROTECTED ROUTES: Unauthenticated users accessing portals → kick to /login
+  // 2. Protected routes → kick to /login
   const isProtectedRoute =
     path.startsWith("/admin") ||
     path.startsWith("/provider") ||

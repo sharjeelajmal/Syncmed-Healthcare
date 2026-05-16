@@ -19,7 +19,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { updateProviderProfileAction } from "@/app/actions/provider.actions"
-import { MFASetupModal } from "@/components/auth/MFASetupModal"
 
 export function ProfileForm({ provider }: { provider: any }) {
   const router = useRouter()
@@ -175,23 +174,6 @@ export function ProfileForm({ provider }: { provider: any }) {
            </div>
         </CardContent>
       </Card>
-      {/* Security Section */}
-      <div className="md:col-span-2 p-4 sm:p-6 bg-slate-50 border border-slate-100 rounded-[2rem] space-y-4">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-center sm:text-left">
-            <h3 className="text-base sm:text-lg font-black text-slate-800">Two-Factor Authentication</h3>
-            <p className="text-[12px] sm:text-sm font-medium text-slate-500">Secure your professional account with TOTP protection.</p>
-          </div>
-          <MFASetupModal>
-            <Button 
-              type="button" 
-              className="w-full sm:w-auto h-11 bg-[#67BA2E] hover:bg-[#5aa827] text-white rounded-xl font-bold px-8 shadow-lg shadow-[#67BA2E]/20 transition-all active:scale-[0.98]"
-            >
-              Set Up MFA
-            </Button>
-          </MFASetupModal>
-        </div>
-      </div>
     </form>
   )
 }

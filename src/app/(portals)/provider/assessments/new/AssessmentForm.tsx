@@ -50,7 +50,8 @@ export function AssessmentForm({ patientId, providerId }: AssessmentFormProps) {
         chiefComplaint: form.get("chiefComplaint"),
         diagnosis: form.get("diagnosis"),
         treatmentPlan: form.get("treatmentPlan"),
-      }
+      },
+      additionalCharges: parseFloat(form.get("additionalCharges") as string || "0")
     }
 
     setFormData(data)
@@ -62,7 +63,7 @@ export function AssessmentForm({ patientId, providerId }: AssessmentFormProps) {
     setIsSignatureModalOpen(false)
 
     startTransition(async () => {
-      const res = await createAssessmentAction(patientId, providerId, formData, capturedSignature)
+      const res = await createAssessmentAction(patientId, providerId, formData, capturedSignature, formData.additionalCharges)
       if (res?.error) {
         toast.error(res.error)
       }
@@ -170,6 +171,31 @@ export function AssessmentForm({ patientId, providerId }: AssessmentFormProps) {
                 required
                 className="min-h-[120px] rounded-2xl border-slate-200 focus:ring-[#67BA2E] focus:border-[#67BA2E] font-medium text-slate-700 p-4"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Section 3: Billing & Additional Procedures */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+            <Stethoscope className="size-5 text-[#67BA2E]" />
+            <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Billing & Additional Procedures</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Additional Procedure / Tool Charges ($)</Label>
+              <div className="relative">
+                <Input 
+                  name="additionalCharges" 
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00" 
+                  className="h-12 rounded-xl border-slate-200 focus:ring-[#67BA2E] focus:border-[#67BA2E] font-bold text-slate-700 pl-10" 
+                />
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">$</span>
+              </div>
+              <p className="text-[9px] font-medium text-slate-400 italic ml-1">These charges will be added to the base consultation fee.</p>
             </div>
           </div>
         </div>

@@ -54,71 +54,95 @@ export const Navbar = () => {
             </motion.div>
 
             {/* Desktop Navigation */}
-            <div className="flex items-center gap-10">
+            <div className="flex items-center gap-1">
               {[
+                { name: "Home", id: "top", href: "/" },
                 { name: "Services", id: "services", href: "/services" },
                 { name: "Consultation", id: "consultation", href: "/request-consultation" },
-                { name: "Blog", id: "blog", href: "/blog" },
-                { name: "FAQ", id: "faq" }
-              ].map((item, i) => (
+                { name: "Blog", id: "blog", href: "/blog" }
+              ].map((item, i) => {
+                const isActive = pathname === item.href || (item.href === "/" && pathname === "/");
+                
+                return (
+                  <motion.div
+                    key={item.name}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="relative px-5 py-2"
+                  >
+                    <button 
+                      onClick={() => item.href ? router.push(item.href) : handleNavClick(item.id)}
+                      className={`text-xs font-bold transition-all tracking-widest uppercase cursor-pointer relative z-10 ${
+                        isActive ? "text-[#67BA2E]" : "text-slate-600 hover:text-[#67BA2E]"
+                      }`}
+                    >
+                      {item.name}
+                    </button>
+                    
+                    {isActive && (
+                      <motion.div
+                        layoutId="nav-pill"
+                        className="absolute inset-0 bg-[#67BA2E]/5 rounded-full z-0"
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                    
+                    {isActive && (
+                      <motion.div
+                        layoutId="nav-dot"
+                        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#67BA2E] rounded-full"
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                  </motion.div>
+                );
+              })}
+              <div className="ml-4">
                 <motion.div
-                  key={item.name}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5 }}
                 >
-                  {item.href && pathname !== item.href ? (
-                    <button 
-                      onClick={() => router.push(item.href)}
-                      className="text-xs font-bold text-slate-600 hover:text-[#67BA2E] transition-colors tracking-widest uppercase cursor-pointer"
-                    >
-                      {item.name}
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => handleNavClick(item.id)}
-                      className="text-xs font-bold text-slate-600 hover:text-[#67BA2E] transition-colors tracking-widest uppercase cursor-pointer"
-                    >
-                      {item.name}
-                    </button>
-                  )}
+                  <Button 
+                    onClick={() => window.location.href = "/login"}
+                    className="bg-[#67BA2E] hover:bg-[#5aa329] hover:shadow-lg hover:shadow-[#67BA2E]/40 transition-all duration-300 hover:-translate-y-0.5 active:scale-95 text-white px-6 py-2 rounded-full font-bold text-xs uppercase"
+                  >
+                    Portal Login
+                  </Button>
                 </motion.div>
-              ))}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.5 }}
-              >
-                <Button 
-                  onClick={() => router.push("/login")}
-                  className="bg-[#67BA2E] hover:bg-[#5aa329] hover:shadow-lg hover:shadow-[#67BA2E]/40 transition-all duration-300 hover:-translate-y-0.5 active:scale-95 text-white px-6 py-2 rounded-full font-bold text-xs uppercase"
-                >
-                  Portal Login
-                </Button>
-              </motion.div>
+              </div>
             </div>
           </div>
         </div>
       </nav>
-
       {/* Fixed Bottom Navigation (Visible on max-[900px]) */}
       <div className="hidden max-[900px]:flex fixed bottom-0 left-0 right-0 z-[999] bg-white/90 backdrop-blur-xl border-t border-slate-200 justify-around p-3 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
-        <button onClick={() => isHome ? handleNavClick("top") : router.push("/")} className="flex flex-col items-center gap-1 text-slate-400 hover:text-[#67BA2E] transition-colors w-14">
-          <Home className="h-5 w-5" />
-          <span className="text-[10px] font-bold uppercase tracking-tight">Home</span>
-        </button>
-        <button onClick={() => router.push("/services")} className={`flex flex-col items-center gap-1 transition-colors w-14 ${pathname === '/services' ? 'text-[#67BA2E]' : 'text-slate-400 hover:text-[#67BA2E]'}`}>
-          <Briefcase className="h-5 w-5" />
-          <span className="text-[10px] font-bold uppercase tracking-tight">Services</span>
-        </button>
-        <button onClick={() => router.push("/blog")} className={`flex flex-col items-center gap-1 transition-colors w-14 ${pathname === '/blog' ? 'text-[#67BA2E]' : 'text-slate-400 hover:text-[#67BA2E]'}`}>
-          <Activity className="h-5 w-5" />
-          <span className="text-[10px] font-bold uppercase tracking-tight">Blog</span>
-        </button>
-        <button onClick={() => handleNavClick("faq")} className="flex flex-col items-center gap-1 text-slate-400 hover:text-[#67BA2E] transition-colors w-14">
-          <HelpCircle className="h-5 w-5" />
-          <span className="text-[10px] font-bold uppercase tracking-tight">FAQ</span>
-        </button>
+        {[
+          { name: "Home", icon: Home, href: "/", id: "top" },
+          { name: "Services", icon: Briefcase, href: "/services", id: "services" },
+          { name: "Blog", icon: Activity, href: "/blog", id: "blog" },
+          { name: "Consult", icon: Crown, href: "/request-consultation", id: "consultation" }
+        ].map((item) => {
+          const isActive = pathname === item.href;
+          const Icon = item.icon;
+          return (
+            <button 
+              key={item.name}
+              onClick={() => router.push(item.href)} 
+              className={`flex flex-col items-center gap-1 transition-all w-14 relative ${isActive ? 'text-[#67BA2E]' : 'text-slate-400 hover:text-[#67BA2E]'}`}
+            >
+              <Icon className={`h-5 w-5 ${isActive ? 'scale-110' : ''} transition-transform`} />
+              <span className="text-[10px] font-black uppercase tracking-tighter">{item.name}</span>
+              {isActive && (
+                <motion.div 
+                  layoutId="bottom-nav-dot"
+                  className="absolute -bottom-1 w-1 h-1 bg-[#67BA2E] rounded-full"
+                />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Mobile Top Header (Visible on max-[900px]) */}
@@ -131,13 +155,13 @@ export const Navbar = () => {
             onClick={() => router.push("/")} 
           />
         </div>
-        <Button 
-          onClick={() => router.push("/login")}
-          size="sm"
-          className="bg-[#67BA2E] hover:bg-[#5aa329] text-white px-3 py-1 rounded-full font-bold text-[9px] uppercase h-7 flex-shrink-0 shadow-lg shadow-[#67BA2E]/20 transition-all duration-300 active:scale-95"
-        >
-          Portal Login
-        </Button>
+          <Button 
+            onClick={() => window.location.href = "/login"}
+            size="sm"
+            className="bg-[#67BA2E] hover:bg-[#5aa329] text-white px-3 py-1 rounded-full font-bold text-[9px] uppercase h-7 flex-shrink-0 shadow-lg shadow-[#67BA2E]/20 transition-all duration-300 active:scale-95"
+          >
+            Portal Login
+          </Button>
       </div>
     </>
   );

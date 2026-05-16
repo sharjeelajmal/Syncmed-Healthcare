@@ -154,7 +154,7 @@ export default function BlogDetailPage() {
         </section>
 
         {/* Content Section */}
-        <section className="py-10 md:py-16 bg-white border-t border-slate-100">
+        <section className="py-6 bg-white border-t border-slate-100">
           <div className="max-w-4xl mx-auto px-5 sm:px-6 lg:px-8">
             <motion.div 
               {...fadeUp}
@@ -168,7 +168,7 @@ export default function BlogDetailPage() {
             />
 
             {/* Author Footer Card */}
-            <div className="mt-16 md:mt-24 p-6 md:p-10 bg-slate-50 rounded-[2.5rem] md:rounded-[3rem] border border-slate-100 flex flex-col md:flex-row items-center gap-6 md:gap-8 text-center md:text-left">
+            <div className="mt-10 md:mt-16 p-6 md:p-10 bg-slate-50 rounded-[2.5rem] md:rounded-[3rem] border border-slate-100 flex flex-col md:flex-row items-center gap-6 md:gap-8 text-center md:text-left">
               <div className="size-20 md:size-24 rounded-[1.5rem] md:rounded-[2rem] bg-white shadow-xl flex items-center justify-center text-[#67BA2E] font-black text-2xl md:text-3xl">
                 {post.author.split(' ').map(n => n[0]).join('')}
               </div>
@@ -189,7 +189,7 @@ export default function BlogDetailPage() {
         </section>
 
         {/* Related Articles Section */}
-        <section className="py-10 md:py-16 bg-slate-50/50">
+        <section className="py-6 md:py-10 bg-slate-50/50">
           <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-8 md:mb-12">
               <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Related Analysis</h2>

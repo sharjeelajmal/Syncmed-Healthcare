@@ -21,9 +21,9 @@ export default function AiHubLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
 
   return (
-    <div className="flex h-[calc(100vh-120px)] md:h-[80vh] flex-col md:flex-row gap-0 md:gap-6 max-w-7xl mx-auto w-full overflow-hidden">
+    <div className="flex h-[calc(100vh-120px)] md:h-[80vh] flex-col md:flex-row max-w-7xl mx-auto w-full overflow-hidden bg-white/50 backdrop-blur-sm rounded-[2.5rem] border border-slate-200/50 shadow-2xl">
       {/* Slim Sidebar (Desktop Only) - SyncMed Theme */}
-      <aside className="hidden md:flex w-20 shrink-0 flex-col items-center py-8 bg-slate-900 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+      <aside className="hidden md:flex w-20 shrink-0 flex-col items-center py-8 bg-slate-900 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-[#67BA2E] opacity-20 blur-[50px] rounded-full pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
         
         <div className="relative z-10 mb-12">
@@ -63,14 +63,14 @@ export default function AiHubLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content Area (App Shell) */}
-      <main className="flex-1 overflow-y-auto pb-24 md:pb-8 bg-slate-50 custom-scrollbar rounded-t-[2.5rem] md:rounded-[2.5rem] border border-slate-200/50 shadow-inner">
-        <div className="p-4 md:p-8">
+      <main className="flex-1 overflow-y-auto pb-24 md:pb-8 bg-slate-50 custom-scrollbar relative">
+        <div className="max-w-7xl mx-auto w-full px-4 md:px-8 py-6 md:py-8">
           {children}
         </div>
       </main>
 
-      {/* Native Mobile Bottom Navigation - SyncMed Theme Highlights */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-t border-slate-100 z-[999] flex items-center justify-around px-2 pb-safe">
+      {/* Native Mobile Bottom Navigation - Sticky & Solid */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-t border-slate-200 z-50 flex items-center justify-around px-6">
         {sidebarLinks.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/admin/ai-panel" && pathname.startsWith(item.href))
           return (
@@ -80,24 +80,24 @@ export default function AiHubLayout({ children }: { children: React.ReactNode })
               className="flex flex-col items-center justify-center flex-1 h-full relative"
             >
               <div className={cn(
-                "flex flex-col items-center justify-center transition-all duration-300 active:scale-90",
-                isActive ? "text-[#67BA2E]" : "text-slate-400"
+                "flex flex-col items-center justify-center transition-all duration-200 active:scale-95",
+                isActive ? "text-[#67BA2E]" : "text-slate-400 hover:text-slate-600"
               )}>
                 <item.icon 
                   className={cn(
-                    "size-5 transition-all mb-1",
+                    "size-5 mb-1",
                     isActive ? "stroke-[2.5px]" : "stroke-[2px]"
                   )} 
                 />
                 <span className={cn(
-                  "text-[9px] font-black uppercase tracking-[0.05em] transition-all",
+                  "text-[9px] font-black uppercase tracking-widest",
                   isActive ? "opacity-100" : "opacity-60"
                 )}>
                   {item.name}
                 </span>
               </div>
               {isActive && (
-                <div className="absolute -top-[1px] left-1/2 -translate-x-1/2 w-8 h-[2px] bg-[#67BA2E] rounded-full" />
+                <div className="absolute -top-[1px] left-1/2 -translate-x-1/2 w-8 h-[3px] bg-[#67BA2E] rounded-b-full shadow-[0_1px_4px_rgba(103,186,46,0.4)]" />
               )}
             </Link>
           )

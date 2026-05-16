@@ -172,6 +172,53 @@ export default function PatientEditForm({ patient, isReadOnly }: PatientEditForm
           </div>
         </div>
       </div>
+      
+      {/* Clinical Snapshot Section */}
+      <div className="space-y-6 pt-8 border-t border-slate-100">
+        <div className="flex items-center gap-2 pb-2">
+          <ShieldCheck className="size-5 text-[#67BA2E]" />
+          <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Clinical Snapshot (Optional)</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="activeMedications" className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Active Medications</Label>
+            <Input 
+              id="activeMedications" 
+              name="activeMedications" 
+              defaultValue={patient.activeMedications?.join(', ')}
+              placeholder="Aspirin, Lisinopril..." 
+              readOnly={isReadOnly}
+              disabled={isReadOnly}
+              className={cn("input-premium", isReadOnly && "bg-slate-50 border-slate-100 opacity-80")}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="allergies" className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Allergies</Label>
+            <Input 
+              id="allergies" 
+              name="allergies" 
+              defaultValue={patient.allergies?.join(', ')}
+              placeholder="Penicillin, Peanuts..." 
+              readOnly={isReadOnly}
+              disabled={isReadOnly}
+              className={cn("input-premium", isReadOnly && "bg-slate-50 border-slate-100 opacity-80")}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="chronicConditions" className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Chronic Conditions</Label>
+            <Input 
+              id="chronicConditions" 
+              name="chronicConditions" 
+              defaultValue={patient.chronicConditions?.join(', ')}
+              placeholder="Hypertension, Asthma..." 
+              readOnly={isReadOnly}
+              disabled={isReadOnly}
+              className={cn("input-premium", isReadOnly && "bg-slate-50 border-slate-100 opacity-80")}
+            />
+          </div>
+        </div>
+      </div>
 
       {!isReadOnly && (
         <div className="pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6">

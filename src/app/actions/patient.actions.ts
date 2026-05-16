@@ -60,6 +60,11 @@ export async function createPatientAction(formData: FormData) {
       },
     })
 
+    // Extract clinical data arrays
+    const activeMedications = formData.get('activeMedications')?.toString().split(',').map(s => s.trim()).filter(Boolean) || []
+    const allergies = formData.get('allergies')?.toString().split(',').map(s => s.trim()).filter(Boolean) || []
+    const chronicConditions = formData.get('chronicConditions')?.toString().split(',').map(s => s.trim()).filter(Boolean) || []
+
     await prisma.patientProfile.create({
       data: {
         userId: user.id,
@@ -67,6 +72,9 @@ export async function createPatientAction(formData: FormData) {
         dateOfBirth: parsedDob,
         address: "", 
         emergencyContact: "", 
+        activeMedications,
+        allergies,
+        chronicConditions,
       },
     })
 
@@ -158,6 +166,11 @@ export async function updatePatientDetailsAction(patientProfileId: string, formD
       }
     })
 
+    // Extract clinical data arrays
+    const activeMedications = formData.get('activeMedications')?.toString().split(',').map(s => s.trim()).filter(Boolean) || []
+    const allergies = formData.get('allergies')?.toString().split(',').map(s => s.trim()).filter(Boolean) || []
+    const chronicConditions = formData.get('chronicConditions')?.toString().split(',').map(s => s.trim()).filter(Boolean) || []
+
     // Update PatientProfile model
     await prisma.patientProfile.update({
       where: { id: patientProfileId },
@@ -165,6 +178,9 @@ export async function updatePatientDetailsAction(patientProfileId: string, formD
         phone,
         dateOfBirth: dob ? new Date(dob) : undefined,
         address,
+        activeMedications,
+        allergies,
+        chronicConditions,
       }
     })
 

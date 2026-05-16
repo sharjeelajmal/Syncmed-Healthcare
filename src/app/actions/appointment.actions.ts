@@ -24,7 +24,51 @@ export async function createAppointmentAction(formData: FormData) {
     }
 
     const scheduledDate = new Date(scheduledAt);
+    const dayName = format(scheduledDate, "EEEE").toUpperCase();
+    const timeStr = format(scheduledDate, "HH:mm");
 
+    // 2. Strict Availability Check
+    const availability = await prisma.availability.findFirst({
+      where: {
+        providerId: providerProfile.id,
+        day: dayName,
+        isActive: true
+      }
+    });
+
+    if (!availability) {
+      return { success: false, error: `Doctor is not available on ${format(scheduledDate, "EEEE")}.` };
+    }
+
+    // Time boundary check (startTime <= timeStr < endTime)
+    if (timeStr < availability.startTime || timeStr >= availability.endTime) {
+      return { success: false, error: 'Requested time slot is outside the doctor\'s office hours.' };
+    }
+
+    // 3. Strict Collision Lock (Double-Booking Protection)
+    // Search for any existing record within a 30-minute overlap window
+    const windowStart = new Date(scheduledDate.getTime() - 29 * 60000);
+    const windowEnd = new Date(scheduledDate.getTime() + 29 * 60000);
+
+    const conflict = await prisma.appointment.findFirst({
+      where: {
+        providerId: providerProfile.id,
+        status: { not: "CANCELLED" },
+        scheduledAt: {
+          gt: windowStart,
+          lt: windowEnd
+        }
+      }
+    });
+
+    if (conflict) {
+      return { 
+        success: false, 
+        error: 'This time slot overlaps with an existing reservation. Please select another slot.' 
+      };
+    }
+
+    // 4. Creation
     await prisma.appointment.create({
       data: {
         patientId: patientProfile.id,
@@ -32,6 +76,7 @@ export async function createAppointmentAction(formData: FormData) {
         scheduledAt: scheduledDate,
         notes: notes || null,
         status: "PENDING",
+        amount: providerProfile.consultationFee,
       },
     })
 

@@ -33,6 +33,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
 import { MFASetupModal } from "@/components/auth/MFASetupModal"
+import { BannerInstallBtn } from "@/components/auth/BannerInstallBtn"
 
 export const dynamic = "force-dynamic"
 
@@ -151,7 +152,7 @@ export default async function AdminDashboardPage() {
             </div>
 
             {/* Bottom Quick Stats/Badges */}
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 md:gap-4 animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-700">
+            <div className="flex flex-row items-center gap-2 mt-1.5 flex-wrap md:flex-nowrap animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-700">
                <div className="flex items-center gap-3 px-4 md:px-6 py-2.5 md:py-3.5 bg-[#67BA2E]/5 border border-[#67BA2E]/10 rounded-xl md:rounded-2xl hover:bg-[#67BA2E]/10 transition-all cursor-pointer group/badge">
                   <div className="p-1.5 md:p-2 bg-white rounded-lg shadow-sm group-hover/badge:scale-110 transition-transform">
                     <TrendingUp className="size-3.5 md:size-4 text-[#67BA2E]" />
@@ -162,15 +163,7 @@ export default async function AdminDashboardPage() {
                   </div>
                </div>
                
-               <div className="flex items-center gap-3 px-4 md:px-6 py-2.5 md:py-3.5 bg-blue-50 border border-blue-100 rounded-xl md:rounded-2xl hover:bg-blue-100 transition-all cursor-pointer group/badge">
-                  <div className="p-1.5 md:p-2 bg-white rounded-lg shadow-sm group-hover/badge:scale-110 transition-transform">
-                    <User className="size-3.5 md:size-4 text-blue-600" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-[8px] md:text-[10px] font-black text-blue-600 uppercase tracking-wider leading-none mb-0.5">Admin Control</p>
-                    <p className="text-[10px] md:text-xs font-bold text-slate-700">Full Access Verified</p>
-                  </div>
-               </div>
+               <BannerInstallBtn />
             </div>
           </div>
 

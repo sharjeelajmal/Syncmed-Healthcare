@@ -12,6 +12,7 @@ export async function createProviderAction(formData: FormData) {
     const password = formData.get("password") as string
     const specialty = formData.get("specialty") as string
     const licenseNumber = formData.get("licenseNumber") as string
+    const consultationFee = parseFloat(formData.get("consultationFee") as string || "150")
 
     if (!firstName || !lastName || !email || !password || !specialty || !licenseNumber) {
       return { error: "All fields are required." }
@@ -35,6 +36,7 @@ export async function createProviderAction(formData: FormData) {
           userId: user.id,
           specialty,
           licenseNumber,
+          consultationFee,
         }
       })
     })
@@ -56,6 +58,7 @@ export async function updateProviderAction(userId: string, formData: FormData) {
     const lastName = formData.get("lastName") as string
     const specialty = formData.get("specialty") as string
     const licenseNumber = formData.get("licenseNumber") as string
+    const consultationFee = parseFloat(formData.get("consultationFee") as string || "150")
 
     if (!firstName || !lastName || !specialty || !licenseNumber) {
       return { error: "Required fields are missing." }
@@ -69,7 +72,7 @@ export async function updateProviderAction(userId: string, formData: FormData) {
 
       await tx.providerProfile.update({
         where: { userId: userId },
-        data: { specialty, licenseNumber }
+        data: { specialty, licenseNumber, consultationFee }
       })
     })
 
@@ -137,17 +140,31 @@ export async function updateProviderProfileAction(userId: string, data: any) {
   }
 }
 
-export async function updateAvailabilityAction(providerId: string, availabilityData: any[]) {
+import { auth } from "@/../auth"
+
+export async function updateProviderAvailability(availabilityData: Array<{ day: string, startTime: string, endTime: string, isActive: boolean }>) {
   try {
-    // Sync availability: Delete existing and create new ones for simplicity in this MVP
-    // A better way would be upsert, but delete/create is cleaner for a bulk sync.
+    const session = await auth()
+    if (!session?.user?.id) {
+      return { success: false, error: "Unauthorized access." }
+    }
+
+    const provider = await prisma.providerProfile.findUnique({
+      where: { userId: session.user.id }
+    })
+
+    if (!provider) {
+      return { success: false, error: "Provider profile not found." }
+    }
+
+    // Atomic sync: Delete all and recreate for simplicity
     await prisma.$transaction([
       prisma.availability.deleteMany({
-        where: { providerId }
+        where: { providerId: provider.id }
       }),
       prisma.availability.createMany({
         data: availabilityData.map(item => ({
-          providerId,
+          providerId: provider.id,
           day: item.day,
           startTime: item.startTime,
           endTime: item.endTime,
@@ -157,9 +174,9 @@ export async function updateAvailabilityAction(providerId: string, availabilityD
     ])
 
     revalidatePath("/provider/schedule")
-    return { success: true }
+    return { success: true, message: "Schedule updated successfully." }
   } catch (err: any) {
-    console.error("[AVAILABILITY_UPDATE_ERROR]:", err)
-    return { error: "Failed to synchronize weekly availability." }
+    console.error("[AVAILABILITY_SYNC_ERROR]:", err)
+    return { success: false, error: "Failed to synchronize availability." }
   }
 }

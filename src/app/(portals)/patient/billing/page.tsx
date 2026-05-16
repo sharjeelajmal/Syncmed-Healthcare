@@ -3,6 +3,9 @@ import { CreditCard } from "lucide-react"
 import prisma from "@/lib/prisma"
 import { BillingClient } from "./BillingClient"
 
+import { auth } from "@/../auth"
+import { redirect } from "next/navigation"
+
 export const dynamic = "force-dynamic"
 
 export default async function BillingPage({
@@ -10,12 +13,17 @@ export default async function BillingPage({
 }: {
   searchParams: Promise<{ query?: string }>
 }) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    redirect("/login")
+  }
+
   const params = await searchParams
   const query = params?.query || ""
 
-  // MOCK AUTH: Fetch deterministic patient
-  const patient = await prisma.patientProfile.findFirst({
-    orderBy: { user: { createdAt: 'asc' } },
+  // Fetch the real patient profile associated with the logged-in user
+  const patient = await prisma.patientProfile.findUnique({
+    where: { userId: (session.user as any).id },
     include: { user: true }
   });
 
@@ -41,17 +49,43 @@ export default async function BillingPage({
     orderBy: { scheduledAt: 'desc' }
   })
 
-  // Filter appointments based on search query
-  const appointments = allAppointments.filter(appt => {
+  // Fetch secondary PaymentInvoices
+  const secondaryInvoices = await prisma.paymentInvoice.findMany({
+    where: { patientId: patient.id },
+    orderBy: { createdAt: 'desc' }
+  })
+
+  // Unify data for the client
+  const billingItems = [
+    ...allAppointments.map(a => ({
+      id: a.id,
+      type: "APPOINTMENT" as const,
+      date: a.scheduledAt,
+      amount: a.amount,
+      status: a.paymentStatus, // UNPAID, PAID, VERIFICATION_PENDING
+      clinician: `Dr. ${a.provider.user.firstName} ${a.provider.user.lastName}`,
+      specialty: a.provider.specialty,
+      initials: `${a.provider.user.firstName[0]}${a.provider.user.lastName[0]}`
+    })),
+    ...secondaryInvoices.map(i => ({
+      id: i.id,
+      type: "SECONDARY" as const,
+      date: i.createdAt,
+      amount: i.amount,
+      status: i.status === "PENDING" ? "UNPAID" : i.status === "VERIFIED" ? "PAID" : "REJECTED",
+      clinician: "Clinical Services",
+      specialty: "Post-Visit Charges",
+      initials: "CS"
+    }))
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+  // Filter based on search query
+  const filteredItems = billingItems.filter(item => {
     if (!query) return true;
     const q = query.toLowerCase();
-    const clinicianName = `${appt.provider.user.firstName} ${appt.provider.user.lastName}`.toLowerCase();
-    const apptId = appt.id.toLowerCase();
-    const specialty = (appt.provider.specialty || "").toLowerCase();
-    
-    return clinicianName.includes(q) || 
-           apptId.includes(q) || 
-           specialty.includes(q);
+    return item.clinician.toLowerCase().includes(q) || 
+           item.id.toLowerCase().includes(q) || 
+           item.specialty.toLowerCase().includes(q);
   });
 
   return (
@@ -69,7 +103,7 @@ export default async function BillingPage({
         </div>
 
         {/* Content */}
-        <BillingClient appointments={appointments} />
+        <BillingClient invoices={filteredItems} />
       </div>
     </div>
   )

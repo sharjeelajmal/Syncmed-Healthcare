@@ -170,6 +170,44 @@ export default function NewPatientPage() {
                 </div>
               </div>
 
+              {/* Section 2: Clinical Snapshot */}
+              <div className="space-y-6 pt-8 border-t border-slate-100">
+                <div className="flex items-center gap-2 pb-2">
+                  <ShieldCheck className="size-5 text-[#67BA2E]" />
+                  <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Clinical Snapshot (Optional)</h2>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="activeMedications" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Active Medications</Label>
+                    <Input 
+                      id="activeMedications" 
+                      name="activeMedications" 
+                      placeholder="e.g. Aspirin, Lisinopril, Metformin (comma separated)" 
+                      className="input-premium"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="allergies" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Allergies</Label>
+                    <Input 
+                      id="allergies" 
+                      name="allergies" 
+                      placeholder="e.g. Penicillin, Peanuts, Latex (comma separated)" 
+                      className="input-premium"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="chronicConditions" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Chronic Conditions</Label>
+                    <Input 
+                      id="chronicConditions" 
+                      name="chronicConditions" 
+                      placeholder="e.g. Hypertension, Type 2 Diabetes, Asthma (comma separated)" 
+                      className="input-premium"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="pt-8 border-t border-slate-100 flex flex-col items-start">
                 <div className="flex flex-row gap-4 items-center">
                   <Link href="/admin/patients">
