@@ -17,15 +17,26 @@ export default function MFAVerifyPage() {
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault()
     if (otp.length !== 6) return toast.error("Code must be 6 digits")
-    if (!session?.user?.email) return toast.error("Session not found")
+
+    const searchParams = new URLSearchParams(window.location.search)
+    const email = searchParams.get("email") || session?.user?.email
+    if (!email) return toast.error("User email not found. Please log in again.")
 
     setIsLoading(true)
-    const res = await verifyMfaLoginAction(session.user.email, otp)
+    const res = await verifyMfaLoginAction(email, otp)
     setIsLoading(false)
 
     if (res.success) {
       toast.success("Verification successful")
-      router.push('/dashboard') // Or role-based redirect
+      
+      // Secure role-based redirection
+      const role = (session?.user as any)?.role || "PATIENT"
+      const redirectPath =
+        role === "ADMIN" ? "/admin/dashboard" :
+        role === "PROVIDER" ? "/provider/dashboard" :
+        "/patient/dashboard"
+      
+      window.location.href = redirectPath
     } else {
       toast.error(res.error || "Invalid code")
     }

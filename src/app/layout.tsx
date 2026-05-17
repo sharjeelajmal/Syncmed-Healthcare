@@ -26,6 +26,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          window.deferredPrompt = null;
+          window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            window.deferredPrompt = e;
+            window.dispatchEvent(new CustomEvent('pwa-prompt-available', { detail: e }));
+          });
+        `}} />
+      </head>
       <body
         className={`${plusJakartaSans.variable} antialiased font-sans tracking-tight bg-white text-slate-900`}
       >

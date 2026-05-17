@@ -17,6 +17,7 @@ import {
 import { signIn } from "next-auth/react"
 import Link from "next/link"
 import { toast } from "sonner"
+import { preLoginCheckAction } from "@/app/actions/auth.actions"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -65,12 +66,20 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      // 1. Standard Redirect Approach: Let NextAuth handle the routing
-      // This is much more robust for slow database connections
+      // 1. Secure DB Pre-Check: verify credentials, get MFA state, and fetch the user's role
+      const preCheck = await preLoginCheckAction(data.email, data.password)
+      
+      if (!preCheck.success) {
+        toast.error("Access Denied", { description: preCheck.error || "Invalid email or password." })
+        setIsLoading(false)
+        return
+      }
+
+      // 2. Perform credential sign-in inside NextAuth to establish the session
       const result = await signIn("credentials", {
         email: data.email,
         password: data.password,
-        redirect: false, // Keeping false to show a custom success toast first
+        redirect: false,
       })
 
       if (result?.error) {
@@ -82,13 +91,14 @@ export default function LoginPage() {
 
       toast.success("Identity Verified", { description: "Connecting to your workspace..." })
 
-      // 2. Refresh and Redirect manually to ensure session is active
-      // Using window.location.href is the "nuclear option" to clear stale states
-      const sessionRes = await fetch("/api/auth/session")
-      const sessionData = await sessionRes.json()
-      const role = sessionData?.user?.role || "ADMIN"
+      // 3. Clean full page redirect based on DB-verified user role (bypasses any session fetch latency/race conditions)
+      const role = preCheck.role || "ADMIN"
       
-      window.location.href = getRedirectPath(role)
+      if (preCheck.mfaEnabled) {
+        window.location.href = `/mfa/verify?email=${encodeURIComponent(data.email)}`
+      } else {
+        window.location.href = getRedirectPath(role)
+      }
 
     } catch (err) {
       console.error("Client Login Crash:", err)

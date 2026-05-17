@@ -134,7 +134,7 @@ const specificationsData: Phase[] = [
         icon: Laptop,
         intent: "Operational Intent: To deploy a reliable, commission-free native software installation entry point for administrators running high-throughput daily workflows.",
         breakdown: [
-          "The Invisible Banner Rule: Embedded inside the top greeting bar, the \"Install Native App\" interface remains completely hidden if the administrator is already executing inside a standalone application viewport.",
+          "The Invisible Banner Rule: Embedded inside the top greeting bar, the \"Install App\" interface remains completely hidden if the administrator is already executing inside a standalone application viewport.",
           "One-Click Chromium Execution: Leverages registered service workers and optimized manifest caching to trigger a clean, native desktop installer prompt for the user, removing browser chrome components for an isolated desktop app experience.",
           "Real-World Advantage: High-speed execution. By running SyncMed as an isolated, standalone app on their machines, admins experience rapid task switching, native window behaviors, and an elite desktop experience optimized for multitasking."
         ],

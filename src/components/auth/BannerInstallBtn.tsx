@@ -4,6 +4,7 @@ import * as React from "react"
 import { createPortal } from "react-dom"
 import { Download, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { toast } from "sonner"
 
 // THE FIX: Catch the event globally before Next.js even hydrates the DOM
 let globalDeferredPrompt: any = null;
@@ -24,9 +25,18 @@ export function BannerInstallBtn() {
   React.useEffect(() => {
     setMounted(true)
     
-    if (globalDeferredPrompt) {
+    // Check if the prompt was already captured in the HTML head
+    if (typeof window !== "undefined" && (window as any).deferredPrompt) {
+      setDeferredPrompt((window as any).deferredPrompt)
+    } else if (globalDeferredPrompt) {
       setDeferredPrompt(globalDeferredPrompt)
     }
+    
+    // Listen for the custom head script event
+    const handlePromptAvailable = (e: any) => {
+      setDeferredPrompt(e.detail)
+    }
+    window.addEventListener("pwa-prompt-available", handlePromptAvailable as EventListener)
     
     // Detect Device Type
     const ua = navigator.userAgent.toLowerCase()
@@ -53,18 +63,25 @@ export function BannerInstallBtn() {
     }
     
     window.addEventListener("beforeinstallprompt", handler)
-    return () => window.removeEventListener("beforeinstallprompt", handler)
+    return () => {
+      window.removeEventListener("pwa-prompt-available", handlePromptAvailable as EventListener)
+      window.removeEventListener("beforeinstallprompt", handler)
+    }
   }, [])
 
   const handleInstall = async () => {
+    const promptToUse = deferredPrompt || (typeof window !== "undefined" ? (window as any).deferredPrompt : null)
     try {
       // 1. Agar native prompt majood hai, toh isay fire karo
-      if (deferredPrompt) {
-        await deferredPrompt.prompt()
-        const { outcome } = await deferredPrompt.userChoice
+      if (promptToUse) {
+        await promptToUse.prompt()
+        const { outcome } = await promptToUse.userChoice
         if (outcome === "accepted") {
           setDeferredPrompt(null)
           globalDeferredPrompt = null
+          if (typeof window !== "undefined") {
+            (window as any).deferredPrompt = null
+          }
         }
         return
       }
@@ -73,7 +90,23 @@ export function BannerInstallBtn() {
       // Silent error catch kar liya
     }
     
-    // 2. Agar native prompt fail hua ya majood nahi hai, toh yeh modal lazmi show karo
+    // 2. Agar already installed ya prompt unavailable hai:
+    if (isInstalled) {
+      toast.success("SyncMed App is already installed", {
+        description: "Open the application directly from your device's home screen."
+      })
+      return
+    }
+
+    // Desktop/Browser users ko annoying manual modal ke bajaye clean, non-intrusive toast show karein!
+    if (deviceType === 'desktop') {
+      toast.info("Install SyncMed Healthcare App", {
+        description: "Please click the install icon on the right side of your browser's address bar to install."
+      })
+      return
+    }
+
+    // 3. For iOS/Mobile (where manual addition is required), show the manual instructions modal
     setShowModal(true)
   }
 
@@ -83,14 +116,14 @@ export function BannerInstallBtn() {
     <>
       <button
         onClick={handleInstall}
-        className="flex items-center gap-3 px-4 md:px-6 py-2.5 md:py-3.5 bg-blue-50 border border-blue-100 rounded-xl md:rounded-2xl hover:bg-blue-100 transition-all cursor-pointer group/badge text-left shrink-0 animate-in fade-in duration-500"
+        className="flex-1 md:flex-initial w-1/2 md:w-auto flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3.5 bg-blue-50 border border-blue-100 rounded-xl md:rounded-2xl hover:bg-blue-100 transition-all cursor-pointer group/badge text-left shrink-0 animate-in fade-in duration-500"
       >
         <div className="p-1.5 md:p-2 bg-white rounded-lg shadow-sm group-hover/badge:scale-110 transition-transform">
           <Download className="size-3.5 md:size-4 text-blue-600 stroke-[3]" />
         </div>
         <div className="text-left">
           <p className="text-[8px] md:text-[10px] font-black text-blue-600 uppercase tracking-wider leading-none mb-0.5">App Access</p>
-          <p className="text-[10px] md:text-xs font-bold text-slate-700">Install Native App</p>
+          <p className="text-[10px] md:text-xs font-bold text-slate-700">Install App</p>
         </div>
       </button>
 

@@ -158,7 +158,7 @@ Architectural Breakdown:
 
   
 
-The Invisible Banner Rule: Embedded inside the top greeting bar, the "Install Native App" interface remains completely hidden if the administrator is already executing inside a standalone application viewport. 
+The Invisible Banner Rule: Embedded inside the top greeting bar, the "Install App" interface remains completely hidden if the administrator is already executing inside a standalone application viewport. 
 
   
 

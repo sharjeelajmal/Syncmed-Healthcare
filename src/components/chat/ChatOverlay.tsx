@@ -166,7 +166,7 @@ export function ChatOverlay() {
   }, [providerUser])
 
   React.useEffect(() => {
-    if (!providerUser) return;
+    if (!providerUser?.id) return;
     async function loadAiHistory() {
       const res = await getAiHistoryForUser(providerUser.id);
       if (res.success && res.data) {
@@ -174,7 +174,7 @@ export function ChatOverlay() {
       }
     }
     loadAiHistory();
-  }, [providerUser]);
+  }, [providerUser?.id]);
 
   React.useEffect(() => {
     if (activeTab === 'HUMAN' && messagesEndRef.current) {
@@ -203,13 +203,25 @@ export function ChatOverlay() {
     setNewMessage("");
     setIsAiTyping(true);
 
-    const res = await chatWithAiAction(providerUser.id, userMsg.content, aiMessages);
-    setIsAiTyping(false);
+    try {
+      const res = await chatWithAiAction(providerUser.id, userMsg.content, aiMessages);
+      setIsAiTyping(false);
 
-    if (res.success && res.data) {
-      setAiMessages(prev => [...prev, { id: Date.now().toString() + "ai", role: "assistant", content: res.data, isMe: false, createdAt: new Date() }]);
-    } else {
-      toast.error(res.error || "AI failed to respond");
+      if (res.success && res.data) {
+        const assistantMsg = { id: Date.now().toString() + "ai", role: "assistant", content: res.data, isMe: false, createdAt: new Date() };
+        setAiMessages(prev => {
+          const hasUserMsg = prev.some(m => m.content === userMsg.content && m.role === "user");
+          if (!hasUserMsg) {
+            return [...prev, userMsg, assistantMsg];
+          }
+          return [...prev, assistantMsg];
+        });
+      } else {
+        toast.error(res.error || "AI failed to respond");
+      }
+    } catch (error) {
+      setIsAiTyping(false);
+      toast.error("Failed to communicate with AI");
     }
   };
 
@@ -481,7 +493,7 @@ export function ChatOverlay() {
                     onKeyDown={(e) => { if (e.key === 'Enter') handleSendAiMessage(); }}
                     className="flex-1 bg-transparent border-none shadow-none focus-visible:ring-0 px-2 text-sm h-9 tracking-[0.03em] font-medium leading-relaxed" 
                   />
-                  <Button onClick={handleSendAiMessage} disabled={isAiTyping || !newMessage.trim()} className="bg-[#67BA2E] text-white size-9 rounded-full"><Send className="size-3" /></Button>
+                  <Button size="icon" onClick={handleSendAiMessage} disabled={isAiTyping || !newMessage.trim()} className="bg-[#67BA2E] hover:bg-[#67BA2E]/90 text-white size-9 rounded-full shrink-0 flex items-center justify-center"><Send className="size-4 text-white shrink-0" /></Button>
                 </div>
                 <Button 
                   variant="ghost" 
@@ -620,8 +632,8 @@ export function ChatOverlay() {
                   <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder={isRecording ? "Recording..." : "Message..."} disabled={isRecording} className="flex-1 bg-transparent border-none shadow-none focus-visible:ring-0 px-2 text-sm h-9 tracking-[0.03em] font-medium leading-relaxed" />
                   <div className="flex items-center gap-1">
                      {isUploading ? <Loader2 className="size-4 animate-spin text-[#67BA2E]" /> : 
-                      isRecording ? <Button onClick={stopRecording} className="bg-red-500 text-white size-9 rounded-full"><Square className="size-3" /></Button> :
-                      newMessage.trim() ? <Button onClick={() => handleSendMessage()} className="bg-[#67BA2E] text-white size-9 rounded-full"><Send className="size-3" /></Button> :
+                      isRecording ? <Button size="icon" onClick={stopRecording} className="bg-red-500 hover:bg-red-600 text-white size-9 rounded-full shrink-0 flex items-center justify-center"><Square className="size-4 text-white shrink-0 fill-white" /></Button> :
+                      newMessage.trim() ? <Button size="icon" onClick={() => handleSendMessage()} className="bg-[#67BA2E] hover:bg-[#67BA2E]/90 text-white size-9 rounded-full shrink-0 flex items-center justify-center"><Send className="size-4 text-white shrink-0" /></Button> :
                       <Button variant="ghost" size="icon" onClick={startRecording} className="text-slate-500 rounded-full"><Mic className="size-4" /></Button>}
                   </div>
                 </div>
