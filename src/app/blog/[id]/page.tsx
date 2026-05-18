@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { 
@@ -20,6 +20,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { blogPosts } from "../data";
+import { getBlogPostByIdAction, getBlogPostsAction } from "@/app/actions/blog.actions";
 import Link from "next/link";
 
 // --- Animation Variants ---
@@ -32,7 +33,39 @@ const fadeUp = {
 export default function BlogDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const post = blogPosts.find(p => p.id === Number(id));
+  const [post, setPost] = useState<any | null>(null);
+  const [relatedPosts, setRelatedPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadDetails = async () => {
+      setLoading(true);
+      const res = await getBlogPostByIdAction(String(id));
+      if (res.success && res.data) {
+        setPost(res.data);
+      }
+      
+      // Load related posts dynamically from Neon PostgreSQL
+      const allRes = await getBlogPostsAction();
+      if (allRes.success && allRes.data) {
+        const filtered = allRes.data.filter((p: any) => String(p.id) !== String(id)).slice(0, 2);
+        setRelatedPosts(filtered);
+      }
+      setLoading(false);
+    };
+    loadDetails();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white font-sans">
+        <div className="text-center space-y-6">
+          <Activity className="size-16 text-[#67BA2E] animate-spin mx-auto" />
+          <p className="text-xs font-black text-slate-400 uppercase tracking-widest animate-pulse">Syncing Medical Journal...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!post) {
     return (
@@ -50,9 +83,6 @@ export default function BlogDetailPage() {
       </div>
     );
   }
-
-  // Related posts (excluding current)
-  const relatedPosts = blogPosts.filter(p => p.id !== post.id).slice(0, 2);
 
   return (
     <div className="min-h-screen bg-white font-sans selection:bg-[#67BA2E]/20 selection:text-slate-900 overflow-x-hidden pt-14 md:pt-0">
@@ -104,7 +134,7 @@ export default function BlogDetailPage() {
                 <div className="flex flex-wrap items-center gap-6 md:gap-8 pt-6 md:pt-8 border-t border-slate-100">
                   <div className="flex items-center gap-4">
                     <div className="size-10 md:size-12 rounded-2xl bg-slate-50 flex items-center justify-center text-[#67BA2E] shadow-inner font-black text-sm">
-                      {post.author.split(' ').map(n => n[0]).join('')}
+                      {post.author.split(' ').map((n: string) => n[0]).join('')}
                     </div>
                     <div>
                       <p className="text-[10px] md:text-sm font-black text-slate-900 leading-tight uppercase tracking-tight">{post.author}</p>
@@ -170,7 +200,7 @@ export default function BlogDetailPage() {
             {/* Author Footer Card */}
             <div className="mt-10 md:mt-16 p-6 md:p-10 bg-slate-50 rounded-[2.5rem] md:rounded-[3rem] border border-slate-100 flex flex-col md:flex-row items-center gap-6 md:gap-8 text-center md:text-left">
               <div className="size-20 md:size-24 rounded-[1.5rem] md:rounded-[2rem] bg-white shadow-xl flex items-center justify-center text-[#67BA2E] font-black text-2xl md:text-3xl">
-                {post.author.split(' ').map(n => n[0]).join('')}
+                {post.author.split(' ').map((n: string) => n[0]).join('')}
               </div>
               <div className="space-y-3 md:space-y-4 flex-grow">
                 <div>
@@ -178,11 +208,8 @@ export default function BlogDetailPage() {
                   <p className="text-[10px] md:text-[11px] font-black text-[#67BA2E] uppercase tracking-[0.2em]">{post.authorRole}</p>
                 </div>
                 <p className="text-slate-500 text-xs md:text-sm leading-relaxed max-w-xl">
-                  Expert in clinical precision and longevity protocols. Dedicated to pioneering personalized healthcare strategies for the world's most discerning individuals.
+                  {post.authorBio || "Expert in clinical precision and longevity protocols. Dedicated to pioneering personalized healthcare strategies for the world's most discerning individuals."}
                 </p>
-                <div className="flex items-center justify-center md:justify-start gap-4">
-                  <Button variant="ghost" className="rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#67BA2E] p-0 h-auto">View Full Profile</Button>
-                </div>
               </div>
             </div>
           </div>

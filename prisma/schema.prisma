@@ -203,3 +203,22 @@ model ConsultationInquiry {
 
   @@map("consultation_inquiries")
 }
+
+model BlogPost {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String
+  excerpt     String
+  content     String   @db.Text
+  category    String
+  author      String
+  authorRole  String
+  authorBio   String   @default("Expert in clinical precision and longevity protocols. Dedicated to pioneering personalized healthcare strategies for the world's most discerning individuals.")
+  date        String
+  readTime    String
+  image       String
+  isFeatured  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@map("blog_posts")
+}
+

@@ -21,6 +21,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { DebouncedSearch } from "@/components/ui/debounced-search";
 import { blogPosts } from "./data";
+import { getBlogPostsAction } from "@/app/actions/blog.actions";
 import Link from "next/link";
 
 // --- Animation Variants ---
@@ -47,33 +48,51 @@ function BlogContent() {
   const query = searchParams.get('query') || "";
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [posts, setPosts] = useState<any[]>(blogPosts);
 
-  // Search by title, excerpt, category, and AUTHOR (Dr. name)
+  // Sync with Neon SQL on component mount
+  useEffect(() => {
+    const fetchLivePosts = async () => {
+      const res = await getBlogPostsAction();
+      if (res.success && res.data) {
+        setPosts(res.data);
+      }
+    };
+    fetchLivePosts();
+  }, []);
+
+  // Designated Featured Post
+  const featuredPost = useMemo(() => {
+    return posts.find(p => p.isFeatured) || posts[0] || null;
+  }, [posts]);
+
+  // Search filter applied to all posts except the featured post
   const filteredPosts = useMemo(() => {
-    if (!query) return blogPosts;
-    return blogPosts.filter(post => 
+    const base = featuredPost ? posts.filter(p => p.id !== featuredPost.id) : posts;
+    if (!query) return base;
+    return base.filter(post => 
       post.title.toLowerCase().includes(query.toLowerCase()) ||
       post.excerpt.toLowerCase().includes(query.toLowerCase()) ||
       post.category.toLowerCase().includes(query.toLowerCase()) ||
       post.author.toLowerCase().includes(query.toLowerCase())
     );
-  }, [query]);
+  }, [query, posts, featuredPost]);
 
-  // Strict 6 items per page
-  const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
-  const paginatedPosts = useMemo(() => {
-    return filteredPosts.slice((currentPage - 1) * POSTS_PER_PAGE, currentPage * POSTS_PER_PAGE);
+  // Strict pagination layout (Page 1 shows 1 Featured banner + 5 Grid items. Page 2+ shows 6 Grid items)
+  const totalPages = Math.ceil((filteredPosts.length + 1) / POSTS_PER_PAGE);
+  const gridPosts = useMemo(() => {
+    if (currentPage === 1) {
+      return filteredPosts.slice(0, 5);
+    } else {
+      const start = 5 + (currentPage - 2) * POSTS_PER_PAGE;
+      return filteredPosts.slice(start, start + POSTS_PER_PAGE);
+    }
   }, [filteredPosts, currentPage]);
-
-  // Page 1: First post is Featured, next 5 are in Grid
-  // Page 2+: All 6 are in Grid
-  const featuredPost = currentPage === 1 ? paginatedPosts[0] : null;
-  const gridPosts = currentPage === 1 ? paginatedPosts.slice(1) : paginatedPosts;
 
   // Handle loading state simulation for better UX
   useEffect(() => {
     setIsLoading(true);
-    const timer = setTimeout(() => setIsLoading(false), 500);
+    const timer = setTimeout(() => setIsLoading(false), 300);
     return () => clearTimeout(timer);
   }, [query, currentPage]);
 
@@ -164,7 +183,7 @@ function BlogContent() {
       </section>
 
       {/* Featured Blog Section */}
-      {featuredPost && (
+      {currentPage === 1 && featuredPost && (
         <section className="py-6 bg-white">
           <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
             <motion.div 
@@ -197,7 +216,7 @@ function BlogContent() {
                 </p>
                 <div className="flex items-center gap-4 pt-4 border-t border-slate-200/60">
                   <div className="size-12 rounded-full bg-[#67BA2E]/10 flex items-center justify-center text-[#67BA2E] font-black text-xs">
-                    {featuredPost.author.split(' ').map(n => n[0]).join('')}
+                    {featuredPost.author.split(' ').map((n: string) => n[0]).join('')}
                   </div>
                   <div>
                     <p className="text-sm font-black text-slate-900 tracking-tight">{featuredPost.author}</p>
@@ -292,7 +311,7 @@ function BlogContent() {
                       <div className="mt-4 md:mt-8 pt-3 md:pt-6 border-t border-slate-50 flex items-center justify-between px-1 md:px-2 gap-2">
                         <div className="flex items-center gap-1.5 md:gap-2 min-w-0 flex-1">
                           <div className="size-5 md:size-8 rounded-full bg-slate-100 flex items-center justify-center text-[#67BA2E] font-black text-[7px] md:text-[10px] flex-shrink-0">
-                            {post.author.split(' ').map(n => n[0]).join('')}
+                            {post.author.split(' ').map((n: string) => n[0]).join('')}
                           </div>
                           <span className="text-[8px] md:text-[10px] font-black text-slate-900 uppercase tracking-tighter truncate min-w-0">
                             {post.author}
