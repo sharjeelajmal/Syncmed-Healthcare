@@ -75,6 +75,28 @@ export async function verifyMfaLoginAction(email: string, token: string) {
   }
 }
 
+/** Clears auth cookies server-side before a fresh sign-in (fixes ERR_RESPONSE_HEADERS_TOO_BIG). */
+export async function clearAuthSessionCookiesAction() {
+  const { cookies } = await import("next/headers")
+  const cookieStore = await cookies()
+  const names = [
+    "authjs.session-token",
+    "__Secure-authjs.session-token",
+    "next-auth.session-token",
+    "__Secure-next-auth.session-token",
+    "authjs.csrf-token",
+    "__Host-authjs.csrf-token",
+  ]
+  for (const name of names) {
+    cookieStore.delete(name)
+  }
+  for (let i = 0; i < 8; i++) {
+    cookieStore.delete(`authjs.session-token.${i}`)
+    cookieStore.delete(`__Secure-authjs.session-token.${i}`)
+  }
+  return { success: true }
+}
+
 export async function preLoginCheckAction(email: string, password?: string) {
   try {
     const user = await prisma.user.findUnique({ where: { email } });

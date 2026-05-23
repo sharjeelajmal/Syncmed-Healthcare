@@ -20,13 +20,22 @@ export async function updateProfile(data: { firstName: string; lastName: string;
       }
     }
 
+    let imageToSave = data.image
+    if (imageToSave?.startsWith("data:") && imageToSave.length > 8_000) {
+      return {
+        success: false,
+        message:
+          "Profile image is too large for secure session storage. Use an image under 50KB or a URL.",
+      }
+    }
+
     await prisma.user.update({
       where: { id: session.user.id },
       data: {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        image: data.image
+        image: imageToSave,
       }
     })
 

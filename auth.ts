@@ -53,20 +53,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 email: user.email,
                 role: user.role,
                 name: `${user.firstName} ${user.lastName}`,
-                image: user.image ?? null,
               }
             }
             return null
           }
 
-          // 4. Success
+          // 4. Success — never put avatar in JWT (base64 images break cookie size limits)
           console.log("Login Successful for:", user.email)
           return {
             id: user.id,
             email: user.email,
             role: user.role,
             name: `${user.firstName} ${user.lastName}`,
-            image: user.image ?? null,
           }
         } catch (error) {
           console.error("Authorize Error:", error)

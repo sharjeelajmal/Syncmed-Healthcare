@@ -26,9 +26,36 @@ const { auth } = NextAuth({
   }
 })
 
+const AUTH_COOKIE_NAMES = [
+  "authjs.session-token",
+  "__Secure-authjs.session-token",
+  "next-auth.session-token",
+  "__Secure-next-auth.session-token",
+  "authjs.csrf-token",
+  "__Host-authjs.csrf-token",
+] as const
+
+function clearAuthCookies(response: NextResponse) {
+  for (const name of AUTH_COOKIE_NAMES) {
+    response.cookies.delete(name)
+  }
+  // Auth.js v5 may split large JWTs into chunked cookies
+  for (let i = 0; i < 8; i++) {
+    response.cookies.delete(`authjs.session-token.${i}`)
+    response.cookies.delete(`__Secure-authjs.session-token.${i}`)
+  }
+}
+
 export default auth((req) => {
   let isLoggedIn = !!req.auth
   const path = req.nextUrl.pathname
+
+  // Drop oversized/stale session cookies before login so headers stay under browser limits
+  if (path === "/login") {
+    const response = NextResponse.next()
+    clearAuthCookies(response)
+    return response
+  }
 
   // STALE SESSION FIX: If session has an invalid UUID (like the fake "1" from bypass), destroy the cookie
   if (isLoggedIn) {
@@ -42,10 +69,7 @@ export default auth((req) => {
         ? NextResponse.next() 
         : NextResponse.redirect(new URL("/login", req.nextUrl))
 
-      response.cookies.delete("authjs.session-token")
-      response.cookies.delete("__Secure-authjs.session-token")
-      response.cookies.delete("next-auth.session-token")
-      response.cookies.delete("__Secure-next-auth.session-token")
+      clearAuthCookies(response)
       return response
     }
   }

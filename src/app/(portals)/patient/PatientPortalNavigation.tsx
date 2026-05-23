@@ -14,6 +14,12 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import {
+  portalHeaderActionsClass,
+  portalHeaderBrandClass,
+  portalHeaderRowClass,
+  portalShellClass,
+} from "@/lib/portal-shell"
 import { fetchPatientUnpaidCountAction } from "@/app/actions/patient.actions"
 
 interface NavItem {
@@ -71,14 +77,15 @@ export function PatientPortalNavigation({ userId }: PatientPortalNavigationProps
   return (
     <>
       {/* Top Navbar (Desktop Only) */}
-      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-8">
-          <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2">
-              <img src="/logo.png" alt="SyncMed Logo" className="h-14 w-auto object-contain" />
+      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md overflow-x-hidden">
+        <div className={portalShellClass}>
+          <div className={portalHeaderRowClass}>
+          <div className={portalHeaderBrandClass}>
+            <Link href="/" className="flex shrink-0 items-center gap-2">
+              <img src="/logo.png" alt="SyncMed Logo" className="h-10 w-auto object-contain sm:h-11" />
             </Link>
 
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden min-w-0 items-center gap-1 overflow-x-auto md:flex">
               {navItems.map((item) => {
                 const isActive = pathname === item.href || (item.href !== "/patient/dashboard" && pathname.startsWith(item.href))
                 return (
@@ -107,7 +114,7 @@ export function PatientPortalNavigation({ userId }: PatientPortalNavigationProps
             </nav>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className={portalHeaderActionsClass}>
             <div className="hidden sm:flex flex-col items-end mr-2 text-right">
               <span className="text-[10px] font-black text-[#67BA2E] uppercase tracking-widest">Patient Portal</span>
               <span className="text-xs font-bold text-slate-900 tracking-tight">Verified Member</span>
@@ -126,6 +133,7 @@ export function PatientPortalNavigation({ userId }: PatientPortalNavigationProps
               <LogOut className="mr-2 size-4 text-red-500" />
               <span className="hidden sm:inline">Logout</span>
             </Button>
+          </div>
           </div>
         </div>
       </header>

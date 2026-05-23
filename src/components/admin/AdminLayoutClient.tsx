@@ -26,6 +26,12 @@ import { AdminNotificationsProvider } from "@/contexts/AdminNotificationsContext
 import { NotificationBell } from "@/components/admin/NotificationBell"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import {
+  portalHeaderActionsClass,
+  portalHeaderBrandClass,
+  portalHeaderRowClass,
+  portalShellClass,
+} from "@/lib/portal-shell"
 
 type AdminLayoutUser = {
   firstName?: string | null
@@ -78,18 +84,19 @@ export function AdminLayoutClient({
   return (
     <AdminNotificationsProvider>
       <div className="flex min-h-screen flex-col bg-slate-50">
-        <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
-          <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-8">
-            <div className="flex items-center gap-8">
-              <Link href="/" className="flex items-center gap-2">
+        <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md overflow-x-hidden">
+          <div className={portalShellClass}>
+            <div className={portalHeaderRowClass}>
+            <div className={portalHeaderBrandClass}>
+              <Link href="/" className="flex shrink-0 items-center gap-2">
                 <img
                   src="/logo.png"
                   alt="SyncMed Logo"
-                  className="h-14 w-auto object-contain"
+                  className="h-10 w-auto object-contain sm:h-11"
                 />
               </Link>
 
-              <nav className="hidden items-center gap-1 md:flex">
+              <nav className="hidden min-w-0 items-center gap-1 overflow-x-auto md:flex">
                 {navItems.map((item) => {
                   const isActive =
                     pathname === item.href ||
@@ -120,7 +127,7 @@ export function AdminLayoutClient({
               </nav>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className={portalHeaderActionsClass}>
               <div className="hidden flex-col items-end text-right sm:flex">
                 <span className="text-xs font-black uppercase tracking-widest text-[#67BA2E]">
                   ADMIN
@@ -207,10 +214,11 @@ export function AdminLayoutClient({
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+            </div>
           </div>
         </header>
 
-        <main className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <main className={cn(portalShellClass, "py-8")}>
           <div className="animate-in fade-in duration-300 ease-out fill-mode-both">
             {children}
           </div>

@@ -18,30 +18,26 @@ callbacks: {
         token.sub = user.id
         token.role = (user as { role?: string }).role
         token.name = user.name
-        const image = (user as { image?: string | null }).image
-        // Avoid storing large base64 avatars in the JWT cookie
-        if (image && !image.startsWith("data:")) {
-          token.picture = image
-        }
+        token.email = user.email
       }
 
-      if (trigger === "update" && session) {
-        if (session.name) token.name = session.name
-        const nextImage = (session as { image?: string | null }).image
-        if (nextImage && !nextImage.startsWith("data:")) {
-          token.picture = nextImage
-        }
+      if (trigger === "update" && session?.name) {
+        token.name = session.name
       }
+
+      // Keep session cookie small (admin profile avatars live in DB only)
+      delete token.picture
+      delete (token as { image?: string }).image
 
       return token
     },
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.sub as string // token.sub ko map back karein session.user.id pe
-        ;(session.user as any).role = token.role
+        session.user.id = token.sub as string
+        ;(session.user as { role?: string }).role = token.role as string
         session.user.name = token.name as string
-        ;(session.user as { image?: string | null }).image =
-          (token.picture as string | null | undefined) ?? null
+        session.user.email = token.email as string
+        ;(session.user as { image?: string | null }).image = null
       }
       return session
     },

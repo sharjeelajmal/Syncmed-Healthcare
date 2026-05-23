@@ -1,6 +1,8 @@
 "use client"
 
 import dynamic from "next/dynamic"
+import { portalShellClass } from "@/lib/portal-shell"
+import { cn } from "@/lib/utils"
 import { PatientPortalNavigation } from "./PatientPortalNavigation"
 
 const PatientChatOverlay = dynamic(
@@ -22,7 +24,7 @@ export function PatientLayoutClient({
     <div className="flex min-h-screen flex-col bg-slate-50">
       <PatientPortalNavigation userId={userId} />
 
-      <main className="container mx-auto max-w-7xl px-0 py-0 pb-32 sm:px-0 sm:pb-0 md:pb-0">
+      <main className={cn(portalShellClass, "pb-32 md:pb-8")}>
         <div className="animate-in fade-in duration-300 ease-out fill-mode-both">
           {children}
         </div>

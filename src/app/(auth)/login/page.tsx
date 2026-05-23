@@ -17,7 +17,7 @@ import {
 import { signIn } from "next-auth/react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { preLoginCheckAction } from "@/app/actions/auth.actions"
+import { clearAuthSessionCookiesAction, preLoginCheckAction } from "@/app/actions/auth.actions"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -75,6 +75,9 @@ export default function LoginPage() {
         return
       }
 
+      // Clear any oversized legacy session cookies (e.g. admin avatar stored in JWT)
+      await clearAuthSessionCookiesAction()
+
       // 2. Perform credential sign-in inside NextAuth to establish the session
       const result = await signIn("credentials", {
         email: data.email,
@@ -114,7 +117,7 @@ export default function LoginPage() {
       <div className="lg:hidden w-full h-[25vh] flex items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
-            src="/images/login-bg.png"
+            src="/logorightbg.png"
             alt="Mobile Branding"
             className="w-full h-full object-cover opacity-40"
           />
