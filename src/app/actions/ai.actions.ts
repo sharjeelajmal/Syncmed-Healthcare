@@ -46,7 +46,8 @@ export async function updateAiKnowledgeBase(data: {
       });
     }
 
-    revalidatePath("/admin/ai-learning");
+    revalidatePath("/admin/ai-panel/train");
+    revalidatePath("/admin/ai-panel");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to update AI Knowledge Base:", error);
@@ -213,6 +214,38 @@ export async function getAdminAiHistory() {
   }
 }
 
+/** Daily token totals for the last 7 days (oldest → newest). */
+export async function getAiTokenTrend() {
+  try {
+    const since = new Date();
+    since.setDate(since.getDate() - 6);
+    since.setHours(0, 0, 0, 0);
+
+    const messages = await prisma.aiChatMessage.findMany({
+      where: { createdAt: { gte: since } },
+      select: { totalTokens: true, createdAt: true },
+    });
+
+    const buckets: number[] = [];
+    for (let i = 0; i < 7; i++) {
+      const dayStart = new Date(since);
+      dayStart.setDate(since.getDate() + i);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const total = messages
+        .filter((m) => m.createdAt >= dayStart && m.createdAt <= dayEnd)
+        .reduce((sum, m) => sum + (m.totalTokens || 0), 0);
+      buckets.push(total);
+    }
+
+    return { success: true, data: buckets };
+  } catch (error: unknown) {
+    console.error("Failed to fetch AI token trend:", error);
+    return { success: false, error: "Failed to fetch token trend." };
+  }
+}
+
 export async function getAiDashboardStats() {
   try {
     const allMessages = await prisma.aiChatMessage.findMany({
@@ -264,14 +297,26 @@ export async function getAiDashboardStats() {
       ? Math.round(totalTokens / assistantMessages.length) 
       : 0;
 
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayTokens = allMessages
+      .filter((m) => m.createdAt >= todayStart)
+      .reduce((sum, m) => sum + (m.totalTokens || 0), 0);
+
+    const kb = await prisma.aiKnowledgeBase.findFirst({
+      select: { modelPreference: true },
+    });
+
     return {
       success: true,
       data: {
         totalMessages,
         totalTokens,
+        todayTokens,
         uniqueUsers,
         avgTokensPerMessage,
         topUsers,
+        modelPreference: kb?.modelPreference ?? "openai/gpt-4o-mini",
       }
     };
   } catch (error: any) {

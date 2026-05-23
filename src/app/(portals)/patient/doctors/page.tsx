@@ -12,40 +12,53 @@ import {
   Clock,
   Phone
 } from "lucide-react"
-import { format } from "date-fns"
+import { differenceInYears, format } from "date-fns"
 
 import prisma from "@/lib/prisma"
-import { auth } from "../../../../../auth"
+import { getPatientProfileForSession } from "@/lib/portal-auth"
+
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
+function formatAvailabilitySummary(
+  rules: { day: string; startTime: string; endTime: string }[]
+) {
+  if (rules.length === 0) return "No active hours on file"
+  const sample = rules.slice(0, 2).map((r) => `${r.day.slice(0, 3)} ${r.startTime}–${r.endTime}`)
+  return rules.length > 2 ? `${sample.join(", ")} (+${rules.length - 2} more)` : sample.join(", ")
+}
+
 export default async function MyDoctorsPage() {
-  const session = await auth()
-  const sessionUserId = (session?.user as any)?.id
+  const patient = await getPatientProfileForSession()
 
-  // 1. Fetch Patient Profile with Assigned Provider
-  const patient = await prisma.patientProfile.findUnique({
-    where: { userId: sessionUserId },
-    include: { 
-      assignedProvider: { 
-        include: { 
-          user: true 
-        } 
-      } 
-    }
-  });
+  const patientWithProvider = await prisma.patientProfile.findUnique({
+    where: { id: patient.id },
+    include: {
+      assignedProvider: {
+        include: {
+          user: true,
+          availability: { where: { isActive: true }, orderBy: { day: "asc" } },
+        },
+      },
+    },
+  })
 
-  if (!patient) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Access Denied: Patient Profile Required</p>
-      </div>
-    )
-  }
-
-  const doctor = patient.assignedProvider;
+  const doctor = patientWithProvider?.assignedProvider
+  const completedVisits = doctor
+    ? await prisma.appointment.count({
+        where: { providerId: doctor.id, patientId: patient.id, status: "COMPLETED" },
+      })
+    : 0
+  const yearsWithPlatform = doctor
+    ? Math.max(1, differenceInYears(new Date(), new Date(doctor.user.createdAt)))
+    : 0
+  const availabilityLabel = doctor
+    ? formatAvailabilitySummary(doctor.availability)
+    : ""
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20 selection:bg-green-100">
@@ -123,9 +136,11 @@ export default async function MyDoctorsPage() {
                          <Badge variant="outline" className="bg-slate-50 text-slate-500 border-slate-200 font-bold text-[10px] uppercase tracking-widest px-3 py-1">
                             {doctor.specialty}
                          </Badge>
-                         <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-100 font-bold text-[10px] uppercase tracking-widest px-3 py-1">
-                            Board Certified
-                         </Badge>
+                         {doctor.licenseNumber ? (
+                           <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-100 font-bold text-[10px] uppercase tracking-widest px-3 py-1">
+                              License {doctor.licenseNumber}
+                           </Badge>
+                         ) : null}
                       </div>
                    </div>
                 </div>
@@ -134,11 +149,11 @@ export default async function MyDoctorsPage() {
                 <div className="grid grid-cols-3 gap-2 py-6 border-y border-slate-50">
                    <div className="text-center space-y-1">
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Experience</p>
-                      <p className="text-xs font-black text-slate-700">12+ Years</p>
+                      <p className="text-xs font-black text-slate-700">{yearsWithPlatform} {yearsWithPlatform === 1 ? "Year" : "Years"}</p>
                    </div>
                    <div className="text-center space-y-1 border-x border-slate-50">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Reviews</p>
-                      <p className="text-xs font-black text-slate-700">4.9/5.0</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Visits</p>
+                      <p className="text-xs font-black text-slate-700">{completedVisits}</p>
                    </div>
                    <div className="text-center space-y-1">
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Assigned</p>
@@ -158,7 +173,7 @@ export default async function MyDoctorsPage() {
                       <div className="size-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
                          <Clock className="size-4" />
                       </div>
-                      <span className="text-xs font-bold">Standard Clinic Hours</span>
+                      <span className="text-xs font-bold">{availabilityLabel}</span>
                    </div>
                 </div>
 

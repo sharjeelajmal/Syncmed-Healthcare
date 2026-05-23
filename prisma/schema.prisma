@@ -222,3 +222,16 @@ model BlogPost {
   @@map("blog_posts")
 }
 
+model Lead {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  type      String   // "general" or "patient_registration"
+  message   String
+  status    String   @default("PENDING") // PENDING, CONVERTED, DISMISSED
+  createdAt DateTime @default(now())
+
+  @@map("leads")
+}
+

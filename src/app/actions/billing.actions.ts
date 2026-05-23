@@ -1,6 +1,7 @@
 "use server"
 
 import prisma from "@/lib/prisma"
+import { pusherServer } from "@/lib/pusher"
 import { revalidatePath } from "next/cache"
 import { v2 as cloudinary } from "cloudinary"
 
@@ -41,11 +42,24 @@ export async function uploadReceiptAction(appointmentId: string, formData: FormD
       where: { id: appointmentId },
       data: {
         receiptData: secureUrl,
-        paymentStatus: "VERIFICATION_PENDING"
-      }
+        paymentStatus: "VERIFICATION_PENDING",
+      },
     })
 
-    revalidatePath('/patient/billing')
+    try {
+      await pusherServer.trigger("admin-alerts", "new-activity", {
+        title: "Payment Received",
+        message:
+          "A patient has submitted a payment receipt for verification.",
+        url: "/admin/appointments",
+      })
+    } catch (pusherError) {
+      console.error("[PUSHER_ADMIN_ALERT]:", pusherError)
+    }
+
+    revalidatePath("/patient/billing")
+    revalidatePath("/admin/appointments")
+    revalidatePath("/patient", "layout")
     return { success: true, url: secureUrl }
   } catch (error: any) {
     console.error("Upload Error:", error)
@@ -60,11 +74,12 @@ export async function verifyReceiptAction(appointmentId: string, status: 'PAID' 
       data: {
         paymentStatus: status,
         ...(status === 'UNPAID' && { receiptData: null })
-      }
+      },
     })
 
     revalidatePath('/admin/appointments')
     revalidatePath('/patient/billing')
+    revalidatePath('/patient', 'layout')
     
     return { success: true }
   } catch (error: any) {

@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { Clock, Save, Loader2, Calendar, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -27,6 +28,7 @@ const DAYS = [
 ]
 
 export function ScheduleForm({ initialAvailability }: ScheduleFormProps) {
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [availability, setAvailability] = React.useState<AvailabilityRule[]>(() => {
     if (initialAvailability.length > 0) {
@@ -68,6 +70,7 @@ export function ScheduleForm({ initialAvailability }: ScheduleFormProps) {
       const res = await updateProviderAvailability(availability)
       if (res.success) {
         toast.success(res.message || "Schedule updated successfully!")
+        router.refresh()
       } else {
         toast.error(res.error || "Failed to update schedule.")
       }

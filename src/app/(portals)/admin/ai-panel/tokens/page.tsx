@@ -31,9 +31,12 @@ export default function AiTokensPage() {
     );
   }
 
-  const estimatedCost = ((stats?.totalTokens || 0) / 1000000) * 0.5;
-  const dailyBudget = 10;
-  const spendPercentage = Math.min((estimatedCost / dailyBudget) * 100, 100);
+  const tokenRatePerMillion = 0.5;
+  const estimatedCost = ((stats?.totalTokens || 0) / 1_000_000) * tokenRatePerMillion;
+  const todayCost = ((stats?.todayTokens || 0) / 1_000_000) * tokenRatePerMillion;
+  const dailyBudget = Math.max(todayCost, estimatedCost * 0.1, 0.01);
+  const spendPercentage = Math.min((todayCost / dailyBudget) * 100, 100);
+  const modelLabel = stats?.modelPreference?.split("/").pop() ?? "—";
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-12">
@@ -76,8 +79,8 @@ export default function AiTokensPage() {
             </div>
             
             <div className="mt-6 flex flex-wrap gap-2">
-               <Badge variant="outline" className="bg-indigo-50 text-indigo-600 border-none text-[9px] font-black uppercase tracking-widest px-2 py-1"><Bot className="size-3 mr-1"/> GPT-4o-M</Badge>
-               <Badge variant="outline" className="bg-purple-50 text-purple-600 border-none text-[9px] font-black uppercase tracking-widest px-2 py-1"><Database className="size-3 mr-1"/> Cache ON</Badge>
+               <Badge variant="outline" className="bg-indigo-50 text-indigo-600 border-none text-[9px] font-black uppercase tracking-widest px-2 py-1"><Bot className="size-3 mr-1"/> {modelLabel}</Badge>
+               <Badge variant="outline" className="bg-purple-50 text-purple-600 border-none text-[9px] font-black uppercase tracking-widest px-2 py-1"><Database className="size-3 mr-1"/> {(stats?.todayTokens ?? 0).toLocaleString()} today</Badge>
             </div>
           </CardContent>
         </Card>

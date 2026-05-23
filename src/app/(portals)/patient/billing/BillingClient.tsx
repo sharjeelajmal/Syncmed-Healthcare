@@ -36,6 +36,10 @@ export function BillingClient({ invoices }: BillingClientProps) {
   const [selectedInvoice, setSelectedInvoice] = React.useState<BillingItem | null>(null)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
 
+  const lastPaidInvoice = invoices
+    .filter((item) => item.status === "PAID")
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+
   const totalOutstanding = invoices
     .filter(a => a.status === "UNPAID")
     .reduce((sum, item) => sum + item.amount, 0)
@@ -83,7 +87,9 @@ export function BillingClient({ invoices }: BillingClientProps) {
               <div className="flex flex-col">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Last Payment Date</span>
                 <span className="text-lg font-black text-slate-800 tracking-tight">
-                  {invoices.some(a => a.status === "PAID") ? "Yesterday" : "No Payments Found"}
+                  {lastPaidInvoice
+                    ? format(new Date(lastPaidInvoice.date), "MMM d, yyyy")
+                    : "No Payments Found"}
                 </span>
               </div>
             </div>

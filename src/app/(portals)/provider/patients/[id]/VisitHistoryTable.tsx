@@ -52,7 +52,7 @@ export function VisitHistoryTable({ assessments }: VisitHistoryTableProps) {
         <TableBody>
           {assessments.map((visit) => {
             const clinicalData = visit.data as any
-            const chiefComplaint = clinicalData?.notes?.chiefComplaint || "Routine Checkup"
+            const chiefComplaint = clinicalData?.notes?.chiefComplaint || "—"
 
             return (
               <TableRow key={visit.id} className="group hover:bg-slate-50/50 border-slate-100">

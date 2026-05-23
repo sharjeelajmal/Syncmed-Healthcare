@@ -13,22 +13,37 @@ import {
 import { Button } from "@/components/ui/button"
 import {
   Table,
-  TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { AnimatedTableBody } from "@/components/ui/animated-table-body"
 import { Badge } from "@/components/ui/badge"
 import { ProviderTableActions } from "./ProviderTableActions"
 import { DebouncedSearch } from "@/components/ui/debounced-search"
+import { ServerTablePagination } from "@/components/ui/server-table-pagination"
 import { cn } from "@/lib/utils"
 
 interface ProviderTableProps {
   providers: any[]
+  totalItems: number
+  currentPage: number
 }
 
-export function ProviderTable({ providers }: ProviderTableProps) {
+export function ProviderTable({
+  providers,
+  totalItems,
+  currentPage,
+}: ProviderTableProps) {
+  const [direction, setDirection] = React.useState(1)
+  const prevPage = React.useRef(currentPage)
+
+  React.useEffect(() => {
+    setDirection(currentPage > prevPage.current ? 1 : -1)
+    prevPage.current = currentPage
+  }, [currentPage])
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -42,7 +57,7 @@ export function ProviderTable({ providers }: ProviderTableProps) {
       </div>
 
       <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm mt-6">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-hidden">
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow className="hover:bg-transparent border-slate-100">
@@ -53,7 +68,7 @@ export function ProviderTable({ providers }: ProviderTableProps) {
                 <TableHead className="text-right text-[10px] font-black text-slate-400 uppercase tracking-widest py-5 px-8">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <AnimatedTableBody pageKey={currentPage} direction={direction}>
               {providers.length > 0 ? (
                 providers.map((provider) => (
                   <TableRow key={provider.id} className="group hover:bg-slate-50/50 transition-colors border-slate-100">
@@ -113,9 +128,13 @@ export function ProviderTable({ providers }: ProviderTableProps) {
                   </TableCell>
                 </TableRow>
               )}
-            </TableBody>
+            </AnimatedTableBody>
           </Table>
         </div>
+        <ServerTablePagination
+          currentPage={currentPage}
+          totalItems={totalItems}
+        />
       </div>
     </div>
   )

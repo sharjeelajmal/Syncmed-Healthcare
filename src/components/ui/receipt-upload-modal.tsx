@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { useRouter } from "next/navigation"
 import { uploadReceiptAction } from "@/app/actions/billing.actions"
 import { toast } from "sonner"
 
@@ -29,6 +30,7 @@ export function ReceiptUploadModal({
   appointmentId,
   amountToPay,
 }: ReceiptUploadModalProps) {
+  const router = useRouter()
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [file, setFile] = React.useState<File | null>(null)
   const [preview, setPreview] = React.useState<string | null>(null)
@@ -72,6 +74,7 @@ export function ReceiptUploadModal({
       
       if (result.success) {
         toast.success("Receipt uploaded to cloud successfully!")
+        router.refresh()
         onClose()
         setFile(null)
         setPreview(null)

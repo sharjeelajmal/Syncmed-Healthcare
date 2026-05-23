@@ -2,25 +2,30 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { 
-  ShieldCheck, 
-  ShieldAlert, 
-  Key, 
-  Lock, 
-  ArrowLeft,
+import { format, formatDistanceToNow } from "date-fns"
+import {
+  ShieldCheck,
+  ShieldAlert,
+  Lock,
   UserCheck,
-  RefreshCw,
   Loader2,
-  Laptop,
-  Smartphone,
   LogOut,
-  MonitorSmartphone
+  MonitorSmartphone,
+  KeyRound,
+  Mail,
+  Clock,
+  RefreshCw,
 } from "lucide-react"
-import Link from "next/link"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -29,23 +34,79 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { updateProviderAccessAction } from "@/app/actions/provider.actions"
+import { Badge } from "@/components/ui/badge"
+import {
+  updateProviderAccessAction,
+  resetProviderMfaAction,
+  revokeProviderSessionsAction,
+} from "@/app/actions/provider.actions"
+import { cn } from "@/lib/utils"
 
-interface ManageAccessFormProps {
+export type ProviderAccessSnapshot = {
   userId: string
-  initialIsActive: boolean
+  firstName: string
+  lastName: string
+  email: string
+  isActive: boolean
+  mfaEnabled: boolean
+  lastActive: string
+  createdAt: string
+  updatedAt: string
+  specialty: string
+  licenseNumber: string
 }
 
-export function ManageAccessForm({ userId, initialIsActive }: ManageAccessFormProps) {
-  const [isActive, setIsActive] = React.useState(initialIsActive)
-  const [isPending, startTransition] = React.useTransition()
+type AccessLiveData = {
+  isActive: boolean
+  mfaEnabled: boolean
+  lastActive: string
+  updatedAt: string
+}
+
+function applyLivePatch(
+  prev: ProviderAccessSnapshot,
+  patch?: AccessLiveData
+): ProviderAccessSnapshot {
+  if (!patch) return prev
+  return {
+    ...prev,
+    isActive: patch.isActive,
+    mfaEnabled: patch.mfaEnabled,
+    lastActive: patch.lastActive,
+    updatedAt: patch.updatedAt,
+  }
+}
+
+interface ManageAccessFormProps {
+  initialData: ProviderAccessSnapshot
+}
+
+export function ManageAccessForm({ initialData }: ManageAccessFormProps) {
   const router = useRouter()
+  const [data, setData] = React.useState(initialData)
+  const [isActive, setIsActive] = React.useState(initialData.isActive)
+  const [isSaving, startSave] = React.useTransition()
+  const [isResettingMfa, startResetMfa] = React.useTransition()
+  const [isRevoking, startRevoke] = React.useTransition()
+
+  React.useEffect(() => {
+    setData(initialData)
+    setIsActive(initialData.isActive)
+  }, [initialData])
+
+  const hasUnsavedStatus = isActive !== data.isActive
 
   const handleSave = () => {
-    startTransition(async () => {
-      const res = await updateProviderAccessAction(userId, { isActive })
-      if (res.success) {
-        toast.success("Security credentials updated successfully")
+    startSave(async () => {
+      const res = await updateProviderAccessAction(data.userId, { isActive })
+      if (res.success && res.data) {
+        setData((prev) => applyLivePatch(prev, res.data))
+        setIsActive(res.data.isActive)
+        toast.success(
+          res.data.isActive
+            ? "Provider authorized for platform access"
+            : "Provider access restricted"
+        )
         router.refresh()
       } else {
         toast.error(res.error || "Failed to update access")
@@ -53,127 +114,262 @@ export function ManageAccessForm({ userId, initialIsActive }: ManageAccessFormPr
     })
   }
 
-  const handleResetMFA = () => {
-    toast.info("MFA reset functionality is coming soon.")
+  const handleResetMfa = () => {
+    startResetMfa(async () => {
+      const res = await resetProviderMfaAction(data.userId)
+      if (res.success && res.data) {
+        setData((prev) => applyLivePatch(prev, res.data))
+        toast.success(res.message || "MFA reset successfully")
+        router.refresh()
+      } else {
+        toast.error(res.error || "Failed to reset MFA")
+      }
+    })
   }
 
   const handleRevokeSessions = () => {
-    toast.success("All active sessions revoked successfully")
+    if (
+      !confirm(
+        "This will restrict the account, clear MFA, and require admin re-activation. Continue?"
+      )
+    ) {
+      return
+    }
+
+    startRevoke(async () => {
+      const res = await revokeProviderSessionsAction(data.userId)
+      if (res.success && res.data) {
+        setData((prev) => applyLivePatch(prev, res.data))
+        setIsActive(res.data.isActive)
+        toast.success(res.message || "Sessions revoked")
+        router.refresh()
+      } else {
+        toast.error(res.error || "Failed to revoke sessions")
+      }
+    })
   }
 
+  const lastActiveLabel = formatDistanceToNow(new Date(data.lastActive), {
+    addSuffix: true,
+  })
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden bg-white">
-        <CardHeader className="p-8">
-          <CardTitle className="text-xl font-black text-slate-800 flex items-center gap-2">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <Card className="overflow-hidden rounded-3xl border-slate-200 bg-white shadow-sm lg:col-span-2">
+        <CardHeader className="border-b border-slate-50 p-8">
+          <CardTitle className="flex items-center gap-2 text-xl font-black text-slate-800">
             <Lock className="size-5 text-[#67BA2E]" />
             Account Status
           </CardTitle>
-          <CardDescription className="font-medium text-slate-500 mt-1">
-            Control the professional's ability to access the platform.
+          <CardDescription className="mt-1 font-medium text-slate-500">
+            Control platform authorization for this medical professional.
           </CardDescription>
         </CardHeader>
-        <CardContent className="px-8 pb-8 space-y-6">
-          <div className="space-y-3">
-            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Authorization</Label>
-            <Select 
-              value={isActive ? "active" : "inactive"} 
-              onValueChange={(val) => setIsActive(val === "active")}
+        <CardContent className="space-y-6 p-8">
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge
+              variant="outline"
+              className={cn(
+                "rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest",
+                data.isActive
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-600"
+                  : "border-red-200 bg-red-50 text-red-600"
+              )}
             >
-              <SelectTrigger className="h-12 rounded-xl border-slate-200 focus:ring-[#67BA2E] focus:border-[#67BA2E] font-bold text-slate-700">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-slate-100 shadow-2xl">
-                <SelectItem value="active" className="font-bold text-emerald-600 focus:bg-emerald-50 focus:text-emerald-700 py-3 cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="size-4" />
-                    Active / Authorized
-                  </div>
-                </SelectItem>
-                <SelectItem value="inactive" className="font-bold text-red-500 focus:bg-red-50 focus:text-red-600 py-3 cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <ShieldAlert className="size-4" />
-                    Inactive / Restricted
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
+              {data.isActive ? "Authorized" : "Restricted"}
+            </Badge>
+            <Badge
+              variant="outline"
+              className={cn(
+                "rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest",
+                data.mfaEnabled
+                  ? "border-[#67BA2E]/30 bg-emerald-50 text-[#67BA2E]"
+                  : "border-slate-200 bg-slate-50 text-slate-500"
+              )}
+            >
+              MFA {data.mfaEnabled ? "Enabled" : "Disabled"}
+            </Badge>
+            {hasUnsavedStatus && (
+              <Badge className="rounded-full bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-700">
+                Unsaved changes
+              </Badge>
+            )}
           </div>
 
-          <div className="space-y-3">
-            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Platform Role</Label>
-            <div className="h-12 flex items-center gap-3 px-4 bg-slate-50 border border-slate-100 rounded-xl">
-              <UserCheck className="size-4 text-slate-400" />
-              <span className="font-bold text-slate-600">Provider (Medical Professional)</span>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-3">
+              <Label className="ml-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                Current Authorization
+              </Label>
+              <Select
+                value={isActive ? "active" : "inactive"}
+                onValueChange={(val) => setIsActive(val === "active")}
+                disabled={isSaving || isRevoking}
+              >
+                <SelectTrigger className="h-12 rounded-xl border-slate-200 font-bold text-slate-700 focus:border-[#67BA2E] focus:ring-[#67BA2E]">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-slate-100 shadow-2xl">
+                  <SelectItem
+                    value="active"
+                    className="cursor-pointer py-3 font-bold text-emerald-600 focus:bg-emerald-50 focus:text-emerald-700"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="size-4" />
+                      Active / Authorized
+                    </div>
+                  </SelectItem>
+                  <SelectItem
+                    value="inactive"
+                    className="cursor-pointer py-3 font-bold text-red-500 focus:bg-red-50 focus:text-red-600"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ShieldAlert className="size-4" />
+                      Inactive / Restricted
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="ml-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                Platform Role
+              </Label>
+              <div className="flex h-12 items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4">
+                <UserCheck className="size-4 text-slate-400" />
+                <span className="font-bold text-slate-600">
+                  Provider (Medical Professional)
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="pt-4">
-            <Button 
-              onClick={handleSave} 
-              disabled={isPending}
-              className="w-full h-12 bg-[#67BA2E] hover:bg-[#5aa827] text-white font-black rounded-xl shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2"
+          <div className="grid gap-4 rounded-2xl border border-slate-100 bg-slate-50/60 p-5 md:grid-cols-2">
+            <DetailRow
+              icon={<Mail className="size-4 text-[#67BA2E]" />}
+              label="Login email"
+              value={data.email}
+            />
+            <DetailRow
+              icon={<UserCheck className="size-4 text-[#67BA2E]" />}
+              label="License"
+              value={data.licenseNumber}
+            />
+            <DetailRow
+              icon={<ShieldCheck className="size-4 text-[#67BA2E]" />}
+              label="Specialty"
+              value={data.specialty}
+            />
+            <DetailRow
+              icon={<Clock className="size-4 text-[#67BA2E]" />}
+              label="Last activity"
+              value={lastActiveLabel}
+            />
+          </div>
+
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+            <Button
+              onClick={handleSave}
+              disabled={isSaving || isRevoking || !hasUnsavedStatus}
+              className="h-12 flex-1 rounded-xl bg-[#67BA2E] font-black text-white shadow-lg shadow-emerald-100 hover:bg-[#5aa827]"
             >
-              {isPending ? (
+              {isSaving ? (
                 <>
-                  <Loader2 className="size-5 animate-spin" />
+                  <Loader2 className="mr-2 size-5 animate-spin" />
                   Synchronizing...
                 </>
               ) : (
-                "Save Changes"
+                "Save Authorization"
               )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.refresh()}
+              className="h-12 rounded-xl border-slate-200 font-bold text-slate-600 hover:bg-slate-50"
+            >
+              <RefreshCw className="mr-2 size-4" />
+              Refresh
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden bg-white">
-        <CardHeader className="p-8">
-          <CardTitle className="text-xl font-black text-slate-800 flex items-center gap-2">
+      <Card className="overflow-hidden rounded-3xl border-slate-200 bg-white shadow-sm">
+        <CardHeader className="border-b border-slate-50 p-8">
+          <CardTitle className="flex items-center gap-2 text-xl font-black text-slate-800">
             <MonitorSmartphone className="size-5 text-[#67BA2E]" />
-            Session & Recovery
+            Security Controls
           </CardTitle>
-          <CardDescription className="font-medium text-slate-500 mt-1">
-            Manage active security sessions and devices for this account.
+          <CardDescription className="mt-1 font-medium text-slate-500">
+            MFA recovery and emergency session lockdown.
           </CardDescription>
         </CardHeader>
-        <CardContent className="px-8 pb-8">
-          {/* Active Devices List UI */}
-          <div className="space-y-3 mb-6">
-            {/* Session Item 1 (Current) */}
-            <div className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 bg-slate-50">
-              <Laptop className="size-5 text-slate-400 shrink-0" />
-              <div className="flex-1 flex items-center justify-between gap-2">
-                <div>
-                  <p className="text-xs font-bold text-slate-700">Mac OS • Safari</p>
-                  <p className="text-[10px] font-semibold text-slate-500 mt-0.5">IP: 192.168.1.1</p>
-                </div>
-                <span className="text-[9px] font-black uppercase tracking-wider text-[#67BA2E] bg-[#67BA2E]/10 px-2.5 py-1 rounded-md shrink-0">
-                  Current Session
-                </span>
-              </div>
-            </div>
-
-            {/* Session Item 2 */}
-            <div className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 bg-slate-50">
-              <Smartphone className="size-5 text-slate-400 shrink-0" />
-              <div>
-                <p className="text-xs font-bold text-slate-700">iOS • SyncMed App</p>
-                <p className="text-[10px] font-semibold text-slate-500 mt-0.5">Last active: 2 hrs ago</p>
-              </div>
-            </div>
+        <CardContent className="space-y-4 p-8">
+          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+            <p className="text-xs font-bold text-slate-700">Account enrolled</p>
+            <p className="mt-1 text-[11px] font-medium text-slate-500">
+              {format(new Date(data.createdAt), "MMM dd, yyyy · hh:mm a")}
+            </p>
+            <p className="mt-3 text-[10px] leading-relaxed text-slate-400">
+              Last security sync:{" "}
+              {format(new Date(data.updatedAt), "MMM dd, yyyy · hh:mm a")}
+            </p>
           </div>
 
-          {/* Revoke Sessions Action Button */}
-          <button 
-            onClick={handleRevokeSessions}
-            className="w-full h-12 border border-red-100 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl transition-all flex items-center justify-center gap-2 group cursor-pointer"
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isResettingMfa || isRevoking || !data.mfaEnabled}
+            onClick={handleResetMfa}
+            className="h-12 w-full rounded-xl border-slate-200 font-bold text-slate-700 hover:border-[#67BA2E]/30 hover:bg-emerald-50 hover:text-[#67BA2E]"
           >
-            <LogOut className="size-4 transition-transform group-hover:scale-110" />
-            Revoke All Active Sessions
+            {isResettingMfa ? (
+              <Loader2 className="mr-2 size-4 animate-spin" />
+            ) : (
+              <KeyRound className="mr-2 size-4" />
+            )}
+            Reset MFA
+          </Button>
+
+          <button
+            type="button"
+            onClick={handleRevokeSessions}
+            disabled={isRevoking || isSaving}
+            className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-100 bg-red-50 font-bold text-red-600 transition-all hover:bg-red-100 disabled:opacity-50"
+          >
+            {isRevoking ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <LogOut className="size-4" />
+            )}
+            Revoke All Sessions
           </button>
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+function DetailRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode
+  label: string
+  value: string
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="mt-0.5 shrink-0">{icon}</div>
+      <div className="min-w-0">
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+          {label}
+        </p>
+        <p className="truncate text-sm font-bold text-slate-700">{value}</p>
+      </div>
     </div>
   )
 }

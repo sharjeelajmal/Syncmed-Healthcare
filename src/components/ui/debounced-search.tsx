@@ -16,13 +16,15 @@ export function DebouncedSearch({ placeholder = "Search..." }: DebouncedSearchPr
   const { replace } = useRouter()
 
   const handleSearch = useDebouncedCallback((term: string) => {
-    const params = new URLSearchParams(searchParams)
+    const params = new URLSearchParams(searchParams.toString())
     if (term) {
-      params.set('query', term)
+      params.set("query", term)
     } else {
-      params.delete('query')
+      params.delete("query")
     }
-    replace(`${pathname}?${params.toString()}`, { scroll: false })
+    params.delete("page")
+    const query = params.toString()
+    replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
   }, 300)
 
   return (

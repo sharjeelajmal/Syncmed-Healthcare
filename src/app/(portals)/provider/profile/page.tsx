@@ -11,7 +11,10 @@ import {
   Loader2
 } from "lucide-react"
 
-import prisma from "@/lib/prisma"
+import { getProviderProfileForSession } from "@/lib/portal-auth"
+
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,19 +22,7 @@ import { Button } from "@/components/ui/button"
 import { ProfileForm } from "./ProfileForm"
 
 export default async function ProviderProfilePage() {
-  // MOCK AUTH: Fetching first available provider to avoid "Not Found" error
-  const provider = await prisma.providerProfile.findFirst({
-    include: { user: true }
-  })
-
-  if (!provider) {
-    console.error("[PROFILE_DEBUG]: No provider profiles found in database.")
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <p className="text-slate-500 font-bold uppercase tracking-widest">No Provider Records Found</p>
-      </div>
-    )
-  }
+  const provider = await getProviderProfileForSession()
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-20">

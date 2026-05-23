@@ -1,291 +1,306 @@
-"use client";
+"use client"
 
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { 
-  Shield, 
-  Lock, 
-  ArrowRight, 
-  ChevronLeft,
-  Loader2,
-  Activity,
-  Award,
-  Quote,
-  Star
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { submitInquiryAction } from "@/app/actions/inquiry.actions";
-
-const fadeUp = {
-  initial: { opacity: 0, y: 30 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: false, amount: 0.2 },
-  transition: { duration: 0.6, ease: "easeOut" as const }
-};
-
-const staggerContainer = {
-  initial: {},
-  whileInView: {
-    transition: { staggerChildren: 0.1 }
-  },
-  viewport: { once: false, amount: 0.2 }
-};
+import React, { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Shield, Lock, ArrowRight, ChevronLeft, Loader2, Sparkles, HelpCircle, HeartPulse, ChevronDown } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { Navbar } from "@/components/layout/Navbar"
+import { Footer } from "@/components/layout/Footer"
+import { submitLeadAction } from "@/app/actions/lead.actions"
 
 export default function RequestConsultationPage() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false)
+  const [inquiryType, setInquiryType] = useState("general")
+  const [isOpen, setIsOpen] = useState(false)
+
+  const options = [
+    {
+      id: "general",
+      label: "General Question",
+      desc: "Inquiries about our private practice, locations, or clinical model."
+    },
+    {
+      id: "patient_registration",
+      label: "New Patient Registration",
+      desc: "Request secure clinical onboarding and dashboard configuration."
+    }
+  ]
+  const selectedOption = options.find(opt => opt.id === inquiryType) || options[0]
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
+    e.preventDefault()
+    setIsLoading(true)
 
-    const formData = new FormData(e.currentTarget);
-    const result = await submitInquiryAction(formData);
+    const formData = new FormData(e.currentTarget)
+    const name = formData.get("name") as string
+    const email = formData.get("email") as string
+    const phone = formData.get("phone") as string
+    const message = formData.get("message") as string
+
+    const result = await submitLeadAction({
+      name,
+      email,
+      phone: phone || null,
+      type: inquiryType,
+      message,
+    })
 
     if (result.success) {
-      toast.success("Request Securely Transmitted", {
-        description: "A clinical concierge will contact you on a secure line within 24 hours.",
-      });
-      (e.target as HTMLFormElement).reset();
-      setTimeout(() => router.push("/"), 3000);
+      toast.success("Request Securely Submitted", {
+        description: result.message || "A coordinator will follow up on a secure line within 24 hours.",
+      })
+      ;(e.target as HTMLFormElement).reset()
+      setInquiryType("general")
     } else {
-      toast.error("Transmission Failed", {
-        description: result.error || "Failed to transmit request. Please try again.",
-      });
+      toast.error("Submission Failed", {
+        description: result.error || "Failed to send request. Please try again.",
+      })
     }
-    setIsLoading(false);
-  };
+    setIsLoading(false)
+  }
 
   return (
-    <div className="min-h-screen bg-white selection:bg-[#67BA2E]/20 font-sans flex flex-col">
+    <div className="min-h-screen bg-slate-50 selection:bg-[#67BA2E]/20 font-sans flex flex-col">
       <Navbar />
 
-      {/* Main content wrapper with flex-grow to push footer down naturally */}
-      <main className="flex-grow pt-[80px]"> {/* Fixed pt matching typical navbar heights based on existing classes */}
-        {/* Removed fixed heights. Flex handles equal column stretching naturally */}
-        <div className="flex flex-col lg:flex-row w-full max-w-[1600px] mx-auto">
-          
-          {/* Left Column: The Pitch & Trust */}
-          {/* FIX: Removed sticky, overflow-y-auto, and justify-center. Added justify-start for natural document flow. */}
-          <div className="w-full lg:w-1/2 bg-slate-50 flex flex-col justify-start p-8 md:p-16 lg:p-20 xl:p-24 border-r border-slate-100">
-            
-            <motion.div
-              {...fadeUp}
-              className="max-w-xl mx-auto w-full"
-            >
-              {/* Back Button */}
-              <button
-                onClick={() => router.back()}
-                className="flex items-center gap-2 text-slate-400 hover:text-[#67BA2E] transition-all mb-10 md:mb-14 group w-fit"
-              >
-                <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Return</span>
-              </button>
+      <main className="flex-grow pt-24 pb-16 px-4 md:px-8">
+        <div className="max-w-4xl mx-auto w-full">
+          {/* Back Button */}
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-slate-500 hover:text-[#67BA2E] transition-colors mb-8 group font-bold text-xs uppercase tracking-wider"
+          >
+            <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            Return
+          </button>
 
-              <div className="space-y-10 md:space-y-14">
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 shadow-sm text-[#67BA2E] text-[10px] font-black uppercase tracking-[0.15em]">
-                    <Shield size={12} />
-                    Secured Clinical Access
-                  </div>
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.1]">
-                    The Science of <br />
-                    <span className="text-[#67BA2E]">Private Care.</span>
-                  </h1>
-                  <p className="text-slate-500 text-base md:text-lg leading-relaxed">
-                    An exclusive clinical sanctuary where bespoke medicine meets absolute personalized attention.
-                  </p>
-                </div>
-
-                {/* Timeline / Steps */}
-                <motion.div 
-                  variants={staggerContainer}
-                  initial="initial"
-                  whileInView="whileInView"
-                  viewport={{ once: false, amount: 0.2 }}
-                  className="space-y-8"
-                >
-                  {[
-                    { icon: Shield, title: "Requirement Analysis", desc: "Confidential clinical intake via our encrypted portal." },
-                    { icon: Activity, title: "Concierge Discovery", desc: "Bespoke consultation with our lead physician team." },
-                    { icon: Award, title: "Clinical Activation", desc: "Immediate access to world-class medical diagnostics." }
-                  ].map((step, i) => (
-                    <motion.div key={i} variants={fadeUp} className="flex gap-5 items-start">
-                      <div className="size-12 rounded-xl bg-white shadow-sm border border-slate-100 flex-shrink-0 flex items-center justify-center text-[#67BA2E]">
-                        <step.icon size={20} />
-                      </div>
-                      <div className="pt-1">
-                        <h3 className="font-bold text-slate-900 text-sm md:text-base mb-1">{step.title}</h3>
-                        <p className="text-slate-500 text-sm leading-relaxed">{step.desc}</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-
-                {/* Testimonial */}
-                <div className="pt-8 border-t border-slate-200">
-                   <div className="relative pl-6 border-l-2 border-[#67BA2E]">
-                      <Quote className="absolute -left-3 -top-3 size-6 text-white fill-slate-100" />
-                      <p className="text-base text-slate-600 leading-relaxed font-medium relative z-10">
-                        "SyncMed restores the sanctity of medicine. Absolute discretion and unmatched clinical precision."
-                      </p>
-                      <div className="flex items-center gap-2 mt-4">
-                        <div className="flex gap-0.5">
-                          {[...Array(5)].map((_, i) => <Star key={i} size={12} className="fill-[#67BA2E] text-[#67BA2E]" />)}
-                        </div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">— Verified Private Member</span>
-                      </div>
-                   </div>
-                </div>
-              </div>
-            </motion.div>
+          {/* Header section */}
+          <div className="text-center mb-12 space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 shadow-xs text-[#67BA2E] text-[10px] font-black uppercase tracking-wider">
+              <Shield size={12} />
+              HIPAA Compliant Communication
+            </div>
+            <h1 className="text-3xl md:text-5xl font-black text-slate-800 tracking-tight leading-none">
+              Request <span className="text-[#67BA2E]">Clinical Consultation</span>
+            </h1>
+            <p className="text-slate-500 text-sm md:text-base max-w-xl mx-auto">
+              Connect with our clinical intake team. Please provide your confidential details below.
+            </p>
           </div>
 
-          {/* Right Column: The Form */}
-          {/* FIX: Removed min-h-[calc(100vh-80px)] to allow it to match the left column's natural height seamlessly. */}
-          <div className="w-full lg:w-1/2 flex flex-col justify-start p-8 md:p-16 lg:p-20 xl:p-24 bg-white">
-            <motion.div
-              {...fadeUp}
-              className="max-w-xl mx-auto w-full"
-            >
-              <div className="mb-12 md:mb-16">
-                <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">Secure Request</h2>
-                <p className="text-slate-500 text-base">Please provide your confidential details for clinical assessment.</p>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-12">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-12">
-                  {/* First Name */}
-                  <div className="relative group">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 transition-colors group-focus-within:text-[#67BA2E]">
-                      First Name
+          {/* Grid Layout: Form on Left, Support Info on Right */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            {/* Form Column */}
+            <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-100/60 p-6 md:p-10">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Name */}
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-bold text-slate-600 uppercase tracking-widest block">
+                      Full Name
                     </label>
                     <input
                       required
-                      name="firstName"
+                      name="name"
                       type="text"
-                      maxLength={20}
-                      onInput={(e) => {
-                        e.currentTarget.value = e.currentTarget.value.replace(/[^a-zA-Z\s]/g, "");
-                      }}
-                      placeholder="Alexander"
-                      className="w-full bg-transparent border-b-2 border-slate-100 py-3 text-slate-900 placeholder:text-slate-200 focus:outline-none focus:border-[#67BA2E] transition-all text-sm md:text-base font-bold"
-                    />
-                  </div>
-
-                  {/* Last Name */}
-                  <div className="relative group">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 transition-colors group-focus-within:text-[#67BA2E]">
-                      Last Name
-                    </label>
-                    <input
-                      required
-                      name="lastName"
-                      type="text"
-                      maxLength={20}
-                      onInput={(e) => {
-                        e.currentTarget.value = e.currentTarget.value.replace(/[^a-zA-Z\s]/g, "");
-                      }}
-                      placeholder="Sterling"
-                      className="w-full bg-transparent border-b-2 border-slate-100 py-3 text-slate-900 placeholder:text-slate-200 focus:outline-none focus:border-[#67BA2E] transition-all text-sm md:text-base font-bold"
+                      maxLength={50}
+                      placeholder="Alexander Sterling"
+                      className="w-full bg-slate-50/50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-[#67BA2E]/20 focus:border-[#67BA2E] rounded-xl h-12 px-4 transition-all text-sm md:text-base font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none"
                     />
                   </div>
 
                   {/* Email */}
-                  <div className="relative group">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 transition-colors group-focus-within:text-[#67BA2E]">
-                      Secure Email
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-600 uppercase tracking-widest block">
+                      Email Address
                     </label>
                     <input
                       required
                       name="email"
                       type="email"
-                      placeholder="private@syncmed.com"
-                      className="w-full bg-transparent border-b-2 border-slate-100 py-3 text-slate-900 placeholder:text-slate-200 focus:outline-none focus:border-[#67BA2E] transition-all text-sm md:text-base font-bold"
+                      placeholder="private@sterling.com"
+                      className="w-full bg-slate-50/50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-[#67BA2E]/20 focus:border-[#67BA2E] rounded-xl h-12 px-4 transition-all text-sm md:text-base font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none"
                     />
                   </div>
 
                   {/* Phone */}
-                  <div className="relative group">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 transition-colors group-focus-within:text-[#67BA2E]">
-                      Encrypted Line
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-600 uppercase tracking-widest block">
+                      Phone Number <span className="text-[10px] text-slate-400 lowercase italic">(optional)</span>
                     </label>
                     <input
-                      required
                       name="phone"
                       type="tel"
-                      onInput={(e) => {
-                        e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, "");
-                      }}
-                      placeholder="000 000 0000"
-                      className="w-full bg-transparent border-b-2 border-slate-100 py-3 text-slate-900 placeholder:text-slate-200 focus:outline-none focus:border-[#67BA2E] transition-all text-sm md:text-base font-bold"
+                      placeholder="+1 (555) 000-0000"
+                      className="w-full bg-slate-50/50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-[#67BA2E]/20 focus:border-[#67BA2E] rounded-xl h-12 px-4 transition-all text-sm md:text-base font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none"
                     />
                   </div>
 
-                  {/* Referral Source */}
-                  <div className="relative group md:col-span-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 transition-colors group-focus-within:text-[#67BA2E]">
-                      Referral Source
+                  {/* Dropdown Type */}
+                  <div className="space-y-2 md:col-span-2 relative">
+                    <label className="text-xs font-bold text-slate-600 uppercase tracking-widest block">
+                      Inquiry Type
                     </label>
-                    <input
-                      name="referralSource"
-                      type="text"
-                      placeholder="How did you hear about our private practice?"
-                      className="w-full bg-transparent border-b-2 border-slate-100 py-3 text-slate-900 placeholder:text-slate-200 focus:outline-none focus:border-[#67BA2E] transition-all text-sm md:text-base font-bold"
-                    />
+                    
+                    {/* Trigger Button */}
+                    <button
+                      type="button"
+                      onClick={() => setIsOpen(!isOpen)}
+                      className="w-full bg-slate-50/50 border border-slate-200 hover:bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#67BA2E]/20 focus:border-[#67BA2E] rounded-xl h-14 px-4 transition-all flex items-center justify-between text-left cursor-pointer focus:outline-none"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`size-2.5 rounded-full ${inquiryType === 'general' ? 'bg-blue-500' : 'bg-[#67BA2E]'}`} />
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-slate-800 leading-tight">
+                            {selectedOption.label}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium leading-none mt-0.5">
+                            {selectedOption.desc}
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronDown size={18} className={`text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    <AnimatePresence>
+                      {isOpen && (
+                        <>
+                          {/* Click outside overlay */}
+                          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+                          
+                          <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-2 space-y-1"
+                          >
+                            {options.map((option) => {
+                              const isSelected = option.id === inquiryType
+                              return (
+                                <button
+                                  key={option.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setInquiryType(option.id)
+                                    setIsOpen(false)
+                                  }}
+                                  className={`w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all ${
+                                    isSelected 
+                                      ? "bg-slate-50 text-slate-800" 
+                                      : "hover:bg-slate-50/60 text-slate-600 hover:text-slate-800"
+                                  }`}
+                                >
+                                  <div className={`size-4 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
+                                    isSelected ? 'border-[#67BA2E] bg-white' : 'border-slate-300'
+                                  }`}>
+                                    {isSelected && <div className="size-2 rounded-full bg-[#67BA2E]" />}
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className={`text-sm font-bold block ${isSelected ? 'text-[#67BA2E]' : 'text-slate-700'}`}>
+                                      {option.label}
+                                    </span>
+                                    <span className="text-[11px] text-slate-400 font-medium leading-normal mt-0.5">
+                                      {option.desc}
+                                    </span>
+                                  </div>
+                                </button>
+                              )
+                            })}
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
                   </div>
 
-                  {/* Inquiry Details */}
-                  <div className="relative group md:col-span-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 transition-colors group-focus-within:text-[#67BA2E]">
-                      Clinical Inquiry
+                  {/* Message */}
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-bold text-slate-600 uppercase tracking-widest block">
+                      Message
                     </label>
                     <textarea
-                      name="inquiryDetails"
-                      rows={2}
-                      placeholder="Briefly outline your clinical requirements..."
-                      className="w-full bg-transparent border-b-2 border-slate-100 py-3 text-slate-900 placeholder:text-slate-200 focus:outline-none focus:border-[#67BA2E] transition-all text-sm md:text-base font-bold resize-none"
+                      required
+                      name="message"
+                      rows={5}
+                      placeholder="Please share details regarding your inquiry..."
+                      className="w-full bg-slate-50/50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-[#67BA2E]/20 focus:border-[#67BA2E] rounded-xl p-4 transition-all text-sm md:text-base font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none resize-none"
                     />
                   </div>
                 </div>
 
-                <div>
+                <div className="pt-2">
                   <Button
                     disabled={isLoading}
                     type="submit"
-                    className="w-full h-12 md:h-14 bg-[#67BA2E] hover:bg-[#5aa329] text-white rounded-full font-black uppercase tracking-[0.1em] text-[10px] md:text-sm shadow-xl shadow-[#67BA2E]/20 transition-all active:scale-[0.98] disabled:opacity-70 group btn-liquid px-4 overflow-hidden"
+                    className="w-full h-12 bg-[#67BA2E] hover:bg-[#5aa827] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#67BA2E]/10 transition-all active:scale-[0.98] flex items-center justify-center gap-2 border-0"
                   >
                     {isLoading ? (
-                      <span className="flex items-center justify-center gap-2 relative z-10 whitespace-nowrap">
+                      <>
                         <Loader2 className="animate-spin" size={16} />
-                        Processing...
-                      </span>
+                        Securing Transmission...
+                      </>
                     ) : (
-                      <span className="flex items-center justify-center gap-2 relative z-10 whitespace-nowrap">
-                        Submit Custom Request
-                        <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform shrink-0" />
-                      </span>
+                      <>
+                        Submit Consultation Request
+                        <ArrowRight size={16} />
+                      </>
                     )}
                   </Button>
 
-                  <div className="mt-8 md:mt-12 flex items-center justify-center gap-3 opacity-40">
-                    <Lock size={14} className="text-[#67BA2E]" />
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">
-                      Clinical-Grade Encryption Active
+                  <div className="mt-6 flex items-center justify-center gap-2 opacity-50">
+                    <Lock size={12} className="text-[#67BA2E]" />
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                      Encrypted Clinical Pipeline Active
                     </span>
                   </div>
                 </div>
               </form>
-            </motion.div>
+            </div>
+
+            {/* Info Side Column */}
+            <div className="space-y-6">
+              {/* Card 1: Concierge Info */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+                <div className="size-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#67BA2E]">
+                  <Sparkles size={20} />
+                </div>
+                <h3 className="font-bold text-slate-800 text-base">Elite Clinical Care</h3>
+                <p className="text-slate-500 text-xs leading-relaxed">
+                  Our private medical clinic prioritizes absolute confidentiality, secure health records, and direct physician access.
+                </p>
+              </div>
+
+              {/* Card 2: Next Steps */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+                <div className="size-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+                  <HelpCircle size={20} />
+                </div>
+                <h3 className="font-bold text-slate-800 text-base">Clinical Timelines</h3>
+                <p className="text-slate-500 text-xs leading-relaxed">
+                  Inquiries are reviewed by clinical intake staff. Approved registrations receive dashboard setup links within 24 hours.
+                </p>
+              </div>
+
+              {/* Card 3: Discretion */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+                <div className="size-10 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600">
+                  <HeartPulse size={20} />
+                </div>
+                <h3 className="font-bold text-slate-800 text-base">Patient Sovereignty</h3>
+                <p className="text-slate-500 text-xs leading-relaxed">
+                  Every interaction is fully protected under global digital privacy standards.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </main>
 
       <Footer />
     </div>
-  );
+  )
 }

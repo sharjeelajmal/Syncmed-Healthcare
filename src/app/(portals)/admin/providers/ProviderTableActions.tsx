@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -31,6 +32,7 @@ interface ProviderTableActionsProps {
 }
 
 export function ProviderTableActions({ userId, isActive }: ProviderTableActionsProps) {
+  const router = useRouter()
   const [isPending, startTransition] = React.useTransition()
 
   const handleToggleStatus = () => {
@@ -38,6 +40,7 @@ export function ProviderTableActions({ userId, isActive }: ProviderTableActionsP
       const res = await toggleProviderStatusAction(userId, isActive)
       if (res.success) {
         toast.success(isActive ? "Provider suspended" : "Provider activated")
+        router.refresh()
       } else {
         toast.error(res.error || "Failed to update status")
       }

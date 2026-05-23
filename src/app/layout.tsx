@@ -48,11 +48,6 @@ export default function RootLayout({
         <Toaster 
           position="top-center" 
           expand={false} 
-          richColors={false}
-          toastOptions={{
-            className: "rounded-[1.5rem] border border-slate-200/50 backdrop-blur-2xl bg-white/70 shadow-[0_8px_30px_rgb(0,0,0,0.08)] font-sans text-slate-800 p-4",
-            descriptionClassName: "text-slate-500 font-medium"
-          }}
         />
 
         {/* 3. Service Worker Registration taake Chrome PWA pass kar de */}

@@ -38,6 +38,7 @@ export function ProfileForm({ provider }: { provider: any }) {
       const res = await updateProviderProfileAction(provider.user.id, data)
       if (res.success) {
         toast.success("Profile updated successfully")
+        router.refresh()
       } else {
         toast.error(res.error)
       }
@@ -158,7 +159,7 @@ export function ProfileForm({ provider }: { provider: any }) {
                 <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">NPI Number</Label>
                 <div className="relative">
                    <Input 
-                     defaultValue="1234567890" // Mock NPI
+                     defaultValue={provider.licenseNumber || "—"}
                      disabled
                      className="h-12 rounded-xl border-slate-200 bg-slate-50 font-bold text-slate-500 pl-10 cursor-not-allowed" 
                    />

@@ -1,6 +1,7 @@
 "use server"
 
 import prisma from "@/lib/prisma"
+import { pusherServer } from "@/lib/pusher"
 import { revalidatePath } from "next/cache"
 import { AppointmentSchema } from "@/lib/validations"
 import { format } from "date-fns"
@@ -16,8 +17,11 @@ export async function createAppointmentAction(formData: FormData) {
   }
 
   try {
-    const patientProfile = await prisma.patientProfile.findUnique({ where: { id: patientId } });
-    const providerProfile = await prisma.providerProfile.findUnique({ where: { id: providerId } });
+    const patientProfile = await prisma.patientProfile.findUnique({
+      where: { id: patientId },
+      include: { user: { select: { firstName: true, lastName: true } } },
+    })
+    const providerProfile = await prisma.providerProfile.findUnique({ where: { id: providerId } })
 
     if (!patientProfile || !providerProfile) {
       return { success: false, error: 'Selected Patient or Provider profile does not exist.' };
@@ -80,6 +84,17 @@ export async function createAppointmentAction(formData: FormData) {
       },
     })
 
+    const patientName = `${patientProfile.user.firstName} ${patientProfile.user.lastName}`.trim()
+    try {
+      await pusherServer.trigger("admin-alerts", "new-activity", {
+        title: "New Appointment Booked",
+        message: `Patient ${patientName} has booked a slot.`,
+        url: "/admin/appointments",
+      })
+    } catch (pusherError) {
+      console.error("[PUSHER_ADMIN_ALERT]:", pusherError)
+    }
+
     revalidatePath("/admin/dashboard")
     revalidatePath("/admin/appointments")
     revalidatePath("/patient/appointments")
@@ -107,9 +122,18 @@ export async function updateAppointmentStatusAction(id: string, status: any) {
   }
 }
 
+function parseSlotDate(dateInput: string): Date {
+  // yyyy-MM-dd avoids timezone shifting the weekday when using ISO midnight UTC
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+    const [y, m, d] = dateInput.split("-").map(Number)
+    return new Date(y, m - 1, d, 12, 0, 0, 0)
+  }
+  return new Date(dateInput)
+}
+
 export async function getProviderSlots(providerId: string, date: string) {
   try {
-    const targetDate = new Date(date);
+    const targetDate = parseSlotDate(date);
     const dayName = format(targetDate, "EEEE").toUpperCase(); // e.g., "MONDAY"
 
     // 1. Fetch Provider Availability for this day

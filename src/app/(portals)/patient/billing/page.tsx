@@ -7,6 +7,7 @@ import { auth } from "@/../auth"
 import { redirect } from "next/navigation"
 
 export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 export default async function BillingPage({
   searchParams,
@@ -73,9 +74,9 @@ export default async function BillingPage({
       date: i.createdAt,
       amount: i.amount,
       status: i.status === "PENDING" ? "UNPAID" : i.status === "VERIFIED" ? "PAID" : "REJECTED",
-      clinician: "Clinical Services",
-      specialty: "Post-Visit Charges",
-      initials: "CS"
+      clinician: `Invoice ${i.id.slice(0, 8).toUpperCase()}`,
+      specialty: "Additional invoice",
+      initials: "INV",
     }))
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 

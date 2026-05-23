@@ -31,7 +31,7 @@ export async function updateProfile(data: { firstName: string; lastName: string;
     })
 
     revalidatePath("/admin/settings")
-    revalidatePath("/")
+    revalidatePath("/admin", "layout")
     return { success: true, message: "Profile updated successfully" }
   } catch (error) {
     return { success: false, message: "Failed to update profile", error: String(error) }

@@ -4,27 +4,57 @@ import pg from "pg"
 
 declare global {
   var prisma: undefined | PrismaClient
-  var pool: undefined | pg.Pool
+  var pgPool: undefined | pg.Pool
 }
 
-const getPrismaClient = () => {
-  if (!globalThis.pool) {
-    globalThis.pool = new pg.Pool({ 
-      connectionString: process.env.DATABASE_URL,
-      max: 20, // Increased for better concurrency
-      connectionTimeoutMillis: 30000,
-      idleTimeoutMillis: 30000,
-    })
-    
-    globalThis.pool.on('error', (err) => {
-      console.error('Unexpected error on idle client', err)
-    })
+function getConnectionString(): string {
+  const url = process.env.DATABASE_URL
+  if (!url) {
+    throw new Error("DATABASE_URL is not set")
   }
-  
-  const adapter = new PrismaPg(globalThis.pool)
-  return new PrismaClient({ 
+
+  // Neon pooler works best with pgbouncer mode for server-side pg.Pool
+  if (url.includes("-pooler.") && !url.includes("pgbouncer=")) {
+    const separator = url.includes("?") ? "&" : "?"
+    return `${url}${separator}pgbouncer=true`
+  }
+
+  return url
+}
+
+function createPool(): pg.Pool {
+  const pool = new pg.Pool({
+    connectionString: getConnectionString(),
+    max: 10,
+    connectionTimeoutMillis: 10_000,
+    idleTimeoutMillis: 20_000,
+    keepAlive: true,
+  })
+
+  pool.on("error", (err) => {
+    console.error("Unexpected error on idle pg client", err)
+    if (process.env.NODE_ENV !== "production") {
+      globalThis.pgPool = undefined
+      globalThis.prisma = undefined
+    }
+  })
+
+  void pool.query("SELECT 1").catch((err) => {
+    console.warn("DB pool warmup failed:", err.message)
+  })
+
+  return pool
+}
+
+function getPrismaClient(): PrismaClient {
+  if (!globalThis.pgPool) {
+    globalThis.pgPool = createPool()
+  }
+
+  const adapter = new PrismaPg(globalThis.pgPool)
+  return new PrismaClient({
     adapter,
-    log: ["error", "warn"]
+    log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
   })
 }
 

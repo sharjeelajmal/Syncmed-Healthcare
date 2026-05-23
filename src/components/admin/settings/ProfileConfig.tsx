@@ -42,9 +42,9 @@ export const ProfileConfig = ({ user }: { user: any }) => {
       const result = await updateProfile(formData)
       if (result.success) {
         // Force session update for header
+        // Name only in JWT — avatar is loaded from DB in admin layout (base64 is too large for cookies)
         await update({
           name: `${formData.firstName} ${formData.lastName}`,
-          image: formData.image
         })
         
         toast.success("Profile updated successfully")

@@ -14,6 +14,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { fetchPatientUnpaidCountAction } from "@/app/actions/patient.actions"
 
 interface NavItem {
   name: string
@@ -23,11 +24,25 @@ interface NavItem {
 }
 
 interface PatientPortalNavigationProps {
-  unpaidCount: number
+  userId: string | null
 }
 
-export function PatientPortalNavigation({ unpaidCount }: PatientPortalNavigationProps) {
+export function PatientPortalNavigation({ userId }: PatientPortalNavigationProps) {
   const pathname = usePathname()
+  const [unpaidCount, setUnpaidCount] = React.useState(0)
+
+  React.useEffect(() => {
+    if (!userId) return
+
+    let cancelled = false
+    fetchPatientUnpaidCountAction(userId).then((count) => {
+      if (!cancelled) setUnpaidCount(count)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
 
   const navItems: NavItem[] = [
     { 

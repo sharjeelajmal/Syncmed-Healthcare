@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 import * as React from "react"
 import { 
   Calendar, 
@@ -321,7 +324,7 @@ export default async function ProviderDashboardPage() {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-slate-500 font-medium line-clamp-1 max-w-[200px]">
-                          {apt.notes || "Regular medical check-up"}
+                          {apt.notes || "—"}
                         </span>
                       </TableCell>
                       <TableCell>

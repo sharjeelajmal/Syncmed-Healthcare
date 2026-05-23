@@ -1,6 +1,10 @@
 import * as React from "react"
 import { Users } from "lucide-react"
 import prisma from "@/lib/prisma"
+import { getProviderProfileForSession } from "@/lib/portal-auth"
+
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 import { AssignedPatientsTable } from "./AssignedPatientsTable"
 
 interface PageProps {
@@ -10,19 +14,7 @@ interface PageProps {
 export default async function ProviderPatientsPage({ searchParams }: PageProps) {
   const { query } = await searchParams
   
-  // Deterministic Provider (Mock Auth Consistency)
-  const provider = await prisma.providerProfile.findFirst({
-    orderBy: { user: { createdAt: 'asc' } },
-    include: { user: true }
-  })
-
-  if (!provider) {
-    return (
-      <div className="p-8 text-center bg-white rounded-3xl border border-slate-200">
-        <p className="text-slate-500 font-bold uppercase tracking-widest text-slate-400">Clinical authorization error: Profile not found.</p>
-      </div>
-    )
-  }
+  const provider = await getProviderProfileForSession()
 
   // Fetch Assigned Patients (Directly assigned OR via Appointments)
   const patients = await prisma.patientProfile.findMany({

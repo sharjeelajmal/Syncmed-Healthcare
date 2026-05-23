@@ -30,33 +30,46 @@ import {
 } from "@/components/ui/dropdown-menu"
 import {
   Table,
-  TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { AnimatedTableBody } from "@/components/ui/animated-table-body"
 import { Badge } from "@/components/ui/badge"
 import { updateAppointmentStatusAction } from "@/app/actions/appointment.actions"
 import { DebouncedSearch } from "@/components/ui/debounced-search"
+import { ServerTablePagination } from "@/components/ui/server-table-pagination"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { VerifyReceiptModal } from "@/components/ui/verify-receipt-modal"
 import { Checkbox } from "@/components/ui/checkbox"
 
 interface AppointmentsTableProps {
   appointments: any[]
+  totalItems: number
+  currentPage: number
+  showPaid: boolean
 }
 
-export function AppointmentsTable({ appointments: initialAppointments }: AppointmentsTableProps) {
+export function AppointmentsTable({
+  appointments,
+  totalItems,
+  currentPage,
+  showPaid,
+}: AppointmentsTableProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [isPending, startTransition] = React.useTransition()
   const [receiptModalAppt, setReceiptModalAppt] = React.useState<any>(null)
-  const [showPaid, setShowPaid] = React.useState(true)
 
   const handleStatusUpdate = (id: string, status: string) => {
     startTransition(async () => {
       const res = await updateAppointmentStatusAction(id, status)
       if (res.success) {
         toast.success(`Appointment marked as ${status.toLowerCase()}`)
+        router.refresh()
       } else {
         toast.error(res.error || "Failed to update status")
       }
@@ -122,9 +135,25 @@ export function AppointmentsTable({ appointments: initialAppointments }: Appoint
     )
   }
 
-  const filteredAppointments = showPaid 
-    ? initialAppointments 
-    : initialAppointments.filter(a => a.paymentStatus !== 'PAID')
+  const [direction, setDirection] = React.useState(1)
+  const prevPage = React.useRef(currentPage)
+
+  React.useEffect(() => {
+    setDirection(currentPage > prevPage.current ? 1 : -1)
+    prevPage.current = currentPage
+  }, [currentPage])
+
+  const toggleShowPaid = (checked: boolean) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (checked) {
+      params.delete("showPaid")
+    } else {
+      params.set("showPaid", "false")
+    }
+    params.delete("page")
+    const query = params.toString()
+    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
+  }
 
   return (
     <div className="space-y-6">
@@ -135,7 +164,7 @@ export function AppointmentsTable({ appointments: initialAppointments }: Appoint
             <Checkbox 
               id="showPaid" 
               checked={showPaid} 
-              onCheckedChange={(checked) => setShowPaid(!!checked)}
+              onCheckedChange={(checked) => toggleShowPaid(!!checked)}
               className="border-slate-300 data-[state=checked]:bg-[#67BA2E] data-[state=checked]:border-[#67BA2E]"
             />
             <label htmlFor="showPaid" className="text-[10px] font-black text-slate-500 uppercase tracking-widest cursor-pointer select-none">
@@ -152,7 +181,7 @@ export function AppointmentsTable({ appointments: initialAppointments }: Appoint
       </div>
 
       <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm mt-6">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-hidden">
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow className="hover:bg-transparent border-slate-100">
@@ -164,9 +193,9 @@ export function AppointmentsTable({ appointments: initialAppointments }: Appoint
                 <TableHead className="text-right text-[10px] font-black text-slate-400 uppercase tracking-widest py-5 px-6">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {filteredAppointments.length > 0 ? (
-                filteredAppointments.map((appointment) => (
+            <AnimatedTableBody pageKey={currentPage} direction={direction}>
+              {appointments.length > 0 ? (
+                appointments.map((appointment) => (
                   <TableRow key={appointment.id} className="group hover:bg-slate-50/50 transition-colors border-slate-100">
                     <TableCell className="px-6 py-4 font-bold text-slate-700">
                       <div className="flex flex-col">
@@ -256,9 +285,13 @@ export function AppointmentsTable({ appointments: initialAppointments }: Appoint
                   </TableCell>
                 </TableRow>
               )}
-            </TableBody>
+            </AnimatedTableBody>
           </Table>
         </div>
+        <ServerTablePagination
+          currentPage={currentPage}
+          totalItems={totalItems}
+        />
       </div>
 
       <VerifyReceiptModal 

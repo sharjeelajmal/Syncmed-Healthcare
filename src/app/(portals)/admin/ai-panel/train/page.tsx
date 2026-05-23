@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getAiKnowledgeBase, updateAiKnowledgeBase } from "@/app/actions/ai.actions";
 import { Sparkles, Save, Loader2, Bot, ShieldAlert, BookOpen, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export default function AiLearningPage() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [kbId, setKbId] = useState<string | undefined>(undefined);
@@ -49,6 +51,7 @@ export default function AiLearningPage() {
     const res = await updateAiKnowledgeBase({ id: kbId, ...formData });
     if (res.success) {
       toast.success("Syncing Complete");
+      router.refresh();
     }
     setIsSaving(false);
   };

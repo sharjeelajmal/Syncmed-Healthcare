@@ -10,6 +10,11 @@ import {
 import { differenceInYears } from "date-fns"
 
 import prisma from "@/lib/prisma"
+import { getProviderProfileForSession } from "@/lib/portal-auth"
+
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AssessmentForm } from "./AssessmentForm"
@@ -40,19 +45,14 @@ export default async function NewAssessmentPage({ searchParams }: PageProps) {
     )
   }
 
-  // MOCK AUTH: Doctor's User ID
-  const MOCK_USER_ID = "bf2a3b3d-0360-45bf-bb31-bf33f48abf3e"
+  const sessionProvider = await getProviderProfileForSession()
 
-  // Fetch Patient Details & Provider Profile
   const [patient, provider] = await Promise.all([
     prisma.patientProfile.findUnique({
       where: { id: patientId },
-      include: { user: true }
+      include: { user: true },
     }),
-    prisma.providerProfile.findUnique({
-      where: { userId: MOCK_USER_ID },
-      select: { id: true }
-    })
+    Promise.resolve({ id: sessionProvider.id }),
   ])
 
   if (!patient || !provider) {

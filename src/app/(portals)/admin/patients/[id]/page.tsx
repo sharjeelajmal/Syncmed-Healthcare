@@ -10,6 +10,7 @@ import AssignProviderForm from "./AssignProviderForm"
 import PatientEditForm from "./PatientEditForm"
 
 export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 export default async function PatientDetailsPage({ 
   params,

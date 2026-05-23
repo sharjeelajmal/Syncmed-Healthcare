@@ -39,6 +39,7 @@ export function PatientTableActions({ patientId }: PatientTableActionsProps) {
     if (res.success) {
       toast.success("Patient record purged successfully.");
       setShowDeleteDialog(false);
+      router.refresh();
     } else {
       toast.error((res as any).error || "Failed to delete record.");
     }

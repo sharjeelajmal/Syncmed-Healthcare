@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 import * as React from "react"
 import { ShieldCheck, FileSignature, AlertCircle } from "lucide-react"
 import Link from "next/link"

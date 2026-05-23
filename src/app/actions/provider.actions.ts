@@ -3,6 +3,15 @@
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
+import { auth } from "@/../auth"
+
+async function assertAdmin() {
+  const session = await auth()
+  if (!session?.user?.id || (session.user as { role?: string }).role !== "ADMIN") {
+    return { ok: false as const, error: "Unauthorized access." }
+  }
+  return { ok: true as const, session }
+}
 
 export async function createProviderAction(formData: FormData) {
   try {
@@ -99,21 +108,151 @@ export async function toggleProviderStatusAction(userId: string, currentStatus: 
   }
 }
 
-export async function updateProviderAccessAction(providerId: string, data: any) {
+export async function updateProviderAccessAction(
+  userId: string,
+  data: { isActive: boolean }
+) {
+  const admin = await assertAdmin()
+  if (!admin.ok) return { success: false, error: admin.error }
+
   try {
-    await prisma.providerProfile.update({
-      where: { id: providerId },
-      data: {
-        specialty: data.specialty,
-        licenseNumber: data.licenseNumber,
-      }
+    const provider = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        role: "PROVIDER",
+      },
+      select: { id: true },
     })
-    revalidatePath(`/admin/providers/${providerId}/access`)
-    revalidatePath("/provider/profile") // Update doctor's view too
-    return { success: true }
-  } catch (err: any) {
+
+    if (!provider) {
+      return { success: false, error: "Provider account not found." }
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { isActive: data.isActive },
+      select: {
+        id: true,
+        isActive: true,
+        mfaEnabled: true,
+        lastActive: true,
+        updatedAt: true,
+      },
+    })
+
+    revalidatePath(`/admin/providers/${userId}/access`)
+    revalidatePath(`/admin/providers/${userId}`)
+    revalidatePath("/admin/providers")
+
+    return {
+      success: true,
+      data: {
+        isActive: updated.isActive,
+        mfaEnabled: updated.mfaEnabled,
+        lastActive: updated.lastActive.toISOString(),
+        updatedAt: updated.updatedAt.toISOString(),
+      },
+    }
+  } catch (err: unknown) {
     console.error("[UPDATE_ACCESS_ERROR]:", err)
-    return { error: "Failed to update professional credentials." }
+    return { success: false, error: "Failed to update account access." }
+  }
+}
+
+export async function resetProviderMfaAction(userId: string) {
+  const admin = await assertAdmin()
+  if (!admin.ok) return { success: false, error: admin.error }
+
+  try {
+    const provider = await prisma.user.findFirst({
+      where: { id: userId, role: "PROVIDER" },
+      select: { id: true },
+    })
+    if (!provider) {
+      return { success: false, error: "Provider account not found." }
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { mfaEnabled: false, mfaSecret: null },
+      select: {
+        id: true,
+        isActive: true,
+        mfaEnabled: true,
+        lastActive: true,
+        updatedAt: true,
+      },
+    })
+
+    revalidatePath(`/admin/providers/${userId}/access`)
+    revalidatePath(`/admin/providers/${userId}`)
+
+    return {
+      success: true,
+      message: "Multi-factor authentication has been reset.",
+      data: {
+        isActive: updated.isActive,
+        mfaEnabled: updated.mfaEnabled,
+        lastActive: updated.lastActive.toISOString(),
+        updatedAt: updated.updatedAt.toISOString(),
+      },
+    }
+  } catch (err: unknown) {
+    console.error("[RESET_MFA_ERROR]:", err)
+    return { success: false, error: "Failed to reset MFA." }
+  }
+}
+
+/** Suspend active login by deactivating until admin re-enables (JWT may persist until expiry). */
+export async function revokeProviderSessionsAction(userId: string) {
+  const admin = await assertAdmin()
+  if (!admin.ok) return { success: false, error: admin.error }
+
+  try {
+    const provider = await prisma.user.findFirst({
+      where: { id: userId, role: "PROVIDER" },
+      select: { id: true, isActive: true },
+    })
+    if (!provider) {
+      return { success: false, error: "Provider account not found." }
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        mfaEnabled: false,
+        mfaSecret: null,
+        resetToken: null,
+        resetTokenExpiry: null,
+        isActive: false,
+      },
+      select: {
+        id: true,
+        isActive: true,
+        mfaEnabled: true,
+        lastActive: true,
+        updatedAt: true,
+      },
+    })
+
+    revalidatePath(`/admin/providers/${userId}/access`)
+    revalidatePath(`/admin/providers/${userId}`)
+    revalidatePath("/admin/providers")
+
+    return {
+      success: true,
+      message:
+        "All sessions revoked: account restricted and MFA cleared. Re-activate when the provider may sign in again.",
+      data: {
+        isActive: updated.isActive,
+        mfaEnabled: updated.mfaEnabled,
+        lastActive: updated.lastActive.toISOString(),
+        updatedAt: updated.updatedAt.toISOString(),
+      },
+    }
+  } catch (err: unknown) {
+    console.error("[REVOKE_SESSIONS_ERROR]:", err)
+    return { success: false, error: "Failed to revoke sessions." }
   }
 }
 
@@ -139,8 +278,6 @@ export async function updateProviderProfileAction(userId: string, data: any) {
     return { error: "Failed to update profile details." }
   }
 }
-
-import { auth } from "@/../auth"
 
 export async function updateProviderAvailability(availabilityData: Array<{ day: string, startTime: string, endTime: string, isActive: boolean }>) {
   try {

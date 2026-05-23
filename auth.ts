@@ -53,6 +53,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 email: user.email,
                 role: user.role,
                 name: `${user.firstName} ${user.lastName}`,
+                image: user.image ?? null,
               }
             }
             return null
@@ -65,7 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             email: user.email,
             role: user.role,
             name: `${user.firstName} ${user.lastName}`,
-            // Image explicitly excluded to keep cookie headers small
+            image: user.image ?? null,
           }
         } catch (error) {
           console.error("Authorize Error:", error)

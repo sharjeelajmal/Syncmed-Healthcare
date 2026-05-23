@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { addDays } from "date-fns"
+import { addDays, format } from "date-fns"
 import { 
   Calendar, 
   Clock, 
@@ -84,7 +84,7 @@ export function AppointmentBookingModal({ isOpen, onClose, patientId, providers 
     if (date && selectedProvider) {
       setIsLoadingSlots(true)
       try {
-        const slots = await getProviderSlots(selectedProvider.id, date.toISOString())
+        const slots = await getProviderSlots(selectedProvider.id, format(date, "yyyy-MM-dd"))
         setAvailableSlots(slots)
       } catch (error) {
         toast.error("Failed to fetch available slots.")

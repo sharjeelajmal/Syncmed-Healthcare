@@ -33,7 +33,7 @@ import {
   CommandItem,
 } from "@/components/ui/command"
 import { PureCalendar } from "@/components/ui/pure-calendar"
-import { createAppointmentAction } from "@/app/actions/appointment.actions"
+import { createAppointmentAction, getProviderSlots } from "@/app/actions/appointment.actions"
 import { cn } from "@/lib/utils"
 
 export function AppointmentForm({ patients, providers }: { patients: any[], providers: any[] }) {
@@ -46,35 +46,38 @@ export function AppointmentForm({ patients, providers }: { patients: any[], prov
   const [openDate, setOpenDate] = React.useState(false)
   const [date, setDate] = React.useState<Date>(new Date())
   const [selectedTime, setSelectedTime] = React.useState<string>("")
+  const [availableSlots, setAvailableSlots] = React.useState<string[]>([])
+  const [isLoadingSlots, setIsLoadingSlots] = React.useState(false)
 
-  const timeSlots = Array.from({ length: 24 }).map((_, i) => {
-    const formatTime = (index: number) => {
-      const hr = Math.floor(index / 2) + 8;
-      const min = index % 2 === 0 ? '00' : '30';
-      const ampm = hr >= 12 ? 'PM' : 'AM';
-      const displayHr = hr > 12 ? hr - 12 : (hr === 0 ? 12 : hr);
-      return `${displayHr.toString().padStart(2, '0')}:${min} ${ampm}`;
-    };
-    return `${formatTime(i)} - ${formatTime(i + 1)}`;
-  });
-
-  const filteredTimeSlots = React.useMemo(() => {
-    if (!date) return timeSlots;
-    const now = new Date();
-    if (isSameDay(date, now)) {
-      return timeSlots.filter(slot => {
-        const startTimeString = slot.split(" - ")[0];
-        const [timeStr, modifier] = startTimeString.split(" ");
-        let [hours, minutes] = timeStr.split(":").map(Number);
-        if (modifier === "PM" && hours < 12) hours += 12;
-        if (modifier === "AM" && hours === 12) hours = 0;
-        const slotTime = new Date(now);
-        slotTime.setHours(hours, minutes, 0, 0);
-        return slotTime > now;
-      });
+  React.useEffect(() => {
+    if (!providerId || !date) {
+      setAvailableSlots([])
+      setSelectedTime("")
+      return
     }
-    return timeSlots;
-  }, [date, timeSlots]);
+
+    let cancelled = false
+    setIsLoadingSlots(true)
+    setSelectedTime("")
+
+    getProviderSlots(providerId, format(date, "yyyy-MM-dd"))
+      .then((slots) => {
+        if (!cancelled) setAvailableSlots(slots)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          toast.error("Failed to load provider schedule slots.")
+          setAvailableSlots([])
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingSlots(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [providerId, date])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -84,9 +87,8 @@ export function AppointmentForm({ patients, providers }: { patients: any[], prov
     }
     setIsPending(true);
     try {
-      const startTimeString = selectedTime.split(" - ")[0]; 
       const scheduledDateTime = new Date(date);
-      const [timeStr, modifier] = startTimeString.split(" ");
+      const [timeStr, modifier] = selectedTime.split(" ");
       let [hours, minutes] = timeStr.split(":").map(Number);
       if (modifier === "PM" && hours < 12) hours += 12;
       if (modifier === "AM" && hours === 12) hours = 0;
@@ -213,6 +215,7 @@ export function AppointmentForm({ patients, providers }: { patients: any[], prov
                               value={`${provider.firstName} ${provider.lastName}`}
                               onSelect={() => {
                                 setProviderId(provider.providerProfile?.id || "");
+                                setSelectedTime("");
                                 setOpenProvider(false);
                               }}
                               className="flex items-center px-3 py-3 rounded-xl cursor-pointer font-bold text-slate-700 data-[selected=true]:bg-emerald-50 data-[selected=true]:text-[#67BA2E] transition-all"
@@ -248,7 +251,11 @@ export function AppointmentForm({ patients, providers }: { patients: any[], prov
                     <PopoverContent className="w-auto p-0 z-[9999] bg-white border-slate-200 shadow-2xl rounded-2xl overflow-hidden" align="start">
                       <PureCalendar 
                         selectedDate={date} 
-                        onSelect={(newDate) => { setDate(newDate); setOpenDate(false); }} 
+                        onSelect={(newDate) => {
+                          setDate(newDate);
+                          setSelectedTime("");
+                          setOpenDate(false);
+                        }} 
                         minDate={minDate} 
                         maxDate={maxDate} 
                       />
@@ -274,8 +281,17 @@ export function AppointmentForm({ patients, providers }: { patients: any[], prov
                     </PopoverTrigger>
                     <PopoverContent side="bottom" align="start" className="w-[--radix-popover-trigger-width] max-w-[calc(100vw-2rem)] sm:w-[450px] p-4 z-[99999] bg-white border border-slate-200 shadow-2xl rounded-2xl max-h-[350px] overflow-y-auto mt-2" collisionPadding={16}>
                       <div className="grid grid-cols-2 gap-3">
-                        {filteredTimeSlots.length > 0 ? (
-                          filteredTimeSlots.map((slot) => (
+                        {!providerId ? (
+                          <div className="col-span-2 text-[10px] font-bold text-slate-400 text-center py-4">
+                            Select a provider first.
+                          </div>
+                        ) : isLoadingSlots ? (
+                          <div className="col-span-2 flex items-center justify-center gap-2 py-6 text-slate-400">
+                            <Loader2 className="size-4 animate-spin text-[#67BA2E]" />
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Loading schedule...</span>
+                          </div>
+                        ) : availableSlots.length > 0 ? (
+                          availableSlots.map((slot) => (
                             <button
                               key={slot}
                               type="button"
@@ -291,7 +307,11 @@ export function AppointmentForm({ patients, providers }: { patients: any[], prov
                             </button>
                           ))
                         ) : (
-                          <div className="col-span-2 text-[10px] font-bold text-slate-400 text-center py-4">No slots available for today.</div>
+                          <div className="col-span-2 text-[10px] font-bold text-slate-400 text-center py-4">
+                            {isSameDay(date, new Date())
+                              ? "No open slots left today for this provider."
+                              : `No availability on ${format(date, "EEEE")} — check the provider schedule.`}
+                          </div>
                         )}
                       </div>
                     </PopoverContent>

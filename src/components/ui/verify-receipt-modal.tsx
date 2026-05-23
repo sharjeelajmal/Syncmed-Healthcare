@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle2, XCircle, ExternalLink, FileText } from "lucide-react"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 import { verifyReceiptAction } from "@/app/actions/billing.actions"
 
 interface VerifyReceiptModalProps {
@@ -20,6 +21,7 @@ interface VerifyReceiptModalProps {
 }
 
 export function VerifyReceiptModal({ isOpen, onClose, appointment }: VerifyReceiptModalProps) {
+  const router = useRouter()
   const [isPending, startTransition] = React.useTransition()
 
   if (!appointment) return null
@@ -31,6 +33,7 @@ export function VerifyReceiptModal({ isOpen, onClose, appointment }: VerifyRecei
       const res = await verifyReceiptAction(appointment.id, status)
       if (res.success) {
         toast.success(status === 'PAID' ? "Payment Approved" : "Payment Rejected")
+        router.refresh()
         onClose()
       } else {
         toast.error(res.error || "Action failed")

@@ -81,8 +81,10 @@ export function PatientChatOverlay() {
 
   React.useEffect(() => {
     async function init() {
-      if (!session?.user) return; 
-      
+      if (!session?.user) return
+
+      await new Promise((resolve) => setTimeout(resolve, 800))
+
       const realUser = await getRealLoggedUserByEmail(session.user.email!);
       setPatientUser(realUser);
 

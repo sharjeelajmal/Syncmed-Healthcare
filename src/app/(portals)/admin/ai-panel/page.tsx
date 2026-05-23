@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAiDashboardStats } from "@/app/actions/ai.actions";
+import { getAiDashboardStats, getAiTokenTrend } from "@/app/actions/ai.actions";
 import { Loader2, MessageSquare, Bot, Users, Coins, Sparkles, TrendingUp, ArrowUpRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -10,13 +10,20 @@ import { cn } from "@/lib/utils";
 
 export default function AiHubOverview() {
   const [stats, setStats] = useState<any>(null);
+  const [trendData, setTrendData] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadStats() {
-      const res = await getAiDashboardStats();
-      if (res.success && res.data) {
-        setStats(res.data);
+      const [statsRes, trendRes] = await Promise.all([
+        getAiDashboardStats(),
+        getAiTokenTrend(),
+      ]);
+      if (statsRes.success && statsRes.data) {
+        setStats(statsRes.data);
+      }
+      if (trendRes.success && trendRes.data) {
+        setTrendData(trendRes.data);
       }
       setIsLoading(false);
     }
@@ -32,15 +39,14 @@ export default function AiHubOverview() {
     );
   }
 
-  // Mock trend data for SVG Smooth Area Chart (7 days)
-  const trendData = [3000, 4500, 3200, 6800, 5100, 8900, 7500];
-  const maxVal = Math.max(...trendData) * 1.2;
+  const chartValues = trendData.length > 0 ? trendData : [0, 0, 0, 0, 0, 0, 0];
+  const maxVal = Math.max(...chartValues, 1) * 1.2;
   const width = 400;
   const height = 150;
   
   // Convert data points to SVG path points
-  const points = trendData.map((val, i) => {
-    const x = (i / (trendData.length - 1)) * width;
+  const points = chartValues.map((val, i) => {
+    const x = (i / (chartValues.length - 1)) * width;
     const y = height - (val / maxVal) * height;
     return { x, y };
   });

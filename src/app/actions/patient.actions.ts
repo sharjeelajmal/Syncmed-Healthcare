@@ -193,3 +193,8 @@ export async function updatePatientDetailsAction(patientProfileId: string, formD
   }
 }
 
+export async function fetchPatientUnpaidCountAction(userId: string) {
+  const { getPatientUnpaidCount } = await import("@/lib/patient-unpaid-count")
+  return getPatientUnpaidCount(userId)
+}
+
