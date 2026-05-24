@@ -173,5 +173,6 @@ Account Status: Aakhir mein 'Authorized' ka active badge hai. Yeh indicate karta
 "In short, yeh directory admin ko pooray clinical roster ka ek clean, powerful aur bird's-eye view deti hai."
 (Video End)
 
+Complete the video
 
 
