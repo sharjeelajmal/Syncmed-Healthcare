@@ -48,8 +48,10 @@ export default async function NewAssessmentPage({ searchParams }: PageProps) {
   const sessionProvider = await getProviderProfileForSession()
 
   const [patient, provider] = await Promise.all([
-    prisma.patientProfile.findUnique({
-      where: { id: patientId },
+    prisma.patientProfile.findFirst({
+      where: {
+        OR: [{ id: patientId }, { userId: patientId }],
+      },
       include: { user: true },
     }),
     Promise.resolve({ id: sessionProvider.id }),
@@ -65,7 +67,7 @@ export default async function NewAssessmentPage({ searchParams }: PageProps) {
     <div className="min-h-screen bg-slate-50 pb-20">
       <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-8 animate-slide-up">
         {/* Navigation */}
-        <Link href={`/provider/patients/${patientId}`}>
+        <Link href={`/provider/patients/${patient.id}`}>
           <Button variant="ghost" className="text-slate-500 font-bold hover:bg-white gap-2 px-0 hover:px-4 transition-all">
             <ArrowLeft className="size-4" />
             Back to Patient Chart

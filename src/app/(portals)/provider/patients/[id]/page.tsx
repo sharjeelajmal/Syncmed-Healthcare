@@ -43,9 +43,11 @@ interface PageProps {
 export default async function PatientChartPage({ params }: PageProps) {
   const { id } = await params
 
-  // Fetch Patient Details with Assessments
-  const patient = await prisma.patientProfile.findUnique({
-    where: { id },
+  // PatientProfile.id (roster) or User.id (admin URLs)
+  const patient = await prisma.patientProfile.findFirst({
+    where: {
+      OR: [{ id }, { userId: id }],
+    },
     include: {
       user: true,
       assignedProvider: {

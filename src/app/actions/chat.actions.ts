@@ -1,5 +1,6 @@
 "use server"
 
+import { auth } from "@/../auth"
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { v2 as cloudinary } from "cloudinary"
@@ -155,26 +156,15 @@ export async function editMessageAction(messageId: string, userId: string, newCo
   }
 }
 
-// Helper function to guarantee we get the right test doctor
-async function getActiveProvider() {
-  // Priority 1: Get the provider that actually has assigned patients or appointments
-  let provider = await prisma.providerProfile.findFirst({
-    where: {
-      OR: [
-        { patients: { some: {} } },
-        { appointments: { some: {} } }
-      ]
-    },
-    include: { user: true }
-  });
+async function getSessionProvider() {
+  const session = await auth()
+  const userId = session?.user?.id
+  if (!userId) return null
 
-  // Priority 2: Fallback to any available provider
-  if (!provider) {
-    provider = await prisma.providerProfile.findFirst({
-      include: { user: true }
-    });
-  }
-  return provider;
+  return prisma.providerProfile.findUnique({
+    where: { userId },
+    include: { user: true },
+  })
 }
 
 // Helper function to guarantee we get a test patient
@@ -187,7 +177,7 @@ async function getActivePatient() {
 
 export async function getProviderContacts() {
   try {
-    const provider = await getActiveProvider();
+    const provider = await getSessionProvider();
     if (!provider) return [];
 
     const patients = await prisma.patientProfile.findMany({
@@ -248,10 +238,9 @@ export async function getProviderContacts() {
 
 export async function getMockProvider() {
   try {
-    const provider = await getActiveProvider();
+    const provider = await getSessionProvider();
     if (!provider) return null;
-    
-    // Map to plain object
+
     return {
       id: provider.user.id,
       firstName: provider.user.firstName,
