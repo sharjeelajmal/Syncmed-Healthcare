@@ -42,6 +42,7 @@ model PatientProfile {
   assignedProviderId String?          @db.Uuid
   appointments       Appointment[]
   assessments        Assessment[]
+  clinicalAssessments ClinicalAssessment[]
   assignedProvider   ProviderProfile? @relation("ProviderPatients", fields: [assignedProviderId], references: [id])
   user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoices           PaymentInvoice[]
@@ -60,6 +61,7 @@ model ProviderProfile {
   consultationFee Float            @default(150.0)
   appointments    Appointment[]
   assessments     Assessment[]
+  clinicalAssessments ClinicalAssessment[]
   availability    Availability[]
   patients        PatientProfile[] @relation("ProviderPatients")
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -109,6 +111,24 @@ model Assessment {
   provider            ProviderProfile @relation(fields: [providerId], references: [id])
 
   @@map("assessments")
+}
+
+model ClinicalAssessment {
+  id             String          @id @default(uuid()) @db.Uuid
+  patientId      String          @db.Uuid
+  providerId     String          @db.Uuid
+  totalRiskScore Int
+  riskLevel      String
+  bmi            Float
+  bmiCategory    String
+  bloodPressure  String
+  bloodGlucose   String
+  assessmentData Json
+  createdAt      DateTime        @default(now())
+  patient        PatientProfile  @relation(fields: [patientId], references: [id])
+  provider       ProviderProfile @relation(fields: [providerId], references: [id])
+
+  @@map("clinical_assessments")
 }
 
 model Message {

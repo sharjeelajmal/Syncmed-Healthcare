@@ -17,17 +17,20 @@
    value: Date | undefined
    onChange: (date: Date | undefined) => void
    placeholder?: string
+  disabled?: boolean
  }
  
- export function CustomDatePicker({ value, onChange, placeholder = "Pick a date" }: CustomDatePickerProps) {
+export function CustomDatePicker({ value, onChange, placeholder = "Pick a date", disabled = false }: CustomDatePickerProps) {
    return (
      <Popover>
        <PopoverTrigger asChild>
          <Button
            variant={"outline"}
+          disabled={disabled}
            className={cn(
              "h-12 w-full justify-start text-left font-bold border-slate-300 bg-white hover:bg-slate-50 transition-all rounded-md",
-             !value && "text-slate-400"
+            !value && "text-slate-400",
+            disabled && "opacity-60 cursor-not-allowed"
            )}
          >
            <CalendarIcon className="mr-2 h-4 w-4 text-[#67BA2E]" />
