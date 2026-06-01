@@ -2,7 +2,6 @@
  
  import * as React from "react"
  import { 
-   format, 
    getDaysInMonth, 
    startOfMonth, 
    setMonth, 
@@ -25,7 +24,9 @@
    const [activeDate, setActiveDate] = React.useState(selectedDate || new Date())
  
    const currentYear = new Date().getFullYear()
-   const years = Array.from({ length: currentYear - 1899 }, (_, i) => currentYear - i)
+   const minYear = minDate?.getFullYear() ?? 1900
+   const maxYear = maxDate?.getFullYear() ?? Math.max(currentYear, minYear)
+   const years = Array.from({ length: Math.max(maxYear - minYear + 1, 1) }, (_, i) => maxYear - i)
    
    const months = [
      "Jan", "Feb", "Mar", "Apr", "May", "Jun",

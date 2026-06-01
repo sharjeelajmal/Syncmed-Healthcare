@@ -19,6 +19,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -28,7 +35,21 @@ import { updatePatientDetailsAction } from "@/app/actions/patient.actions"
 import { cn } from "@/lib/utils"
 
 interface PatientEditFormProps {
-  patient: any
+  patient: {
+    id: string
+    dateOfBirth: Date | string
+    phone: string
+    address: string | null
+    activeMedications?: string[]
+    allergies?: string[]
+    chronicConditions?: string[]
+    membershipStatus?: string | null
+    user: {
+      firstName: string
+      lastName: string
+      email: string
+    }
+  }
   isReadOnly?: boolean
 }
 
@@ -36,6 +57,7 @@ export default function PatientEditForm({ patient, isReadOnly }: PatientEditForm
   const router = useRouter()
   const [isPending, setIsPending] = React.useState(false)
   const [date, setDate] = React.useState<Date>(new Date(patient.dateOfBirth))
+  const [membershipStatus, setMembershipStatus] = React.useState(patient.membershipStatus ?? "SILVER")
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -44,6 +66,7 @@ export default function PatientEditForm({ patient, isReadOnly }: PatientEditForm
     try {
       const formData = new FormData(e.currentTarget);
       formData.set("dob", date.toISOString());
+      formData.set("membershipStatus", membershipStatus);
       
       const res = await updatePatientDetailsAction(patient.id, formData);
       if (res?.error) { 
@@ -53,7 +76,7 @@ export default function PatientEditForm({ patient, isReadOnly }: PatientEditForm
         router.push("/admin/patients");
         router.refresh();
       }
-    } catch (err: any) { 
+    } catch {
       toast.error("An unexpected system error occurred."); 
     } finally {
       setIsPending(false);
@@ -163,13 +186,38 @@ export default function PatientEditForm({ patient, isReadOnly }: PatientEditForm
             <Input 
               id="address" 
               name="address" 
-              defaultValue={patient.address}
+              defaultValue={patient.address ?? ""}
               placeholder="e.g. 123 Health St, Medical City"
               readOnly={isReadOnly}
               disabled={isReadOnly}
               className={cn("input-premium pl-11", isReadOnly && "bg-slate-50 border-slate-100 cursor-not-allowed opacity-80")}
             />
           </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="membershipStatus" className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Membership Status</Label>
+          <Select value={membershipStatus} onValueChange={setMembershipStatus} disabled={isReadOnly}>
+            <SelectTrigger
+              id="membershipStatus"
+              className={cn(
+                "input-premium h-12 rounded-md border-slate-200 bg-white font-bold text-slate-700 focus:ring-[#67BA2E]",
+                isReadOnly && "bg-slate-50 border-slate-100 cursor-not-allowed opacity-80"
+              )}
+            >
+              <SelectValue placeholder="Select membership tier" />
+            </SelectTrigger>
+            <SelectContent className="z-[9999] rounded-xl border-slate-100 bg-white shadow-2xl">
+              <SelectItem value="PLATINUM" className="cursor-pointer py-3 font-bold text-slate-700 focus:bg-emerald-50 focus:text-[#4A8A1C]">
+                PLATINUM
+              </SelectItem>
+              <SelectItem value="GOLD" className="cursor-pointer py-3 font-bold text-slate-700 focus:bg-emerald-50 focus:text-[#4A8A1C]">
+                GOLD
+              </SelectItem>
+              <SelectItem value="SILVER" className="cursor-pointer py-3 font-bold text-slate-700 focus:bg-emerald-50 focus:text-[#4A8A1C]">
+                SILVER
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       

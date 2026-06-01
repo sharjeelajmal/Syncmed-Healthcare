@@ -2,7 +2,6 @@
 
 import { auth } from "@/../auth"
 import prisma from "@/lib/prisma"
-import { revalidatePath } from "next/cache"
 import { v2 as cloudinary } from "cloudinary"
 import { pusherServer } from "@/lib/pusher"
 
@@ -12,11 +11,60 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
+async function getSessionActor() {
+  const session = await auth()
+  const userId = session?.user?.id
+  const role = (session?.user as { role?: string } | undefined)?.role
+  if (!userId || !role) {
+    throw new Error("Unauthorized")
+  }
+  return { userId, role }
+}
+
+async function assertSessionUser(expectedUserId: string) {
+  const actor = await getSessionActor()
+  if (actor.userId !== expectedUserId) {
+    throw new Error("Unauthorized user context")
+  }
+  return actor
+}
+
+async function canUsersChat(userAId: string, userBId: string) {
+  const users = await prisma.user.findMany({
+    where: { id: { in: [userAId, userBId] } },
+    include: {
+      providerProfile: { select: { id: true } },
+      patientProfile: { select: { id: true, assignedProviderId: true } },
+    },
+  })
+
+  if (users.length !== 2) return false
+
+  const [a, b] = users
+  if (a.role === "ADMIN" || b.role === "ADMIN") return true
+
+  const providerSide = a.role === "PROVIDER" ? a : b.role === "PROVIDER" ? b : null
+  const patientSide = a.role === "PATIENT" ? a : b.role === "PATIENT" ? b : null
+
+  if (!providerSide || !patientSide) return false
+  if (!providerSide.providerProfile || !patientSide.patientProfile) return false
+
+  return patientSide.patientProfile.assignedProviderId === providerSide.providerProfile.id
+}
+
+async function assertChatPairAccess(userAId: string, userBId: string) {
+  const allowed = await canUsersChat(userAId, userBId)
+  if (!allowed) {
+    throw new Error("Chat access denied")
+  }
+}
+
 /**
  * Modern chat attachment upload with type detection
  */
 export async function uploadChatAttachmentAction(formData: FormData) {
   try {
+    await getSessionActor()
     const file = formData.get('file') as File | null
     if (!file) throw new Error("No file provided")
 
@@ -54,6 +102,9 @@ export async function uploadChatAttachmentAction(formData: FormData) {
  */
 export async function sendMessageAction(senderId: string, receiverId: string, content: string, type: string = "TEXT") {
   try {
+    await assertSessionUser(senderId)
+    await assertChatPairAccess(senderId, receiverId)
+
     const newMessage = await prisma.message.create({
       data: { 
         senderId, 
@@ -77,6 +128,7 @@ export async function sendMessageAction(senderId: string, receiverId: string, co
  */
 export async function updatePresenceAction(userId: string) {
   try {
+    await assertSessionUser(userId)
     await prisma.user.update({
       where: { id: userId },
       data: { lastActive: new Date() }
@@ -89,8 +141,10 @@ export async function updatePresenceAction(userId: string) {
  */
 export async function deleteMessageAction(messageId: string, userId: string) {
   try {
+    await assertSessionUser(userId)
     const message = await prisma.message.findUnique({ where: { id: messageId } })
     if (!message || message.senderId !== userId) throw new Error("Unauthorized")
+    await assertChatPairAccess(message.senderId, message.receiverId)
 
     const now = new Date()
     const fiveMins = 5 * 60 * 1000
@@ -125,8 +179,10 @@ export async function deleteMessageAction(messageId: string, userId: string) {
  */
 export async function editMessageAction(messageId: string, userId: string, newContent: string) {
   try {
+    await assertSessionUser(userId)
     const message = await prisma.message.findUnique({ where: { id: messageId } })
     if (!message || message.senderId !== userId) throw new Error("Unauthorized")
+    await assertChatPairAccess(message.senderId, message.receiverId)
 
     const now = new Date()
     const fiveMins = 5 * 60 * 1000
@@ -167,21 +223,13 @@ async function getSessionProvider() {
   })
 }
 
-// Helper function to guarantee we get a test patient
-async function getActivePatient() {
-  let patient = await prisma.patientProfile.findFirst({
-    include: { user: true }
-  });
-  return patient;
-}
-
 export async function getProviderContacts() {
   try {
     const provider = await getSessionProvider();
     if (!provider) return [];
 
     const patients = await prisma.patientProfile.findMany({
-      where: { OR: [{ assignedProviderId: provider.id }, { appointments: { some: { providerId: provider.id } } }] },
+      where: { assignedProviderId: provider.id },
       include: { user: true }
     });
     const validPatients = patients.filter(p => p.user != null);
@@ -270,6 +318,12 @@ export async function getMockPatient() {
 
 export async function getRealLoggedUserByEmail(email: string) {
   try {
+    const actor = await getSessionActor()
+    const normalizedEmail = email.trim().toLowerCase()
+    const sessionEmail = (await auth())?.user?.email?.toLowerCase()
+    if (actor.role !== "ADMIN" && sessionEmail !== normalizedEmail) {
+      return null
+    }
     return await prisma.user.findUnique({ where: { email } });
   } catch (error) { 
     console.error("Error fetching real user:", error);
@@ -279,11 +333,15 @@ export async function getRealLoggedUserByEmail(email: string) {
 
 export async function getPatientContacts(patientUserId: string) {
   try {
+    const actor = await assertSessionUser(patientUserId)
+    if (actor.role !== "PATIENT" && actor.role !== "ADMIN") {
+      return []
+    }
+
     const patientProfile = await prisma.patientProfile.findUnique({
       where: { userId: patientUserId },
       include: {
         assignedProvider: { include: { user: true } },
-        appointments: { include: { provider: { include: { user: true } } } }
       }
     });
 
@@ -296,15 +354,6 @@ export async function getPatientContacts(patientUserId: string) {
         specialty: patientProfile.assignedProvider.specialty
       });
     }
-    patientProfile.appointments?.forEach(apt => {
-      if (apt.provider?.user) {
-        providerMap.set(apt.provider.user.id, {
-          ...apt.provider.user,
-          specialty: apt.provider.specialty
-        });
-      }
-    });
-
     const providers = Array.from(providerMap.values());
     const providerUserIds = providers.map(p => p.id);
 
@@ -353,6 +402,9 @@ export async function getPatientContacts(patientUserId: string) {
 }
 export async function getChatHistory(user1Id: string, user2Id: string) {
   try {
+    await assertSessionUser(user1Id)
+    await assertChatPairAccess(user1Id, user2Id)
+
     const messages = await prisma.message.findMany({
       where: {
         OR: [
@@ -372,6 +424,9 @@ export async function getChatHistory(user1Id: string, user2Id: string) {
  */
 export async function markMessagesAsReadAction(currentUserId: string, chatPartnerId: string) {
   try {
+    await assertSessionUser(currentUserId)
+    await assertChatPairAccess(currentUserId, chatPartnerId)
+
     await prisma.message.updateMany({
       where: { 
         senderId: chatPartnerId, 
@@ -399,6 +454,7 @@ export async function markMessagesAsReadAction(currentUserId: string, chatPartne
  */
 export async function getGlobalUnreadCount(currentUserId: string) {
   try {
+    await assertSessionUser(currentUserId)
     const count = await prisma.message.count({
       where: {
         receiverId: currentUserId,
@@ -422,6 +478,9 @@ export async function getGlobalUnreadCount(currentUserId: string) {
  */
 export async function clearChatForUserAction(userId: string, otherUserId: string) {
   try {
+    await assertSessionUser(userId)
+    await assertChatPairAccess(userId, otherUserId)
+
     const messages = await prisma.message.findMany({
       where: {
         OR: [

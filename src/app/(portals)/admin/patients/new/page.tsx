@@ -3,14 +3,21 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { ArrowLeft, UserPlus, ShieldCheck, Loader2, Calendar as CalendarIcon, Phone, CheckCircle, Eye, EyeOff } from "lucide-react"
+import { ArrowLeft, UserPlus, ShieldCheck, Loader2, Calendar as CalendarIcon, Phone, Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { 
   Popover,
   PopoverContent,
@@ -18,14 +25,13 @@ import {
 } from "@/components/ui/popover"
 import { PureCalendar } from "@/components/ui/pure-calendar"
 import { createPatientAction } from "@/app/actions/patient.actions"
-import { cn } from "@/lib/utils"
 
 export default function NewPatientPage() {
   const router = useRouter()
   const [isPending, setIsPending] = React.useState(false)
   const [showPassword, setShowPassword] = React.useState(false)
   const [date, setDate] = React.useState<Date>(new Date())
-  const [showSuccess, setShowSuccess] = React.useState(false)
+  const [membershipStatus, setMembershipStatus] = React.useState("SILVER")
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -36,6 +42,7 @@ export default function NewPatientPage() {
         return;
       }
       formData.set("dob", date.toISOString());
+      formData.set("membershipStatus", membershipStatus);
       
       setIsPending(true);
       const res = await createPatientAction(formData);
@@ -48,7 +55,7 @@ export default function NewPatientPage() {
         router.push('/admin/patients'); 
         router.refresh();
       }
-    } catch (err: any) { 
+    } catch {
       toast.error("An unexpected error occurred."); 
       setIsPending(false);
     }
@@ -167,6 +174,28 @@ export default function NewPatientPage() {
                       <PureCalendar selectedDate={date} onSelect={setDate} maxDate={new Date()} />
                     </PopoverContent>
                   </Popover>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="membershipStatus" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Membership Status</Label>
+                  <Select value={membershipStatus} onValueChange={setMembershipStatus}>
+                    <SelectTrigger
+                      id="membershipStatus"
+                      className="input-premium h-12 rounded-md border-slate-200 bg-white font-bold text-slate-700 focus:ring-[#67BA2E]"
+                    >
+                      <SelectValue placeholder="Select membership tier" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[9999] rounded-xl border-slate-100 bg-white shadow-2xl">
+                      <SelectItem value="PLATINUM" className="cursor-pointer py-3 font-bold text-slate-700 focus:bg-emerald-50 focus:text-[#4A8A1C]">
+                        PLATINUM
+                      </SelectItem>
+                      <SelectItem value="GOLD" className="cursor-pointer py-3 font-bold text-slate-700 focus:bg-emerald-50 focus:text-[#4A8A1C]">
+                        GOLD
+                      </SelectItem>
+                      <SelectItem value="SILVER" className="cursor-pointer py-3 font-bold text-slate-700 focus:bg-emerald-50 focus:text-[#4A8A1C]">
+                        SILVER
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

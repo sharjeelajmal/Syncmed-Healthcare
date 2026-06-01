@@ -35,6 +35,7 @@ model User {
 model PatientProfile {
   id                 String           @id @default(uuid()) @db.Uuid
   userId             String           @unique @db.Uuid
+  membershipStatus   MembershipStatus @default(SILVER)
   dateOfBirth        DateTime
   phone              String
   address            String
@@ -56,6 +57,7 @@ model PatientProfile {
 model ProviderProfile {
   id              String           @id @default(uuid()) @db.Uuid
   userId          String           @unique @db.Uuid
+  providerType    ProviderType     @default(MEDICAL_DOCTOR)
   specialty       String
   licenseNumber   String
   consultationFee Float            @default(150.0)
@@ -106,11 +108,44 @@ model Assessment {
   type                AssessmentType
   data                Json
   patientSignatureUrl String?
+  signatureUrl        String?
+  weightKg            Float?
+  heightInches        Float?
+  soapNotes           String?
+  followUpDate        DateTime?
   createdAt           DateTime        @default(now())
   patient             PatientProfile  @relation(fields: [patientId], references: [id])
   provider            ProviderProfile @relation(fields: [providerId], references: [id])
+  medications         Medication[]
+  diagnoses           Diagnosis[]
 
   @@map("assessments")
+}
+
+model Medication {
+  id           String     @id @default(uuid()) @db.Uuid
+  assessmentId String     @db.Uuid
+  name         String
+  dosage       String
+  frequency    String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+  @@map("medications")
+}
+
+model Diagnosis {
+  id           String     @id @default(uuid()) @db.Uuid
+  assessmentId String     @db.Uuid
+  name         String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+  @@map("diagnoses")
 }
 
 model ClinicalAssessment {
@@ -166,6 +201,17 @@ enum UserRole {
   ADMIN
   PROVIDER
   PATIENT
+}
+
+enum ProviderType {
+  MEDICAL_DOCTOR
+  REGISTERED_NURSE
+}
+
+enum MembershipStatus {
+  PLATINUM
+  GOLD
+  SILVER
 }
 
 enum AppointmentStatus {

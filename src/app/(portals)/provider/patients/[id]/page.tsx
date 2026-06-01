@@ -21,6 +21,7 @@ import {
   Shield
 } from "lucide-react"
 import { format, differenceInYears } from "date-fns"
+import { auth } from "@/../auth"
 
 import prisma from "@/lib/prisma"
 import { Button } from "@/components/ui/button"
@@ -42,11 +43,44 @@ interface PageProps {
 
 export default async function PatientChartPage({ params }: PageProps) {
   const { id } = await params
+  const session = await auth()
+  const sessionUserId = session?.user?.id
+  const role = (session?.user as { role?: string } | undefined)?.role
+
+  if (!sessionUserId || !role) {
+    notFound()
+  }
+
+  let providerProfileId: string | null = null
+  if (role === "PROVIDER") {
+    const providerProfile = await prisma.providerProfile.findUnique({
+      where: { userId: sessionUserId },
+      select: { id: true },
+    })
+    if (!providerProfile) {
+      notFound()
+    }
+    providerProfileId = providerProfile.id
+  } else if (role !== "ADMIN") {
+    notFound()
+  }
 
   // PatientProfile.id (roster) or User.id (admin URLs)
   const patient = await prisma.patientProfile.findFirst({
     where: {
-      OR: [{ id }, { userId: id }],
+      ...(providerProfileId
+        ? {
+            AND: [
+              { OR: [{ id }, { userId: id }] },
+              {
+                OR: [
+                  { assignedProviderId: providerProfileId },
+                  { appointments: { some: { providerId: providerProfileId } } },
+                ],
+              },
+            ],
+          }
+        : { OR: [{ id }, { userId: id }] }),
     },
     include: {
       user: true,
@@ -60,7 +94,9 @@ export default async function PatientChartPage({ params }: PageProps) {
         include: {
           provider: {
             include: { user: true }
-          }
+          },
+          medications: true,
+          diagnoses: true
         }
       },
       appointments: {

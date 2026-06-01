@@ -4,8 +4,19 @@ import type { Prisma } from "@prisma/client"
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { auth } from "@/../auth"
 
 export type AssessmentRiskLevel = "LOW" | "MODERATE" | "HIGH"
+
+export interface AssessmentMedicationInput {
+  name: string
+  dosage: string
+  frequency: string
+}
+
+export interface AssessmentDiagnosisInput {
+  name: string
+}
 
 export interface SubmitAssessmentPayload {
   patientId: string
@@ -16,6 +27,13 @@ export interface SubmitAssessmentPayload {
   bloodPressure: string
   bloodGlucose: string
   assessmentData: Prisma.InputJsonValue
+  medications?: AssessmentMedicationInput[]
+  diagnoses?: AssessmentDiagnosisInput[]
+  signatureUrl?: string
+  weightKg?: number
+  heightInches?: number
+  soapNotes?: string
+  followUpDate?: string | Date | null
   revalidatePathname?: string
 }
 
@@ -33,6 +51,65 @@ function deriveRiskLevel(totalRiskScore: number): AssessmentRiskLevel {
   }
 
   return "HIGH"
+}
+
+function parseOptionalDate(input?: string | Date | null): Date | null {
+  if (!input) return null
+  const next = input instanceof Date ? input : new Date(input)
+  return Number.isNaN(next.getTime()) ? null : next
+}
+
+function parseNumberValue(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string") {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  return null
+}
+
+function sanitizeMedicationEntries(
+  payloadMeds: AssessmentMedicationInput[] | undefined,
+  dataMeds: unknown
+): AssessmentMedicationInput[] {
+  const source = Array.isArray(payloadMeds)
+    ? payloadMeds
+    : Array.isArray(dataMeds)
+      ? dataMeds
+      : []
+
+  return source
+    .map((entry) => {
+      const value =
+        typeof entry === "object" && entry !== null ? (entry as Record<string, unknown>) : {}
+      return {
+        name: String(value.name ?? "").trim(),
+        dosage: String(value.dosage ?? "").trim(),
+        frequency: String(value.frequency ?? "").trim(),
+      }
+    })
+    .filter((entry) => entry.name && entry.dosage && entry.frequency)
+}
+
+function sanitizeDiagnosisEntries(
+  payloadDiagnoses: AssessmentDiagnosisInput[] | undefined,
+  dataDiagnoses: unknown
+): AssessmentDiagnosisInput[] {
+  const source = Array.isArray(payloadDiagnoses)
+    ? payloadDiagnoses
+    : Array.isArray(dataDiagnoses)
+      ? dataDiagnoses
+      : []
+
+  return source
+    .map((entry) => {
+      const value =
+        typeof entry === "object" && entry !== null ? (entry as Record<string, unknown>) : null
+      return {
+        name: String(value?.name ?? entry ?? "").trim(),
+      }
+    })
+    .filter((entry) => entry.name)
 }
 
 function validateSubmitAssessmentPayload(payload: SubmitAssessmentPayload): void {
@@ -69,29 +146,160 @@ function validateSubmitAssessmentPayload(payload: SubmitAssessmentPayload): void
   }
 }
 
+async function assertAssessmentAccess(patientId: string, providerId: string) {
+  const session = await auth()
+  const role = (session?.user as { role?: string } | undefined)?.role
+  const sessionUserId = session?.user?.id
+
+  if (!sessionUserId || !role) {
+    throw new Error("Unauthorized")
+  }
+
+  if (role === "ADMIN") {
+    return
+  }
+
+  if (role !== "PROVIDER") {
+    throw new Error("Unauthorized")
+  }
+
+  const provider = await prisma.providerProfile.findUnique({
+    where: { userId: sessionUserId },
+    select: { id: true },
+  })
+
+  if (!provider || provider.id !== providerId) {
+    throw new Error("Forbidden provider access")
+  }
+
+  const patient = await prisma.patientProfile.findUnique({
+    where: { id: patientId },
+    select: {
+      assignedProviderId: true,
+      appointments: {
+        where: { providerId: provider.id },
+        select: { id: true },
+        take: 1,
+      },
+    },
+  })
+
+  const isAssignedProvider = patient?.assignedProviderId === provider.id
+  const hasProviderAppointment = Boolean(patient?.appointments?.length)
+
+  if (!patient || (!isAssignedProvider && !hasProviderAppointment)) {
+    throw new Error("Provider is not assigned to this patient")
+  }
+}
+
 export async function submitAssessment(
   payload: SubmitAssessmentPayload
 ): Promise<SubmitAssessmentResult> {
   try {
     validateSubmitAssessmentPayload(payload)
 
-    const riskLevel = deriveRiskLevel(payload.totalRiskScore)
+    const patientId = payload.patientId.trim()
+    const providerId = payload.providerId.trim()
+    await assertAssessmentAccess(patientId, providerId)
 
-    const assessment = await prisma.clinicalAssessment.create({
-      data: {
-        patientId: payload.patientId.trim(),
-        providerId: payload.providerId.trim(),
-        totalRiskScore: payload.totalRiskScore,
-        riskLevel,
-        bmi: payload.bmi,
-        bmiCategory: payload.bmiCategory.trim(),
-        bloodPressure: payload.bloodPressure.trim(),
-        bloodGlucose: payload.bloodGlucose.trim(),
-        assessmentData: payload.assessmentData,
-      },
+    const riskLevel = deriveRiskLevel(payload.totalRiskScore)
+    const assessmentData =
+      typeof payload.assessmentData === "object" && payload.assessmentData !== null
+        ? (payload.assessmentData as Record<string, unknown>)
+        : {}
+    const assessmentBmiVitals =
+      typeof assessmentData?.bmiVitals === "object" && assessmentData.bmiVitals !== null
+        ? (assessmentData.bmiVitals as Record<string, unknown>)
+        : {}
+    const assessmentSummary =
+      typeof assessmentData?.summary === "object" && assessmentData.summary !== null
+        ? (assessmentData.summary as Record<string, unknown>)
+        : {}
+    const assessmentSignatures =
+      typeof assessmentData?.signatures === "object" && assessmentData.signatures !== null
+        ? (assessmentData.signatures as Record<string, unknown>)
+        : {}
+
+    const weightKg =
+      parseNumberValue(payload.weightKg) ??
+      parseNumberValue(assessmentBmiVitals?.weightKg) ??
+      null
+    const heightInches =
+      parseNumberValue(payload.heightInches) ??
+      parseNumberValue(assessmentBmiVitals?.heightInches) ??
+      (() => {
+        const heightCm = parseNumberValue(assessmentBmiVitals?.heightCm)
+        if (!heightCm) return null
+        return Number((heightCm / 2.54).toFixed(2))
+      })()
+
+    const signatureUrl =
+      payload.signatureUrl?.trim() ||
+      String(assessmentSignatures?.assessorSignature ?? "").trim() ||
+      null
+    const soapNotes =
+      payload.soapNotes?.trim() ||
+      String(assessmentSummary?.q98OverallAssessmentSummary ?? "").trim() ||
+      null
+    const followUpDate = parseOptionalDate(payload.followUpDate)
+
+    const medications = sanitizeMedicationEntries(payload.medications, assessmentData?.medications)
+    const diagnoses = sanitizeDiagnosisEntries(payload.diagnoses, assessmentData?.diagnoses)
+
+    const assessment = await prisma.$transaction(async (tx) => {
+      const createdAssessment = await tx.assessment.create({
+        data: {
+          patientId,
+          providerId,
+          type: "COMPLEX",
+          data: payload.assessmentData,
+          patientSignatureUrl: signatureUrl,
+          signatureUrl,
+          weightKg,
+          heightInches,
+          soapNotes,
+          followUpDate,
+        },
+      })
+
+      if (medications.length > 0) {
+        await tx.medication.createMany({
+          data: medications.map((item) => ({
+            assessmentId: createdAssessment.id,
+            name: item.name,
+            dosage: item.dosage,
+            frequency: item.frequency,
+          })),
+        })
+      }
+
+      if (diagnoses.length > 0) {
+        await tx.diagnosis.createMany({
+          data: diagnoses.map((item) => ({
+            assessmentId: createdAssessment.id,
+            name: item.name,
+          })),
+        })
+      }
+
+      await tx.clinicalAssessment.create({
+        data: {
+          patientId,
+          providerId,
+          totalRiskScore: payload.totalRiskScore,
+          riskLevel,
+          bmi: payload.bmi,
+          bmiCategory: payload.bmiCategory.trim(),
+          bloodPressure: payload.bloodPressure.trim(),
+          bloodGlucose: payload.bloodGlucose.trim(),
+          assessmentData: payload.assessmentData,
+        },
+      })
+
+      return createdAssessment
     })
 
-    revalidatePath(payload.revalidatePathname ?? `/provider/patients/${payload.patientId}`)
+    revalidatePath(payload.revalidatePathname ?? `/provider/patients/${patientId}`)
 
     return {
       success: true,
@@ -110,20 +318,84 @@ export async function submitAssessment(
 export async function createAssessmentAction(
   patientId: string, 
   providerId: string, 
-  data: any, 
+  data: Prisma.InputJsonValue, 
   signatureBase64?: string,
   additionalCharges: number = 0
 ) {
   try {
-    // 1. Create the assessment record in Prisma with signature
-    const assessment = await prisma.assessment.create({
-      data: {
-        patientId,
-        providerId,
-        type: "COMPLEX", // Standard clinical assessment
-        data: data, // Store vitals and notes as JSON
-        patientSignatureUrl: signatureBase64 || null,
+    await assertAssessmentAccess(patientId, providerId)
+
+    const dataObject =
+      typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {}
+
+    const medications = sanitizeMedicationEntries(undefined, dataObject?.medications)
+    const diagnoses = sanitizeDiagnosisEntries(undefined, dataObject?.diagnoses)
+    const bmiVitals =
+      typeof dataObject?.bmiVitals === "object" && dataObject.bmiVitals !== null
+        ? (dataObject.bmiVitals as Record<string, unknown>)
+        : {}
+    const summary =
+      typeof dataObject?.summary === "object" && dataObject.summary !== null
+        ? (dataObject.summary as Record<string, unknown>)
+        : {}
+    const weightKg = parseNumberValue(dataObject?.weightKg) ?? parseNumberValue(bmiVitals?.weightKg)
+    const heightInches =
+      parseNumberValue(dataObject?.heightInches) ??
+      parseNumberValue(bmiVitals?.heightInches) ??
+      (() => {
+        const heightCm = parseNumberValue(bmiVitals?.heightCm)
+        if (!heightCm) return null
+        return Number((heightCm / 2.54).toFixed(2))
+      })()
+    const soapNotes =
+      String(dataObject?.soapNotes ?? "").trim() ||
+      String(summary?.q98OverallAssessmentSummary ?? "").trim() ||
+      null
+    const followUpDate = parseOptionalDate(
+      (typeof dataObject?.followUpDate === "string" || dataObject?.followUpDate instanceof Date
+        ? dataObject.followUpDate
+        : null) as string | Date | null
+    )
+    const signatureUrl = signatureBase64 || String(dataObject?.signatureUrl ?? "").trim() || null
+
+    // 1. Create the assessment record in Prisma with normalized relations
+    await prisma.$transaction(async (tx) => {
+      const created = await tx.assessment.create({
+        data: {
+          patientId,
+          providerId,
+          type: "COMPLEX",
+          data,
+          patientSignatureUrl: signatureUrl,
+          signatureUrl,
+          weightKg,
+          heightInches,
+          soapNotes,
+          followUpDate,
+        },
+      })
+
+      if (medications.length > 0) {
+        await tx.medication.createMany({
+          data: medications.map((item) => ({
+            assessmentId: created.id,
+            name: item.name,
+            dosage: item.dosage,
+            frequency: item.frequency,
+          })),
+        })
       }
+
+      if (diagnoses.length > 0) {
+        await tx.diagnosis.createMany({
+          data: diagnoses.map((item) => ({
+            assessmentId: created.id,
+            name: item.name,
+          })),
+        })
+      }
+
+      return created
     })
 
     // 2. Find the active appointment for this patient/provider to update the billing amount
@@ -165,12 +437,12 @@ export async function createAssessmentAction(
     }
 
 
-    // 2. Revalidate paths
+    // 4. Revalidate paths
     revalidatePath(`/provider/patients/${patientId}`)
     revalidatePath("/provider/dashboard")
     
-  } catch (err: any) {
-    if (err.message === "NEXT_REDIRECT") throw err; // Next.js redirect special error
+  } catch (err: unknown) {
+    if ((err as { message?: string })?.message === "NEXT_REDIRECT") throw err; // Next.js redirect special error
     console.error("[CRITICAL_CLINICAL_ERROR]:", err)
     return { error: "Failed to finalize assessment. Please check system integrity." }
   }

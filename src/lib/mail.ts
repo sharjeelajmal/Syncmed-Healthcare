@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer'
+import nodemailer from "nodemailer"
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -118,6 +118,92 @@ export async function sendLeadConfirmationEmail(lead: {
     })
   } catch (error) {
     console.error("Error sending user confirmation email:", error)
+  }
+}
+
+function getPortalLoginUrl(): string {
+  return (
+    process.env.PORTAL_LOGIN_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.APP_URL ||
+    "http://localhost:3000"
+  )
+}
+
+export async function sendAccountWelcomeEmail(payload: {
+  to: string
+  fullName: string
+  roleLabel: "Provider" | "Patient"
+  loginEmail: string
+  temporaryPassword: string
+}) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.log(`[MAIL FALLBACK] SMTP credentials missing. Welcome email for: ${payload.to}`)
+    return
+  }
+
+  const loginUrl = getPortalLoginUrl()
+
+  try {
+    await transporter.sendMail({
+      from: `"SyncMed Concierge" <${process.env.SMTP_USER}>`,
+      to: payload.to,
+      subject: `Welcome to SyncMed ${payload.roleLabel} Portal`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+          <div style="background: #67BA2E; color: white; padding: 20px 24px;">
+            <h2 style="margin: 0; font-size: 20px;">Welcome to SyncMed</h2>
+            <p style="margin: 6px 0 0 0; opacity: 0.9;">Your ${payload.roleLabel.toLowerCase()} account is now active.</p>
+          </div>
+          <div style="padding: 20px 24px; color: #334155;">
+            <p>Hello ${payload.fullName},</p>
+            <p>Your administrator has created your SyncMed account. Use the credentials below to sign in:</p>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin: 14px 0;">
+              <p style="margin: 0 0 8px 0;"><strong>Login Email:</strong> ${payload.loginEmail}</p>
+              <p style="margin: 0;"><strong>Temporary Password:</strong> ${payload.temporaryPassword}</p>
+            </div>
+            <p style="margin: 14px 0;">Portal login: <a href="${loginUrl}" target="_blank" rel="noreferrer">${loginUrl}</a></p>
+            <p style="margin: 14px 0 0 0;">For security, please change your password immediately after first sign-in.</p>
+          </div>
+        </div>
+      `,
+    })
+  } catch (error) {
+    console.error("Error sending welcome email:", error)
+  }
+}
+
+export async function sendProviderAssignmentEmail(payload: {
+  to: string
+  providerName: string
+  patientName: string
+  patientId: string
+}) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.log(`[MAIL FALLBACK] SMTP credentials missing. Assignment email for: ${payload.to}`)
+    return
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"SyncMed Concierge" <${process.env.SMTP_USER}>`,
+      to: payload.to,
+      subject: `New Patient Assignment: ${payload.patientName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; color: #334155;">
+          <h2 style="margin: 0 0 8px 0; color: #0f172a;">SyncMed Assignment Notification</h2>
+          <p style="margin: 0 0 12px 0;">Dear ${payload.providerName},</p>
+          <p style="margin: 0 0 12px 0;">A patient has been assigned to your clinical panel.</p>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+            <p style="margin: 0 0 8px 0;"><strong>Patient:</strong> ${payload.patientName}</p>
+            <p style="margin: 0;"><strong>Patient ID:</strong> ${payload.patientId}</p>
+          </div>
+          <p style="margin: 14px 0 0 0;">Please review the patient chart in SyncMed at your earliest convenience.</p>
+        </div>
+      `,
+    })
+  } catch (error) {
+    console.error("Error sending provider assignment email:", error)
   }
 }
 

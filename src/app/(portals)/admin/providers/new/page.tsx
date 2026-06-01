@@ -7,9 +7,16 @@ import { ArrowLeft, UserPlus, ShieldCheck, Loader2, Eye, EyeOff } from "lucide-r
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { createProviderAction } from "@/app/actions/provider.actions"
 
 export default function NewProviderPage() {
@@ -133,6 +140,25 @@ export default function NewProviderPage() {
                     required 
                     className="input-premium"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="providerType" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Provider Type</Label>
+                  <Select name="providerType" defaultValue="MEDICAL_DOCTOR">
+                    <SelectTrigger
+                      id="providerType"
+                      className="input-premium h-12 rounded-md border-slate-200 bg-white font-bold text-slate-700 focus:ring-[#67BA2E]"
+                    >
+                      <SelectValue placeholder="Select provider type" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[9999] rounded-xl border-slate-100 bg-white shadow-2xl">
+                      <SelectItem value="MEDICAL_DOCTOR" className="cursor-pointer py-3 font-bold text-slate-700 focus:bg-emerald-50 focus:text-[#4A8A1C]">
+                        Medical Doctor
+                      </SelectItem>
+                      <SelectItem value="REGISTERED_NURSE" className="cursor-pointer py-3 font-bold text-slate-700 focus:bg-emerald-50 focus:text-[#4A8A1C]">
+                        Registered Nurse (RN)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="consultationFee" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Consultation Fee ($)</Label>

@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
 import { auth } from "@/../auth"
+import { sendAccountWelcomeEmail } from "@/lib/mail"
 
 async function assertAdmin() {
   const session = await auth()
@@ -14,6 +15,9 @@ async function assertAdmin() {
 }
 
 export async function createProviderAction(formData: FormData) {
+  const admin = await assertAdmin()
+  if (!admin.ok) return { error: admin.error }
+
   try {
     const firstName = formData.get("firstName") as string
     const lastName = formData.get("lastName") as string
@@ -21,6 +25,9 @@ export async function createProviderAction(formData: FormData) {
     const password = formData.get("password") as string
     const specialty = formData.get("specialty") as string
     const licenseNumber = formData.get("licenseNumber") as string
+    const providerTypeValue = formData.get("providerType")
+    const providerType =
+      providerTypeValue === "REGISTERED_NURSE" ? "REGISTERED_NURSE" : "MEDICAL_DOCTOR"
     const consultationFee = parseFloat(formData.get("consultationFee") as string || "150")
 
     if (!firstName || !lastName || !email || !password || !specialty || !licenseNumber) {
@@ -43,11 +50,20 @@ export async function createProviderAction(formData: FormData) {
       await tx.providerProfile.create({
         data: {
           userId: user.id,
+          providerType,
           specialty,
           licenseNumber,
           consultationFee,
         }
       })
+    })
+
+    await sendAccountWelcomeEmail({
+      to: email,
+      fullName: `${firstName} ${lastName}`,
+      roleLabel: "Provider",
+      loginEmail: email,
+      temporaryPassword: password,
     })
 
     revalidatePath("/admin/providers")

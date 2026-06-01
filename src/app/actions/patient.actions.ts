@@ -1,13 +1,50 @@
 "use server"
 
 import bcrypt from "bcryptjs"
+import { MembershipStatus } from "@prisma/client"
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { PatientSchema } from "@/lib/validations"
+import { auth } from "@/../auth"
+import { sendAccountWelcomeEmail, sendProviderAssignmentEmail } from "@/lib/mail"
+
+const MEMBERSHIP_STATUSES = [
+  MembershipStatus.PLATINUM,
+  MembershipStatus.GOLD,
+  MembershipStatus.SILVER,
+] as const
+
+function parseMembershipStatus(value: FormDataEntryValue | null) {
+  const status = value?.toString()
+  return MEMBERSHIP_STATUSES.includes(status as MembershipStatus) ? (status as MembershipStatus) : MembershipStatus.SILVER
+}
+
+function formatProviderName(provider: {
+  providerType?: string | null
+  user: { firstName: string; lastName: string }
+}) {
+  const fullName = `${provider.user.firstName} ${provider.user.lastName}`
+  return provider.providerType === "REGISTERED_NURSE" ? `${fullName}, RN` : `Dr. ${fullName}`
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error)
+}
+
+async function assertAdmin() {
+  const session = await auth()
+  if (!session?.user?.id || (session.user as { role?: string }).role !== "ADMIN") {
+    return { ok: false as const, error: "Unauthorized access." }
+  }
+  return { ok: true as const, session }
+}
 
 export async function createPatientAction(formData: FormData) {
-  const rawData = Object.fromEntries(formData.entries())
-  
+  const admin = await assertAdmin()
+  if (!admin.ok) {
+    return { success: false, error: admin.error }
+  }
+
   // 1. Safe Extraction & Fallbacks
   const firstName = (formData.get('firstName')?.toString() || formData.get('name')?.toString()?.split(' ')[0] || '').trim();
   const lastName = (formData.get('lastName')?.toString() || formData.get('name')?.toString()?.split(' ').slice(1).join(' ') || '').trim();
@@ -15,6 +52,7 @@ export async function createPatientAction(formData: FormData) {
   const password = formData.get('password')?.toString() || '';
   const phone = formData.get('phone')?.toString() || '';
   const dob = formData.get('dob')?.toString() || '';
+  const membershipStatus = parseMembershipStatus(formData.get("membershipStatus"));
 
   // 2. Strict Zod Validation
   const validatedFields = PatientSchema.safeParse({
@@ -75,17 +113,27 @@ export async function createPatientAction(formData: FormData) {
         activeMedications,
         allergies,
         chronicConditions,
+        membershipStatus,
       },
+    })
+
+    await sendAccountWelcomeEmail({
+      to: eMail,
+      fullName: `${fName} ${lName}`,
+      roleLabel: "Patient",
+      loginEmail: eMail,
+      temporaryPassword: pWord,
     })
 
     revalidatePath("/admin/dashboard")
     revalidatePath("/admin/patients")
     return { success: true }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("PRISMA_WRITE_FAILURE:", error);
+    const message = getErrorMessage(error)
     return { 
       success: false, 
-      error: error?.message || String(error) 
+      error: message
     };
   }
 }
@@ -117,13 +165,18 @@ export async function deletePatientAction(userId: string) {
 
     revalidatePath("/admin/patients")
     return { success: true }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[CRITICAL_BACKEND_ERROR]:", err)
-    return { error: `Failed to delete record: ${err.message}` }
+    return { error: `Failed to delete record: ${getErrorMessage(err)}` }
   }
 }
 
 export async function assignProviderAction(patientProfileId: string, providerId: string) {
+  const admin = await assertAdmin()
+  if (!admin.ok) {
+    return { success: false, error: admin.error }
+  }
+
   try {
     const patient = await prisma.patientProfile.update({
       where: { id: patientProfileId },
@@ -131,12 +184,26 @@ export async function assignProviderAction(patientProfileId: string, providerId:
       include: { user: true }
     })
 
+    const assignedProvider = await prisma.providerProfile.findUnique({
+      where: { id: providerId },
+      include: { user: true },
+    })
+
+    if (assignedProvider?.user?.email) {
+      await sendProviderAssignmentEmail({
+        to: assignedProvider.user.email,
+        providerName: formatProviderName(assignedProvider),
+        patientName: `${patient.user.firstName} ${patient.user.lastName}`,
+        patientId: patient.id,
+      })
+    }
+
     revalidatePath(`/admin/patients/${patient.userId}`)
     revalidatePath("/admin/patients")
     return { success: true }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[ASSIGNMENT_ERROR]:", err)
-    return { error: `Failed to assign doctor: ${err.message}` }
+    return { error: `Failed to assign doctor: ${getErrorMessage(err)}` }
   }
 }
 
@@ -148,6 +215,7 @@ export async function updatePatientDetailsAction(patientProfileId: string, formD
     const phone = formData.get("phone")?.toString()
     const dob = formData.get("dob")?.toString()
     const address = formData.get("address")?.toString()
+    const membershipStatus = parseMembershipStatus(formData.get("membershipStatus"))
 
     const patient = await prisma.patientProfile.findUnique({
       where: { id: patientProfileId },
@@ -181,15 +249,16 @@ export async function updatePatientDetailsAction(patientProfileId: string, formD
         activeMedications,
         allergies,
         chronicConditions,
+        membershipStatus,
       }
     })
 
     revalidatePath(`/admin/patients/${patient.userId}`)
     revalidatePath("/admin/patients")
     return { success: true }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[UPDATE_ERROR]:", err)
-    return { error: `Update failed: ${err.message}` }
+    return { error: `Update failed: ${getErrorMessage(err)}` }
   }
 }
 

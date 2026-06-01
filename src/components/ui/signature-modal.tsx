@@ -28,6 +28,9 @@ interface SignatureModalProps {
 
 export function SignatureModal({ isOpen, onClose, onSave }: SignatureModalProps) {
   const sigCanvas = React.useRef<SignatureCanvas>(null)
+  const canvasContainerRef = React.useRef<HTMLDivElement>(null)
+  const [canvasWidth, setCanvasWidth] = React.useState(536)
+  const canvasHeight = 250
 
   // Fix for offset bug: clear and resize canvas when modal opens
   React.useEffect(() => {
@@ -38,6 +41,20 @@ export function SignatureModal({ isOpen, onClose, onSave }: SignatureModalProps)
         }
       }, 100)
     }
+  }, [isOpen])
+
+  React.useEffect(() => {
+    if (!isOpen) return
+
+    const updateCanvasSize = () => {
+      if (!canvasContainerRef.current) return
+      const width = Math.floor(canvasContainerRef.current.clientWidth)
+      if (width > 0) setCanvasWidth(width)
+    }
+
+    updateCanvasSize()
+    window.addEventListener("resize", updateCanvasSize)
+    return () => window.removeEventListener("resize", updateCanvasSize)
   }, [isOpen])
 
   const handleClear = () => {
@@ -79,7 +96,7 @@ export function SignatureModal({ isOpen, onClose, onSave }: SignatureModalProps)
 
         <div className="p-8 space-y-6">
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 italic text-slate-500 text-sm leading-relaxed text-center font-medium">
-             "I acknowledge that the information provided in today's clinical encounter is accurate and I consent to the treatment plan."
+             &quot;I acknowledge that the information provided in today&apos;s clinical encounter is accurate and I consent to the treatment plan.&quot;
           </div>
 
           <div className="space-y-2">
@@ -91,14 +108,17 @@ export function SignatureModal({ isOpen, onClose, onSave }: SignatureModalProps)
                </div>
             </div>
             
-            <div className="border-2 border-slate-200 rounded-2xl bg-white w-full h-[250px] overflow-hidden shadow-inner touch-none relative cursor-crosshair">
+            <div
+              ref={canvasContainerRef}
+              className="border-2 border-slate-200 rounded-2xl bg-white w-full h-[250px] overflow-hidden shadow-inner touch-none relative cursor-crosshair"
+            >
               <SignatureCanvas
                 ref={sigCanvas}
                 penColor="#0F172A"
                 canvasProps={{
                   className: "w-full h-full",
-                  width: 536, // Precise width for the modal content area
-                  height: 250
+                  width: canvasWidth,
+                  height: canvasHeight,
                 }}
               />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] select-none">

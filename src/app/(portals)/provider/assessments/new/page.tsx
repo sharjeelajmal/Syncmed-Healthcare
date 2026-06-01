@@ -50,7 +50,17 @@ export default async function NewAssessmentPage({ searchParams }: PageProps) {
   const [patient, provider] = await Promise.all([
     prisma.patientProfile.findFirst({
       where: {
-        OR: [{ id: patientId }, { userId: patientId }],
+        AND: [
+          {
+            OR: [{ id: patientId }, { userId: patientId }],
+          },
+          {
+            OR: [
+              { assignedProviderId: sessionProvider.id },
+              { appointments: { some: { providerId: sessionProvider.id } } },
+            ],
+          },
+        ],
       },
       include: { user: true },
     }),
