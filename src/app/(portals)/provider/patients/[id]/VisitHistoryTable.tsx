@@ -99,7 +99,7 @@ interface Assessment {
   heightInches?: number | null
   soapNotes?: string | null
   followUpDate?: string | Date | null
-  data?: Record<string, unknown> | null
+  data?: unknown
   medications?: MedicationEntry[]
   diagnoses?: DiagnosisEntry[]
   provider: {
@@ -117,36 +117,63 @@ const RISK_STYLES: Record<string, string> = {
   LOW: "bg-emerald-50 text-emerald-600 border-emerald-100",
 }
 
+type JsonRecord = Record<string, unknown>
+
+function isJsonRecord(value: unknown): value is JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function asJsonRecord(value: unknown): JsonRecord {
+  return isJsonRecord(value) ? value : {}
+}
+
+function asString(value: unknown): string {
+  return typeof value === "string" ? value : ""
+}
+
+function asNumber(value: unknown): number | undefined {
+  return typeof value === "number" ? value : undefined
+}
+
+function asDateInput(value: unknown): string | number | Date | null {
+  return typeof value === "string" || typeof value === "number" || value instanceof Date ? value : null
+}
+
+function asMedicationEntries(value: unknown): MedicationEntry[] {
+  return Array.isArray(value) ? (value as MedicationEntry[]) : []
+}
+
+function asDiagnosisEntries(value: unknown): DiagnosisEntry[] {
+  return Array.isArray(value) ? (value as DiagnosisEntry[]) : []
+}
+
 function getClinicalData(visit: Assessment) {
-  const data = (visit.data ?? {}) as Record<string, any>
-  const bmiVitals = (data.bmiVitals ?? {}) as Record<string, any>
-  const summary = (data.summary ?? {}) as Record<string, any>
-  const memberInfo = (data.memberInfo ?? {}) as Record<string, any>
-  const responses = (data.responses ?? {}) as Record<string, any>
+  const data = asJsonRecord(visit.data)
+  const bmiVitals = asJsonRecord(data.bmiVitals)
+  const summary = asJsonRecord(data.summary)
+  const memberInfo = asJsonRecord(data.memberInfo)
+  const responses = asJsonRecord(data.responses)
+  const signatures = asJsonRecord(data.signatures)
 
   const medications: MedicationEntry[] =
     visit.medications && visit.medications.length > 0
       ? visit.medications
-      : Array.isArray(data.medications)
-      ? data.medications
-      : []
+      : asMedicationEntries(data.medications)
 
   const diagnoses: DiagnosisEntry[] =
     visit.diagnoses && visit.diagnoses.length > 0
       ? visit.diagnoses
-      : Array.isArray(data.diagnoses)
-      ? data.diagnoses
-      : []
+      : asDiagnosisEntries(data.diagnoses)
 
   const soapNotes: string =
-    visit.soapNotes || (typeof data.soapNotes === "string" ? data.soapNotes : "")
+    visit.soapNotes || asString(data.soapNotes)
 
-  const followUpDate = visit.followUpDate || data.followUpDate || null
+  const followUpDate = visit.followUpDate || asDateInput(data.followUpDate)
 
   const signatureUrl: string =
     visit.signatureUrl ||
     visit.patientSignatureUrl ||
-    (data.signatures?.assessorSignature as string) ||
+    asString(signatures.assessorSignature) ||
     ""
 
   const weightKg =
@@ -173,10 +200,10 @@ function getClinicalData(visit: Assessment) {
     signatureUrl,
     weightKg,
     heightInches,
-    riskLevel: (summary.riskLevel as string) || "",
-    riskScore: summary.totalRiskScore as number | undefined,
-    overallSummary: (summary.q98OverallAssessmentSummary as string) || "",
-    supervisorReview: (summary.supervisorReview as string) || "",
+    riskLevel: asString(summary.riskLevel),
+    riskScore: asNumber(summary.totalRiskScore),
+    overallSummary: asString(summary.q98OverallAssessmentSummary),
+    supervisorReview: asString(summary.supervisorReview),
   }
 }
 
@@ -298,7 +325,7 @@ function QACard({ questionId, value }: { questionId: string; value: string }) {
   )
 }
 
-function SectionResponses({ sections, responses }: { sections: typeof step2Sections; responses: Record<string, any> }) {
+function SectionResponses({ sections, responses }: { sections: typeof step2Sections; responses: Record<string, unknown> }) {
   const groups = sections
     .map((section) => ({
       title: section.title,
@@ -326,7 +353,7 @@ function SectionResponses({ sections, responses }: { sections: typeof step2Secti
   )
 }
 
-function FlatResponses({ questions, responses }: { questions: typeof step5Questions; responses: Record<string, any> }) {
+function FlatResponses({ questions, responses }: { questions: typeof step5Questions; responses: Record<string, unknown> }) {
   const rows = questions
     .map((q) => ({ q, value: formatAnswer(q.id, responses[q.id]) }))
     .filter((row) => row.value !== "")

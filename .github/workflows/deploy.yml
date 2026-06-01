@@ -1,0 +1,35 @@
+name: Deploy Next.js App to Hostinger VPS
+
+on:
+  push:
+    branches:
+      - main  # Agar Github par aapki branch ka naam 'master' hai, toh yahan master likh dein
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 22
+          script: |
+            # 1. Exact VPS folder path jahan humara code para hai
+            cd /root/Syncmed-Healthcare
+            
+            # 2. Naya code pull karein
+            git pull origin main
+            
+            # 3. Dependencies aur Prisma update karein
+            npm install
+            npx prisma generate
+            
+            # 4. Production Build banayen
+            npm run build
+            
+            # 5. PM2 Server restart karein
+            pm2 restart syncmed
