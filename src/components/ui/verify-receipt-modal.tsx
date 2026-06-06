@@ -13,6 +13,7 @@ import { Loader2, CheckCircle2, XCircle, ExternalLink, FileText } from "lucide-r
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { verifyReceiptAction } from "@/app/actions/billing.actions"
+import { formatNaira } from "@/lib/currency"
 
 interface VerifyReceiptModalProps {
   isOpen: boolean
@@ -63,6 +64,10 @@ export function VerifyReceiptModal({ isOpen, onClose, appointment }: VerifyRecei
                  <div>
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Doctor</span>
                     <span className="font-bold text-slate-700">Dr. {appointment.provider.user.firstName} {appointment.provider.user.lastName}</span>
+                 </div>
+                 <div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Expected Amount</span>
+                    <span className="font-black text-[#67BA2E]">{formatNaira(appointment.amount ?? 0)}</span>
                  </div>
               </div>
            </div>

@@ -35,7 +35,7 @@ export default async function ManageAccessPage({ params }: PageProps) {
   }
 
   return (
-    <div className="animate-in fade-in duration-300 pb-10">
+    <div className="animate-in fade-in duration-300">
       <div className="mb-8 flex items-center gap-4">
         <Link href={`/admin/providers/${provider.id}`}>
           <Button

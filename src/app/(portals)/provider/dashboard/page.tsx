@@ -147,7 +147,7 @@ export default async function ProviderDashboardPage() {
   }
 
   return (
-    <div className="animate-slide-up pb-24 md:pb-10">
+    <div className="animate-slide-up">
       {/* Premium Hero Section - Mobile App Style */}
       <div className="relative overflow-hidden bg-white border border-slate-200 rounded-[2rem] md:rounded-[3rem] p-6 md:p-14 mb-8 shadow-2xl shadow-slate-100 group animate-in fade-in duration-1000">
         {/* Background Image Layer - App Style */}

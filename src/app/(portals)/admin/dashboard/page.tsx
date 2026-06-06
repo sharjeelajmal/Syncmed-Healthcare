@@ -26,7 +26,7 @@ export default async function AdminDashboardPage() {
   const userName = session?.user?.name || "Admin"
 
   return (
-    <div className="animate-slide-up pb-24 md:pb-10">
+    <div className="animate-slide-up">
       <AdminDashboardHero userName={userName} />
 
       <div className="flex flex-col gap-2 mb-10">

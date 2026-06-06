@@ -4,7 +4,28 @@ import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
 import { auth } from "@/../auth"
-import { sendAccountWelcomeEmail } from "@/lib/mail"
+import { sendAccountWelcomeEmail, sendProviderPasswordResetEmail, sendProviderSecurityWarningEmail } from "@/lib/mail"
+
+function getPortalBaseUrl(): string {
+  return (
+    process.env.PORTAL_LOGIN_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.APP_URL ||
+    "http://localhost:3000"
+  )
+}
+
+async function getProviderAccount(userId: string) {
+  return prisma.user.findFirst({
+    where: { id: userId, role: "PROVIDER" },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+    },
+  })
+}
 
 async function assertAdmin() {
   const session = await auth()
@@ -269,6 +290,67 @@ export async function revokeProviderSessionsAction(userId: string) {
   } catch (err: unknown) {
     console.error("[REVOKE_SESSIONS_ERROR]:", err)
     return { success: false, error: "Failed to revoke sessions." }
+  }
+}
+
+export async function sendProviderPasswordResetAction(userId: string) {
+  const admin = await assertAdmin()
+  if (!admin.ok) return { error: admin.error }
+
+  try {
+    const provider = await getProviderAccount(userId)
+    if (!provider) {
+      return { error: "Provider account not found." }
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+    const expiry = new Date(Date.now() + 15 * 60 * 1000)
+    const resetUrl = `${getPortalBaseUrl()}/forgot-password`
+
+    await prisma.user.update({
+      where: { id: provider.id },
+      data: {
+        resetToken: otp,
+        resetTokenExpiry: expiry,
+      },
+    })
+
+    await sendProviderPasswordResetEmail({
+      to: provider.email,
+      fullName: `${provider.firstName} ${provider.lastName}`,
+      otp,
+      resetUrl,
+    })
+
+    return { success: true }
+  } catch (err: unknown) {
+    console.error("[SEND_PROVIDER_PASSWORD_RESET]:", err)
+    return { error: "Failed to send password reset email." }
+  }
+}
+
+export async function sendProviderSecurityWarningAction(userId: string) {
+  const admin = await assertAdmin()
+  if (!admin.ok) return { error: admin.error }
+
+  try {
+    const provider = await getProviderAccount(userId)
+    if (!provider) {
+      return { error: "Provider account not found." }
+    }
+
+    const loginUrl = `${getPortalBaseUrl()}/login`
+
+    await sendProviderSecurityWarningEmail({
+      to: provider.email,
+      fullName: `${provider.firstName} ${provider.lastName}`,
+      loginUrl,
+    })
+
+    return { success: true }
+  } catch (err: unknown) {
+    console.error("[SEND_PROVIDER_SECURITY_WARNING]:", err)
+    return { error: "Failed to send security warning email." }
   }
 }
 

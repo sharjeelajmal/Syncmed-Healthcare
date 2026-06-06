@@ -57,7 +57,7 @@ export default async function ProviderSchedulePage() {
   ])
 
   return (
-    <div className="max-w-5xl mx-auto space-y-4 sm:space-y-8 pb-20 px-2 sm:px-0">
+    <div className="max-w-5xl mx-auto space-y-4 sm:space-y-8 px-2 sm:px-0">
       {/* Header */}
       <div className="flex flex-col gap-1 px-2 sm:px-0 mt-4 sm:mt-0">
         <h1 className="text-xl sm:text-3xl font-black text-slate-800 tracking-tight uppercase sm:normal-case">Schedule</h1>

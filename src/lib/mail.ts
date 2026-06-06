@@ -1,28 +1,24 @@
-import nodemailer from "nodemailer"
+import { BrevoClient } from "@getbrevo/brevo"
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-})
+const SENDER = { name: "SyncMed Health", email: "support@syncmed.health" } as const
+
+const apiInstance = new BrevoClient({
+  apiKey: process.env.BREVO_API_KEY ?? "",
+}).transactionalEmails
 
 export async function sendOTPEmail(to: string, otp: string) {
   // Fallback to log if credentials are missing so it never violently crashes
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.log(`[MAIL FALLBACK] SMTP credentials missing. OTP for ${to}: ${otp}`)
+  if (!process.env.BREVO_API_KEY) {
+    console.log(`[MAIL FALLBACK] Brevo API key missing. OTP for ${to}: ${otp}`)
     return
   }
 
   try {
-    await transporter.sendMail({
-      from: `"SyncMed Concierge" <${process.env.SMTP_USER}>`,
-      to,
+    await apiInstance.sendTransacEmail({
+      sender: SENDER,
+      to: [{ email: to }],
       subject: "Your SyncMed Security Code",
-      html: `
+      htmlContent: `
         <div style="font-family: sans-serif; padding: 24px; max-width: 480px; margin: 0 auto; border: 1px solid #f1f5f9; border-radius: 12px;">
           <h2 style="color: #0f172a; font-weight: 900;">SyncMed Security</h2>
           <p style="color: #475569; font-size: 14px;">Use the following 6-digit secure verification code to reset your account password. This code will expire in 15 minutes.</p>
@@ -31,7 +27,7 @@ export async function sendOTPEmail(to: string, otp: string) {
           </div>
           <p style="color: #94a3b8; font-size: 11px;">If you did not request this code, please ignore this email or contact support.</p>
         </div>
-      `
+      `,
     })
   } catch (error) {
     console.error("Error sending email:", error)
@@ -48,18 +44,18 @@ export async function sendLeadNotificationEmail(lead: {
   message: string
 }) {
   // Fallback to log if credentials are missing
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.log(`[MAIL FALLBACK] SMTP credentials missing. Lead Notification for: ${lead.email}`)
+  if (!process.env.BREVO_API_KEY) {
+    console.log(`[MAIL FALLBACK] Brevo API key missing. Lead Notification for: ${lead.email}`)
     return
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_USER
+  const adminEmail = process.env.ADMIN_EMAIL || "support@syncmed.health"
   try {
-    await transporter.sendMail({
-      from: `"SyncMed Concierge" <${process.env.SMTP_USER}>`,
-      to: adminEmail,
+    await apiInstance.sendTransacEmail({
+      sender: SENDER,
+      to: [{ email: adminEmail }],
       subject: `New Lead: ${lead.name} (${lead.type === "patient_registration" ? "New Patient Registration" : "General Inquiry"})`,
-      html: `
+      htmlContent: `
         <div style="font-family: sans-serif; padding: 24px; max-width: 480px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px;">
           <h2 style="color: #0f172a; font-weight: 900; margin-bottom: 4px;">SyncMed Concierge</h2>
           <p style="color: #67BA2E; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-top: 0;">New Lead Notification</p>
@@ -74,7 +70,7 @@ export async function sendLeadNotificationEmail(lead: {
           </div>
           <p style="color: #94a3b8; font-size: 11px;">This notification was automatically sent by the SyncMed Healthcare platform.</p>
         </div>
-      `
+      `,
     })
   } catch (error) {
     console.error("Error sending lead notification email:", error)
@@ -87,17 +83,17 @@ export async function sendLeadConfirmationEmail(lead: {
   type: string
 }) {
   // Fallback to log if credentials are missing
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.log(`[MAIL FALLBACK] SMTP credentials missing. User Confirmation for: ${lead.email}`)
+  if (!process.env.BREVO_API_KEY) {
+    console.log(`[MAIL FALLBACK] Brevo API key missing. User Confirmation for: ${lead.email}`)
     return
   }
 
   try {
-    await transporter.sendMail({
-      from: `"SyncMed Concierge" <${process.env.SMTP_USER}>`,
-      to: lead.email,
+    await apiInstance.sendTransacEmail({
+      sender: SENDER,
+      to: [{ email: lead.email }],
       subject: `Thank you for contacting SyncMed Healthcare`,
-      html: `
+      htmlContent: `
         <div style="font-family: sans-serif; padding: 24px; max-width: 480px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px;">
           <h2 style="color: #0f172a; font-weight: 900; margin-bottom: 4px; font-family: 'Inter', sans-serif;">SyncMed Healthcare</h2>
           <p style="color: #67BA2E; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-top: 0;">Inquiry Received</p>
@@ -114,7 +110,7 @@ export async function sendLeadConfirmationEmail(lead: {
             <p style="color: #94a3b8; font-size: 11px; margin: 0;">This is an automated confirmation of your submission. Please do not reply directly to this message.</p>
           </div>
         </div>
-      `
+      `,
     })
   } catch (error) {
     console.error("Error sending user confirmation email:", error)
@@ -137,19 +133,19 @@ export async function sendAccountWelcomeEmail(payload: {
   loginEmail: string
   temporaryPassword: string
 }) {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.log(`[MAIL FALLBACK] SMTP credentials missing. Welcome email for: ${payload.to}`)
+  if (!process.env.BREVO_API_KEY) {
+    console.log(`[MAIL FALLBACK] Brevo API key missing. Welcome email for: ${payload.to}`)
     return
   }
 
   const loginUrl = getPortalLoginUrl()
 
   try {
-    await transporter.sendMail({
-      from: `"SyncMed Concierge" <${process.env.SMTP_USER}>`,
-      to: payload.to,
+    await apiInstance.sendTransacEmail({
+      sender: SENDER,
+      to: [{ email: payload.to }],
       subject: `Welcome to SyncMed ${payload.roleLabel} Portal`,
-      html: `
+      htmlContent: `
         <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
           <div style="background: #67BA2E; color: white; padding: 20px 24px;">
             <h2 style="margin: 0; font-size: 20px;">Welcome to SyncMed</h2>
@@ -179,17 +175,17 @@ export async function sendProviderAssignmentEmail(payload: {
   patientName: string
   patientId: string
 }) {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.log(`[MAIL FALLBACK] SMTP credentials missing. Assignment email for: ${payload.to}`)
+  if (!process.env.BREVO_API_KEY) {
+    console.log(`[MAIL FALLBACK] Brevo API key missing. Assignment email for: ${payload.to}`)
     return
   }
 
   try {
-    await transporter.sendMail({
-      from: `"SyncMed Concierge" <${process.env.SMTP_USER}>`,
-      to: payload.to,
+    await apiInstance.sendTransacEmail({
+      sender: SENDER,
+      to: [{ email: payload.to }],
       subject: `New Patient Assignment: ${payload.patientName}`,
-      html: `
+      htmlContent: `
         <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; color: #334155;">
           <h2 style="margin: 0 0 8px 0; color: #0f172a;">SyncMed Assignment Notification</h2>
           <p style="margin: 0 0 12px 0;">Dear ${payload.providerName},</p>
@@ -207,3 +203,87 @@ export async function sendProviderAssignmentEmail(payload: {
   }
 }
 
+export async function sendProviderPasswordResetEmail(payload: {
+  to: string
+  fullName: string
+  otp: string
+  resetUrl: string
+}) {
+  if (!process.env.BREVO_API_KEY) {
+    console.log(
+      `[MAIL FALLBACK] Brevo API key missing. Password reset for: ${payload.to} · OTP: ${payload.otp}`
+    )
+    return
+  }
+
+  try {
+    await apiInstance.sendTransacEmail({
+      sender: SENDER,
+      to: [{ email: payload.to }],
+      subject: "SyncMed Provider Password Reset",
+      htmlContent: `
+        <div style="font-family: sans-serif; padding: 24px; max-width: 480px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px;">
+          <h2 style="color: #0f172a; font-weight: 900; margin-bottom: 4px;">Password Reset Requested</h2>
+          <p style="color: #67BA2E; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-top: 0;">Credential Recovery</p>
+          <p style="color: #475569; font-size: 14px; line-height: 1.6;">Hello <strong>${payload.fullName}</strong>,</p>
+          <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+            A SyncMed administrator initiated a password reset for your provider account. Use the verification code below on the password reset page. This code expires in 15 minutes.
+          </p>
+          <div style="background: #f8fafc; padding: 16px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #67BA2E; margin: 24px 0; border-radius: 12px; border: 1px solid #f1f5f9;">
+            ${payload.otp}
+          </div>
+          <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+            Reset your password here: <a href="${payload.resetUrl}" target="_blank" rel="noreferrer">${payload.resetUrl}</a>
+          </p>
+          <p style="color: #94a3b8; font-size: 11px; margin-top: 20px;">If you did not expect this email, contact SyncMed support immediately.</p>
+        </div>
+      `,
+    })
+  } catch (error) {
+    console.error("Error sending provider password reset email:", error)
+    console.log(`[MAIL ERROR] Password reset OTP for ${payload.to}: ${payload.otp}`)
+  }
+}
+
+export async function sendProviderSecurityWarningEmail(payload: {
+  to: string
+  fullName: string
+  loginUrl: string
+}) {
+  if (!process.env.BREVO_API_KEY) {
+    console.log(`[MAIL FALLBACK] Brevo API key missing. Security warning for: ${payload.to}`)
+    return
+  }
+
+  try {
+    await apiInstance.sendTransacEmail({
+      sender: SENDER,
+      to: [{ email: payload.to }],
+      subject: "[URGENT] Security Alert — SyncMed Provider Account",
+      htmlContent: `
+        <div style="font-family: sans-serif; padding: 24px; max-width: 480px; margin: 0 auto; border: 2px solid #fecaca; border-radius: 12px; background: #fffafa;">
+          <h2 style="color: #991b1b; font-weight: 900; margin: 0 0 4px 0;">Security Alert</h2>
+          <p style="color: #dc2626; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-top: 0;">High Priority</p>
+          <p style="color: #475569; font-size: 14px; line-height: 1.6;">Dear <strong>${payload.fullName}</strong>,</p>
+          <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+            Our security team detected suspicious activity associated with your SyncMed provider account. As a precaution, we recommend that you sign in immediately, review recent account activity, and change your password if anything looks unfamiliar.
+          </p>
+          <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 14px; margin: 20px 0;">
+            <p style="margin: 0 0 8px 0; color: #991b1b; font-size: 13px; font-weight: bold;">Recommended actions:</p>
+            <ul style="margin: 0; padding-left: 18px; color: #7f1d1d; font-size: 13px; line-height: 1.7;">
+              <li>Verify your recent login history</li>
+              <li>Reset your password immediately</li>
+              <li>Contact SyncMed support if you did not authorize recent activity</li>
+            </ul>
+          </div>
+          <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+            Provider portal: <a href="${payload.loginUrl}" target="_blank" rel="noreferrer" style="color: #dc2626; font-weight: bold;">${payload.loginUrl}</a>
+          </p>
+          <p style="color: #94a3b8; font-size: 11px; margin-top: 20px;">This alert was sent by a SyncMed administrator. Do not share your credentials with anyone.</p>
+        </div>
+      `,
+    })
+  } catch (error) {
+    console.error("Error sending provider security warning email:", error)
+  }
+}

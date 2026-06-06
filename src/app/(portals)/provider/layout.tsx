@@ -18,7 +18,10 @@ import { cn } from "@/lib/utils"
 import {
   portalHeaderActionsClass,
   portalHeaderBrandClass,
+  portalHeaderNavClass,
   portalHeaderRowClass,
+  portalMainBottomPadding,
+  portalBottomNavClass,
   portalShellClass,
 } from "@/lib/portal-shell"
 
@@ -72,7 +75,7 @@ export default function ProviderPortalLayout({
               />
             </Link>
 
-            <nav className="hidden min-w-0 items-center gap-1 overflow-x-auto md:flex">
+            <nav className={portalHeaderNavClass}>
               {navItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
@@ -131,13 +134,13 @@ export default function ProviderPortalLayout({
         </div>
       </header>
 
-      <main className={cn(portalShellClass, "py-8")}>
+      <main className={cn(portalShellClass, "pt-8", portalMainBottomPadding)}>
         <div className="animate-in fade-in duration-300 ease-out fill-mode-both">
           {children}
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 px-6 py-3 pb-safe shadow-[0_-8px_30px_rgb(0,0,0,0.04)] backdrop-blur-lg md:hidden">
+      <div className={portalBottomNavClass}>
         <nav className="flex items-center justify-between">
           {navItems.map((item) => {
             const isActive =

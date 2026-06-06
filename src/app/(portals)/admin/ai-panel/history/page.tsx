@@ -33,7 +33,7 @@ export default function AiHistoryPage() {
   }
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 pb-12">
+    <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
       {/* Hyper-Compact Header */}
       <div className="flex items-center justify-between mb-6 px-1">
         <div>
@@ -101,7 +101,7 @@ export default function AiHistoryPage() {
                     </SheetTitle>
                   </SheetHeader>
 
-                  <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-slate-50/30 custom-scrollbar pb-24">
+                  <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-slate-50/30 custom-scrollbar">
                     {group.messages.map((msg: any) => {
                       const isUser = msg.role === 'user';
                       return (

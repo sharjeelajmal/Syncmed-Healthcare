@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { sendLeadConfirmationEmail, sendLeadNotificationEmail } from "@/lib/mail";
 import { z } from "zod";
 
 const InquirySchema = z.object({
@@ -36,6 +37,37 @@ export async function submitInquiryAction(formData: FormData) {
         status: "PENDING",
       },
     });
+
+    const fullName = `${validatedData.firstName} ${validatedData.lastName}`;
+    const messageParts = [
+      validatedData.inquiryDetails,
+      validatedData.referralSource
+        ? `Referral source: ${validatedData.referralSource}`
+        : null,
+    ].filter(Boolean);
+    const message =
+      messageParts.length > 0
+        ? messageParts.join("\n\n")
+        : "Consultation inquiry submitted via website.";
+
+    try {
+      await Promise.all([
+        sendLeadNotificationEmail({
+          name: fullName,
+          email: validatedData.email,
+          phone: validatedData.phone,
+          type: "general",
+          message,
+        }),
+        sendLeadConfirmationEmail({
+          name: fullName,
+          email: validatedData.email,
+          type: "general",
+        }),
+      ]);
+    } catch (emailError) {
+      console.error("Consultation inquiry email error:", emailError);
+    }
 
     return { success: true, message: "Your request has been securely transmitted." };
   } catch (error) {

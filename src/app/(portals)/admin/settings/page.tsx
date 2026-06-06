@@ -19,7 +19,7 @@ export default async function SystemSettingsPage() {
   if (!user) redirect("/login")
 
   return (
-    <div className="animate-slide-up space-y-8 pb-20 md:pb-10">
+    <div className="animate-slide-up space-y-8">
       {/* Header Section */}
       <div className="flex flex-col gap-2">
         <h2 className="text-xl md:text-3xl font-black tracking-tight text-slate-800 flex items-center gap-3">

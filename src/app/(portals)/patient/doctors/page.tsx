@@ -6,11 +6,9 @@ import {
   Calendar, 
   ArrowLeft,
   Mail,
-  MoreVertical,
   ShieldCheck,
-  MapPin,
   Clock,
-  Phone
+  MessageCircle,
 } from "lucide-react"
 import { differenceInYears, format } from "date-fns"
 
@@ -23,6 +21,19 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { OpenProviderChatButton } from "@/components/chat/OpenProviderChatButton"
+
+function getProviderAvatarSrc(providerType: string) {
+  return providerType === "REGISTERED_NURSE" ? "/female.png" : "/male.png"
+}
+
+function formatProviderDisplayName(provider: {
+  providerType: string
+  user: { firstName: string; lastName: string }
+}) {
+  const fullName = `${provider.user.firstName} ${provider.user.lastName}`
+  return provider.providerType === "REGISTERED_NURSE" ? `${fullName}, RN` : `Dr. ${fullName}`
+}
 
 function formatAvailabilitySummary(
   rules: { day: string; startTime: string; endTime: string }[]
@@ -61,7 +72,7 @@ export default async function MyDoctorsPage() {
     : ""
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-20 selection:bg-green-100">
+    <div className="min-h-screen bg-slate-50/50 selection:bg-green-100">
       <div className="w-full space-y-10 py-6 md:py-8 animate-in fade-in duration-700">
         
         {/* Header Section */}
@@ -100,7 +111,7 @@ export default async function MyDoctorsPage() {
               <CardContent className="p-8 md:p-10 space-y-8">
                 
                 {/* Status Indicator */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-start">
                    <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100 font-black text-[9px] uppercase tracking-[0.2em] px-3 py-1 gap-2 flex items-center">
                       <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -108,9 +119,6 @@ export default async function MyDoctorsPage() {
                       </span>
                       Available on Direct Line
                    </Badge>
-                   <button className="text-slate-300 hover:text-slate-600 transition-colors">
-                      <MoreVertical className="size-5" />
-                   </button>
                 </div>
 
                 {/* Profile Info */}
@@ -118,7 +126,11 @@ export default async function MyDoctorsPage() {
                    <div className="relative">
                       <div className="absolute inset-0 bg-[#67BA2E] rounded-[2rem] blur-2xl opacity-10 group-hover:opacity-20 transition-opacity" />
                       <Avatar className="size-28 md:size-32 rounded-[2rem] border-[4px] border-white shadow-xl group-hover:scale-105 transition-transform duration-500 ring-2 ring-[#67BA2E]/10">
-                        <AvatarImage src={doctor.user.image || ""} alt={doctor.user.firstName} className="object-cover" />
+                        <AvatarImage
+                          src={getProviderAvatarSrc(doctor.providerType)}
+                          alt={formatProviderDisplayName(doctor)}
+                          className="object-cover object-top"
+                        />
                         <AvatarFallback className="bg-slate-50 text-[#67BA2E] font-black text-3xl">
                            {doctor.user.firstName[0]}{doctor.user.lastName[0]}
                         </AvatarFallback>
@@ -130,7 +142,7 @@ export default async function MyDoctorsPage() {
 
                    <div className="space-y-1">
                       <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                        Dr. {doctor.user.firstName} {doctor.user.lastName}
+                        {formatProviderDisplayName(doctor)}
                       </h2>
                       <div className="flex flex-wrap justify-center gap-2">
                          <Badge variant="outline" className="bg-slate-50 text-slate-500 border-slate-200 font-bold text-[10px] uppercase tracking-widest px-3 py-1">
@@ -179,19 +191,17 @@ export default async function MyDoctorsPage() {
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                  <Button 
-                    asChild 
-                    variant="outline" 
-                    className="flex-1 h-12 rounded-2xl border-slate-200 text-[#67BA2E] font-black uppercase tracking-widest text-[10px] hover:bg-[#67BA2E]/5 hover:border-[#67BA2E]/20 transition-all gap-2"
+                  <OpenProviderChatButton
+                    providerUserId={doctor.user.id}
+                    variant="outline"
+                    className="md:flex-1 h-12 rounded-2xl border-slate-200 text-[#67BA2E] font-black uppercase tracking-widest text-[10px] hover:bg-[#67BA2E]/5 hover:border-[#67BA2E]/20 transition-all gap-2"
                   >
-                    <Link href={`/patient/messages?providerId=${doctor.id}`}>
-                      <MessageSquare className="size-3.5" />
-                      Message
-                    </Link>
-                  </Button>
+                    <MessageSquare className="size-3.5" />
+                    Message
+                  </OpenProviderChatButton>
                   <Button 
                     asChild 
-                    className="flex-1 h-12 rounded-2xl bg-[#67BA2E] hover:bg-[#5aa329] text-white font-black uppercase tracking-widest text-[10px] shadow-xl shadow-green-100 transition-all active:scale-[0.98] gap-2"
+                    className="md:flex-1 h-12 rounded-2xl bg-[#67BA2E] hover:bg-[#5aa329] text-white font-black uppercase tracking-widest text-[10px] shadow-xl shadow-green-100 transition-all active:scale-[0.98] gap-2"
                   >
                     <Link href={`/patient/appointments?doctorId=${doctor.id}`}>
                       <Calendar className="size-3.5" />
@@ -227,15 +237,35 @@ export default async function MyDoctorsPage() {
           )}
         </div>
 
-        {/* Support Section */}
+        {/* Specialist Referral */}
         <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 md:p-12 shadow-sm flex flex-col md:flex-row items-center justify-between gap-8">
-           <div className="space-y-2 text-center md:text-left">
-              <h4 className="text-xl font-black text-slate-900 tracking-tight">Need a second opinion?</h4>
-              <p className="text-sm font-medium text-slate-500">Our medical board can facilitate consultations with specialized experts across our network.</p>
-           </div>
-           <Button variant="ghost" className="h-12 px-8 font-black text-[#67BA2E] uppercase tracking-widest text-xs gap-2 hover:bg-green-50">
-              Explore Network <ArrowLeft className="size-4 rotate-180" />
-           </Button>
+          <div className="space-y-2 text-center md:text-left max-w-xl">
+            <h4 className="text-xl font-black text-slate-900 tracking-tight">
+              Need a Specialist?
+            </h4>
+            <p className="text-sm font-medium text-slate-500 leading-relaxed">
+              Looking for specialized care? Send a secure message to your primary provider to request a referral to a SyncMed specialist.
+            </p>
+          </div>
+          {doctor ? (
+            <OpenProviderChatButton
+              providerUserId={doctor.user.id}
+              variant="ghost"
+              className="h-12 px-8 font-black text-[#67BA2E] uppercase tracking-widest text-xs gap-2 hover:bg-green-50 shrink-0"
+            >
+              <MessageCircle className="size-4" />
+              Message Provider
+            </OpenProviderChatButton>
+          ) : (
+            <Button
+              variant="ghost"
+              disabled
+              className="h-12 px-8 font-black text-slate-400 uppercase tracking-widest text-xs gap-2 shrink-0"
+            >
+              <MessageCircle className="size-4" />
+              Message Provider
+            </Button>
+          )}
         </div>
 
       </div>

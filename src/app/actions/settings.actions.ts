@@ -60,6 +60,14 @@ export async function updatePassword(data: { currentPassword: string; newPasswor
     return { success: false, message: "Both passwords are required." }
   }
 
+  if (data.newPassword.trim().length < 8) {
+    return { success: false, message: "Password must be at least 8 characters." }
+  }
+
+  if (data.currentPassword === data.newPassword) {
+    return { success: false, message: "New password must be different from your current password." }
+  }
+
   try {
     // Fetch user from DB using session ID
     const user = await prisma.user.findUnique({
@@ -85,6 +93,8 @@ export async function updatePassword(data: { currentPassword: string; newPasswor
         where: { id: userByEmail.id },
         data: { passwordHash: newHash }
       })
+      revalidatePath("/provider/profile")
+      revalidatePath("/admin/settings")
       return { success: true, message: "Password updated successfully" }
     }
 
@@ -100,6 +110,9 @@ export async function updatePassword(data: { currentPassword: string; newPasswor
       where: { id: user.id },
       data: { passwordHash: newHash }
     })
+
+    revalidatePath("/provider/profile")
+    revalidatePath("/admin/settings")
 
     return { success: true, message: "Password updated successfully" }
   } catch (error) {

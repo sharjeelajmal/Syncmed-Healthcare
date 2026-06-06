@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { pusherClient } from "@/lib/pusher-client"
 import { CustomAudioPlayer } from "@/components/chat/CustomAudioPlayer"
+import { PATIENT_CHAT_OPEN_EVENT } from "@/lib/patient-chat"
 
 export function PatientChatOverlay() {
   const { data: session } = useSession();
@@ -53,7 +54,41 @@ export function PatientChatOverlay() {
   const messagesEndRef = React.useRef<HTMLDivElement>(null)
   const aiMessagesEndRef = React.useRef<HTMLDivElement>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
-  
+  const pendingChatUserIdRef = React.useRef<string | null>(null)
+
+  const openChatWithProvider = React.useCallback(
+    (providerUserId: string) => {
+      setIsOpen(true)
+      setActiveTab("HUMAN")
+      setView("chat")
+
+      const contact = contacts.find((c: { id: string }) => c.id === providerUserId)
+      if (contact) {
+        setSelectedPatient(contact)
+        pendingChatUserIdRef.current = null
+      } else {
+        pendingChatUserIdRef.current = providerUserId
+      }
+    },
+    [contacts]
+  )
+
+  React.useEffect(() => {
+    if (!pendingChatUserIdRef.current || contacts.length === 0) return
+    openChatWithProvider(pendingChatUserIdRef.current)
+  }, [contacts, openChatWithProvider])
+
+  React.useEffect(() => {
+    const handler = (event: Event) => {
+      const providerUserId = (event as CustomEvent<{ providerUserId: string }>).detail
+        ?.providerUserId
+      if (providerUserId) openChatWithProvider(providerUserId)
+    }
+
+    window.addEventListener(PATIENT_CHAT_OPEN_EVENT, handler)
+    return () => window.removeEventListener(PATIENT_CHAT_OPEN_EVENT, handler)
+  }, [openChatWithProvider])
+
   React.useEffect(() => {
     if (!patientUser) return;
     

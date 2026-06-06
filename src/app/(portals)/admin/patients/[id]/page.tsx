@@ -53,7 +53,7 @@ export default async function PatientDetailsPage({
   }))
 
   return (
-    <div className="min-h-screen pb-20 md:pb-10 animate-slide-up">
+    <div className="min-h-screen animate-slide-up">
       <div className="mb-8 flex items-center justify-between">
         <Link href="/admin/patients">
           <Button variant="ghost" className="hover:bg-slate-100 transition-colors">

@@ -28,7 +28,7 @@ export default async function AdminLeadsPage({
   })
 
   return (
-    <div className="animate-in fade-in duration-300 space-y-8 pb-24 md:pb-10">
+    <div className="animate-in fade-in duration-300 space-y-8">
       <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 md:flex-row md:items-center">
         <div className="space-y-1">
           <h1 className="flex items-center gap-3 text-3xl font-black tracking-tight text-slate-800">

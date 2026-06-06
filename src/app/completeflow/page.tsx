@@ -92,7 +92,7 @@ const specificationsData: Phase[] = [
         icon: Lock,
         intent: "Operational Intent: To manage the credentials, licensing parameters, access states, and individualized pricing structures for the professional medical team.",
         breakdown: [
-          "Dynamic Variable Consultation Fees: Moving away from rigid, platform-wide code rules, this module embeds a live financial parameter inside each provider's record (consultationFee). Administrators can adjust this amount based on seniority, specialization, or contract tiers (e.g., setting Dr. A at $150 and Dr. B at $220).",
+          "Dynamic Variable Consultation Fees: Moving away from rigid, platform-wide code rules, this module embeds a live financial parameter inside each provider's record (consultationFee). Administrators can adjust this amount based on seniority, specialization, or contract tiers (e.g., setting Dr. A at ₦150 and Dr. B at ₦220).",
           "Security Access Configuration Tool: Allows admins to toggle the functional clearance levels of individual clinicians, review license authentications, and temporarily suspend access if compliance reviews fail."
         ],
         advantage: "Real-World Advantage: Offers maximum commercial agility. If a provider changes their rates or if a new tier of specialized consultants is added to the system, the admin updates the parameter via the UI. The platform's booking wizard immediately adapts to the new rates without requiring code revisions."
@@ -200,7 +200,7 @@ const specificationsData: Phase[] = [
         intent: "Operational Intent: Clinical assessment encounter forms execute karna aur checkup ke dauran kiye gaye extra internal procedures ke charges transparently capture karna.",
         breakdown: [
           "Encounters Core Schema: Formal structured medical inputs capture karta hai (Symptoms, Diagnostics Notes, Prescriptions, Care Plans).",
-          "Additional Procedure Charges Module: Form submission block se bilkul upar ek secondary billing metric tool embedded hai. Agar doctor visit ke dauran koi additional procedure execute karta hai (e.g., Vitals testing tool charges, ECG execution, specialized swabs), toh doctor wahan custom fee enter karta hai (e.g., $50.00).",
+          "Additional Procedure Charges Module: Form submission block se bilkul upar ek secondary billing metric tool embedded hai. Agar doctor visit ke dauran koi additional procedure execute karta hai (e.g., Vitals testing tool charges, ECG execution, specialized swabs), toh doctor wahan custom fee enter karta hai (e.g., ₦50.00).",
           "Automated Secondary Invoicing Engine: Form submit hote hi server action chalte hi do alag parallel actions trigger hote hain:",
           "Clinical Assessment form save ho kar immutable chart data ban jata hai.",
           "System check karta hai ke agar additionalCharges > 0, toh original paid appointment entry ko touch kiye bina automatically ek brand new 'Secondary Invoice' system generate kar deta hai status PENDING ke sath, jo seedha patient panel par shift ho jati hai."
@@ -350,7 +350,7 @@ export default function CompleteFlowPage() {
       details: [
         {
           label: "Provider Pricing Configuration",
-          desc: "The Admin registers new clinicians and customizes their consultation fees (e.g., $150 or $250) based on seniority, specialization, or tier."
+          desc: "The Admin registers new clinicians and customizes their consultation fees (e.g., ₦150 or ₦250) based on seniority, specialization, or tier."
         },
         {
           label: "Patient Baseline Charting",
@@ -382,7 +382,7 @@ export default function CompleteFlowPage() {
       details: [
         {
           label: "Smart Auto-Pricing",
-          desc: "When a patient selects a provider, the booking wizard queries the database to retrieve that doctor's specific consultation fee (e.g., $150) and injects it dynamically into the checkout statement."
+          desc: "When a patient selects a provider, the booking wizard queries the database to retrieve that doctor's specific consultation fee (e.g., ₦150) and injects it dynamically into the checkout statement."
         },
         {
           label: "Collision Guard Protocol",
@@ -434,11 +434,11 @@ export default function CompleteFlowPage() {
       details: [
         {
           label: "Frictionless Charging",
-          desc: "Directly inside the assessment form, the provider enters the custom procedure amount (e.g., $50) before submitting."
+          desc: "Directly inside the assessment form, the provider enters the custom procedure amount (e.g., ₦50) before submitting."
         },
         {
           label: "Auto-Secondary Invoice",
-          desc: "The platform leaves the original $150 invoice (legally paid) completely untouched. Instead, it generates a fresh, independent secondary PENDING invoice of $50 assigned to the patient."
+          desc: "The platform leaves the original ₦150 invoice (legally paid) completely untouched. Instead, it generates a fresh, independent secondary PENDING invoice of ₦50 assigned to the patient."
         },
         {
           label: "The Red Pulse Alert",

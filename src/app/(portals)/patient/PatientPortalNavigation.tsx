@@ -17,7 +17,9 @@ import { cn } from "@/lib/utils"
 import {
   portalHeaderActionsClass,
   portalHeaderBrandClass,
+  portalHeaderNavClass,
   portalHeaderRowClass,
+  portalBottomNavClass,
   portalShellClass,
 } from "@/lib/portal-shell"
 import { fetchPatientUnpaidCountAction } from "@/app/actions/patient.actions"
@@ -85,7 +87,7 @@ export function PatientPortalNavigation({ userId }: PatientPortalNavigationProps
                 <img src="/logo.png" alt="SyncMed Logo" className="h-10 w-auto object-contain sm:h-11" />
               </Link>
 
-              <nav className="hidden min-w-0 flex-1 items-center gap-0.5 md:flex lg:gap-1">
+              <nav className={cn(portalHeaderNavClass, "flex-1 gap-0.5 xl:gap-1")}>
                 {navItems.map((item) => {
                   const isActive =
                     pathname === item.href ||
@@ -102,17 +104,17 @@ export function PatientPortalNavigation({ userId }: PatientPortalNavigationProps
                         variant={isActive ? "secondary" : "ghost"}
                         size="sm"
                         className={cn(
-                          "relative h-9 overflow-visible px-2 pr-3 font-bold transition-all sm:px-2.5 sm:pr-3.5 lg:px-3 lg:pr-4",
+                          "relative h-9 overflow-visible px-2 pr-3 font-bold transition-all sm:px-2.5 sm:pr-3.5 xl:px-3 xl:pr-4",
                           isActive ? "text-[#67BA2E] bg-emerald-50" : "text-slate-500"
                         )}
                       >
                         <item.icon
                           className={cn(
-                            "size-4 shrink-0 lg:mr-2",
+                            "size-4 shrink-0 xl:mr-2",
                             isActive && "fill-[#67BA2E]/20"
                           )}
                         />
-                        <span className="hidden lg:inline">{item.name}</span>
+                        <span className="hidden xl:inline">{item.name}</span>
 
                         {item.badge != null && item.badge > 0 && (
                           <span className="pointer-events-none absolute -top-0.5 right-0 z-10 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-black leading-none text-white shadow-sm ring-2 ring-white animate-pulse">
@@ -127,7 +129,7 @@ export function PatientPortalNavigation({ userId }: PatientPortalNavigationProps
             </div>
 
             <div className={portalHeaderActionsClass}>
-              <div className="mr-2 hidden flex-col items-end text-right lg:flex">
+              <div className="mr-2 hidden flex-col items-end text-right xl:flex">
                 <span className="text-[10px] font-black uppercase tracking-widest text-[#67BA2E]">
                   Patient Portal
                 </span>
@@ -143,19 +145,19 @@ export function PatientPortalNavigation({ userId }: PatientPortalNavigationProps
               <Button
                 variant="outline"
                 size="sm"
-                className="ml-1 shrink-0 rounded-lg border-slate-200 font-bold transition-all hover:bg-slate-50 lg:ml-2"
+                className="ml-1 shrink-0 rounded-lg border-slate-200 font-bold transition-all hover:bg-slate-50 xl:ml-2"
                 onClick={() => signOut({ callbackUrl: "/login" })}
               >
-                <LogOut className="size-4 text-red-500 lg:mr-2" />
-                <span className="hidden lg:inline">Logout</span>
+                <LogOut className="size-4 text-red-500 xl:mr-2" />
+                <span className="hidden xl:inline">Logout</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-slate-200 px-6 py-3 pb-safe shadow-[0_-8px_30px_rgb(0,0,0,0.04)]">
+      {/* Mobile & tablet bottom navigation */}
+      <div className={portalBottomNavClass}>
         <nav className="flex items-center justify-between">
           {navItems.map((item) => {
             const isActive = pathname === item.href || (item.href !== "/patient/dashboard" && pathname.startsWith(item.href))

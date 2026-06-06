@@ -66,7 +66,7 @@ export default function AiHubOverview() {
   const areaPath = `${linePath} L ${width},${height} L 0,${height} Z`;
 
   return (
-    <div className="space-y-4 pb-8">
+    <div className="space-y-4">
       
       {/* Ultra-Compact Header */}
       <div className="p-4 rounded-2xl bg-slate-900 relative overflow-hidden shadow-lg animate-in fade-in slide-in-from-bottom-8 duration-700">

@@ -365,7 +365,7 @@ export default function LandingPage() {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
                   <div className="text-white">
                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Annual Access</p>
-                    <p className="text-3xl font-black">$5,000</p>
+                    <p className="text-3xl font-black">₦5,000</p>
                   </div>
                   <Button 
                     variant="default"

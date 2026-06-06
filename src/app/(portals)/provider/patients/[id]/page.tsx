@@ -116,7 +116,7 @@ export default async function PatientChartPage({ params }: PageProps) {
   const age = differenceInYears(new Date(), new Date(patient.dateOfBirth))
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
+    <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8 animate-slide-up">
         {/* Navigation & Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">

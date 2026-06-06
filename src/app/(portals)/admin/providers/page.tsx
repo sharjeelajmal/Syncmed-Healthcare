@@ -50,7 +50,7 @@ export default async function ProvidersPage({
   })
 
   return (
-    <div className="animate-in fade-in duration-300 pb-10">
+    <div className="animate-in fade-in duration-300">
       <div className="mb-8 flex flex-col gap-2">
         <h1 className="flex items-center gap-3 text-3xl font-black tracking-tight text-slate-800">
           <div className="rounded-xl bg-[#67BA2E]/10 p-2">

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { 
   Calendar, 
   Users, 
-  DollarSign, 
+  Banknote, 
   Target, 
   Clock, 
   TrendingUp, 
@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { formatNaira, formatNairaCompactThousands } from "@/lib/currency"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { PureCalendar } from "@/components/ui/pure-calendar"
 
@@ -154,10 +155,10 @@ export function OverviewAnalytics() {
         {/* Net Revenue */}
         <MetricCardImageStyle 
           title="Net Revenue" 
-          value={`$${(data?.revenue.verified / 1000).toFixed(1)}k`} 
+          value={formatNairaCompactThousands(data?.revenue.verified || 0)}
           subLabel="Revenue Overview"
-          subDetail={`$${(data?.revenue.pending || 0).toLocaleString()} pending collection`}
-          icon={DollarSign}
+          subDetail={`${formatNaira(data?.revenue.pending || 0)} pending collection`}
+          icon={Banknote}
           chartType="bars"
         />
 
@@ -252,11 +253,11 @@ export function OverviewAnalytics() {
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1">
                     <span className="text-[10px] font-bold text-slate-400">Verified Claims</span>
-                    <div className="text-2xl font-black text-[#67BA2E]">${(data?.revenue.verified || 0).toLocaleString()}</div>
+                    <div className="text-2xl font-black text-[#67BA2E]">{formatNaira(data?.revenue.verified || 0)}</div>
                  </div>
                  <div className="space-y-1">
                     <span className="text-[10px] font-bold text-slate-400">Pending Reviews</span>
-                    <div className="text-2xl font-black text-[#67BA2E]">${(data?.revenue.pending || 0).toLocaleString()}</div>
+                    <div className="text-2xl font-black text-[#67BA2E]">{formatNaira(data?.revenue.pending || 0)}</div>
                  </div>
               </div>
            </Card>

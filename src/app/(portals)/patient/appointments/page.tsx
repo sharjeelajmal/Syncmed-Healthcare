@@ -64,7 +64,7 @@ export default async function PatientAppointmentsPage({
 
   return (
     <div className="w-full py-6 md:py-8">
-      <div className="animate-slide-up pb-10">
+      <div className="animate-slide-up">
         <div className="flex flex-col gap-2 mb-8">
           <h1 className="text-3xl font-black tracking-tight text-slate-800 flex items-center gap-3">
             <div className="p-2 bg-[#67BA2E]/10 rounded-xl">

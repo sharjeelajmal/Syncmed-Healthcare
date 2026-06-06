@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Upload, FileText, CheckCircle2, Loader2, DollarSign, CloudUpload } from "lucide-react"
+import { Upload, FileText, CheckCircle2, Loader2, Banknote, CloudUpload } from "lucide-react"
 import { useDropzone } from "react-dropzone"
 import {
   Dialog,
@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
 import { uploadReceiptAction } from "@/app/actions/billing.actions"
 import { toast } from "sonner"
+import { formatNaira } from "@/lib/currency"
 
 interface ReceiptUploadModalProps {
   isOpen: boolean
@@ -131,7 +132,7 @@ export function ReceiptUploadModal({
             </div>
             <div className="pt-2">
                <p className="text-[10px] font-bold text-slate-500 bg-white border border-slate-100 rounded-lg p-2 text-center leading-relaxed">
-                 Please transfer exactly <span className="text-[#67BA2E] font-black">${amountToPay.toLocaleString()}</span> to the account above and upload the confirmation receipt.
+                 Please transfer exactly <span className="text-[#67BA2E] font-black">{formatNaira(amountToPay)}</span> to the account above and upload the confirmation receipt.
                </p>
             </div>
           </div>
@@ -140,11 +141,11 @@ export function ReceiptUploadModal({
             <div className="flex flex-col">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount Due</span>
               <span className="text-2xl font-black text-[#67BA2E] tracking-tighter">
-                ${amountToPay.toLocaleString()}
+                {formatNaira(amountToPay)}
               </span>
             </div>
             <div className="size-10 rounded-xl bg-[#67BA2E] flex items-center justify-center text-white shadow-lg shadow-emerald-100">
-               <DollarSign className="size-5" />
+               <Banknote className="size-5" />
             </div>
           </div>
 

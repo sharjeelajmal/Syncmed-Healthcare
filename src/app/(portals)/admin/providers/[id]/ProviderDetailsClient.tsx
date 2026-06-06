@@ -17,12 +17,13 @@ import {
   Save,
   X,
   Loader2,
-  DollarSign
+  Banknote
 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { formatNaira } from "@/lib/currency"
 import { Label } from "@/components/ui/label"
 import { updateProviderAction } from "@/app/actions/provider.actions"
 
@@ -58,7 +59,7 @@ export function ProviderDetailsClient({ provider, stats }: ProviderDetailsClient
   }
 
   return (
-    <div className="animate-slide-up pb-10">
+    <div className="animate-slide-up">
       <div className="flex items-center gap-4 mb-8">
         <Link href="/admin/providers">
           <Button variant="ghost" className="size-10 p-0 rounded-full hover:bg-slate-100 transition-all">
@@ -130,7 +131,7 @@ export function ProviderDetailsClient({ provider, stats }: ProviderDetailsClient
                       <Input name="licenseNumber" defaultValue={provider.providerProfile?.licenseNumber} required className="h-12 rounded-xl border-slate-200 focus:ring-[#67BA2E] font-bold" />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Consultation Fee ($)</Label>
+                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Consultation Fee (₦)</Label>
                       <Input name="consultationFee" type="number" step="0.01" defaultValue={provider.providerProfile?.consultationFee || 150} required className="h-12 rounded-xl border-slate-200 focus:ring-[#67BA2E] font-bold" />
                     </div>
                   </>
@@ -147,9 +148,9 @@ export function ProviderDetailsClient({ provider, stats }: ProviderDetailsClient
                       value={provider.providerProfile?.licenseNumber || "Unverified"} 
                     />
                     <DetailItem 
-                      icon={<DollarSign className="size-4 text-[#67BA2E]" />} 
+                      icon={<Banknote className="size-4 text-[#67BA2E]" />} 
                       label="Consultation Fee" 
-                      value={`$${(provider.providerProfile?.consultationFee || 150).toLocaleString()}`} 
+                      value={formatNaira(provider.providerProfile?.consultationFee || 150)} 
                     />
                     <DetailItem 
                       icon={<Mail className="size-4 text-[#67BA2E]" />} 

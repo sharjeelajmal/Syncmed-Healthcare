@@ -6,6 +6,7 @@ import { notFound } from "next/navigation"
 import prisma from "@/lib/prisma"
 import { ProviderDetailsClient } from "./ProviderDetailsClient"
 import { resolveProviderUser } from "@/lib/resolve-provider-user"
+import NewProviderPage from "../new/page"
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -13,6 +14,11 @@ interface PageProps {
 
 export default async function ProviderProfilePage({ params }: PageProps) {
   const { id } = await params
+
+  // "new" is a static sibling route; when the dynamic segment wins, render the form instead of 404.
+  if (id === "new") {
+    return <NewProviderPage />
+  }
 
   const provider = await resolveProviderUser(id)
 

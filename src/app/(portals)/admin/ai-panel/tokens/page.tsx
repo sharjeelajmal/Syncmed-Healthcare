@@ -6,6 +6,7 @@ import { Loader2, Coins, Receipt, ArrowUpRight, ArrowDownRight, Flame, Database,
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { formatNaira, CURRENCY_SYMBOL } from "@/lib/currency";
 
 export default function AiTokensPage() {
   const [stats, setStats] = useState<any>(null);
@@ -39,7 +40,7 @@ export default function AiTokensPage() {
   const modelLabel = stats?.modelPreference?.split("/").pop() ?? "—";
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-12">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-700">
       {/* Hyper-Compact Header */}
       <div className="flex items-center justify-between px-1">
         <div>
@@ -91,14 +92,14 @@ export default function AiTokensPage() {
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <div className="text-3xl font-black text-emerald-600 flex items-start gap-1 mb-6">
-              <span className="text-base mt-1">$</span>
+              <span className="text-base mt-1">{CURRENCY_SYMBOL}</span>
               {estimatedCost.toFixed(4)}
             </div>
             
             <div className="space-y-2">
                <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-emerald-700/70">
                  <span>Daily Quota</span>
-                 <span>${dailyBudget}</span>
+                 <span>{formatNaira(dailyBudget)}</span>
                </div>
                <div className="h-2 w-full bg-emerald-100 rounded-full overflow-hidden">
                  <div 
@@ -109,7 +110,7 @@ export default function AiTokensPage() {
             </div>
 
             <div className="mt-4 p-2.5 rounded-xl bg-white/50 border border-emerald-100 flex items-center gap-2">
-              <span className="text-[9px] font-bold text-emerald-800 leading-tight">Rate: $0.50 per 1M tokens combined input/output.</span>
+              <span className="text-[9px] font-bold text-emerald-800 leading-tight">Rate: {formatNaira(0.5)} per 1M tokens combined input/output.</span>
             </div>
           </CardContent>
         </Card>

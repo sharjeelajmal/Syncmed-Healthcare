@@ -118,12 +118,12 @@ export function AppointmentForm({ patients, providers }: { patients: any[], prov
   const maxDate = addDays(new Date(), 30);
 
   return (
-    <div className="min-h-screen pb-20 md:pb-10 animate-slide-up">
+    <div className="min-h-screen animate-slide-up">
       <div className="flex items-center justify-between mb-6">
-        <Link href="/admin/dashboard">
+        <Link href="/admin/appointments">
           <Button variant="ghost" className="hover:bg-slate-100/50 transition-colors">
             <ArrowLeft className="mr-2 size-4" />
-            <span className="hidden sm:inline">Back to Dashboard</span>
+            <span className="hidden sm:inline">Back to Directory</span>
             <span className="sm:hidden">Back</span>
           </Button>
         </Link>

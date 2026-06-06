@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bot, MessageSquare, Activity, Settings, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { portalMainBottomPadding } from "@/lib/portal-shell";
 import {
   Tooltip,
   TooltipContent,
@@ -23,7 +24,7 @@ export default function AiHubLayout({ children }: { children: React.ReactNode })
   return (
     <div className="flex h-[calc(100vh-120px)] md:h-[80vh] flex-col md:flex-row max-w-7xl mx-auto w-full overflow-hidden bg-white/50 backdrop-blur-sm rounded-[2.5rem] border border-slate-200/50 shadow-2xl">
       {/* Slim Sidebar (Desktop Only) - SyncMed Theme */}
-      <aside className="hidden md:flex w-20 shrink-0 flex-col items-center py-8 bg-slate-900 relative overflow-hidden">
+      <aside className="hidden xl:flex w-20 shrink-0 flex-col items-center py-8 bg-slate-900 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-[#67BA2E] opacity-20 blur-[50px] rounded-full pointer-events-none translate-x-1/3 -translate-y-1/3"></div>
         
         <div className="relative z-10 mb-12">
@@ -63,14 +64,14 @@ export default function AiHubLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content Area (App Shell) */}
-      <main className="flex-1 overflow-y-auto pb-24 md:pb-8 bg-slate-50 custom-scrollbar relative">
+      <main className={cn("flex-1 overflow-y-auto bg-slate-50 custom-scrollbar relative", portalMainBottomPadding)}>
         <div className="max-w-7xl mx-auto w-full px-4 md:px-8 py-6 md:py-8">
           {children}
         </div>
       </main>
 
       {/* Native Mobile Bottom Navigation - Sticky & Solid */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-t border-slate-200 z-50 flex items-center justify-around px-6">
+      <nav className="xl:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-t border-slate-200 z-50 flex items-center justify-around px-6">
         {sidebarLinks.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/admin/ai-panel" && pathname.startsWith(item.href))
           return (

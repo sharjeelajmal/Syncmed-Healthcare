@@ -34,7 +34,7 @@ export function EditProviderForm({ provider }: { provider: any }) {
   }
 
   return (
-    <div className="min-h-screen pb-20 md:pb-10 animate-slide-up">
+    <div className="min-h-screen animate-slide-up">
       <div className="flex items-center justify-between mb-6">
         <Link href="/admin/providers">
           <Button variant="ghost" className="hover:bg-slate-100/50 transition-colors">
@@ -111,7 +111,7 @@ export function EditProviderForm({ provider }: { provider: any }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="consultationFee" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Consultation Fee ($)</Label>
+                  <Label htmlFor="consultationFee" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Consultation Fee (₦)</Label>
                   <Input 
                     id="consultationFee" 
                     name="consultationFee" 

@@ -9,12 +9,10 @@ import {
   Lock,
   UserCheck,
   Loader2,
-  LogOut,
-  MonitorSmartphone,
-  KeyRound,
   Mail,
   Clock,
   RefreshCw,
+  Key,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -37,8 +35,8 @@ import {
 import { Badge } from "@/components/ui/badge"
 import {
   updateProviderAccessAction,
-  resetProviderMfaAction,
-  revokeProviderSessionsAction,
+  sendProviderPasswordResetAction,
+  sendProviderSecurityWarningAction,
 } from "@/app/actions/provider.actions"
 import { cn } from "@/lib/utils"
 
@@ -86,8 +84,8 @@ export function ManageAccessForm({ initialData }: ManageAccessFormProps) {
   const [data, setData] = React.useState(initialData)
   const [isActive, setIsActive] = React.useState(initialData.isActive)
   const [isSaving, startSave] = React.useTransition()
-  const [isResettingMfa, startResetMfa] = React.useTransition()
-  const [isRevoking, startRevoke] = React.useTransition()
+  const [isSendingReset, startSendReset] = React.useTransition()
+  const [isSendingWarning, startSendWarning] = React.useTransition()
 
   React.useEffect(() => {
     setData(initialData)
@@ -114,37 +112,32 @@ export function ManageAccessForm({ initialData }: ManageAccessFormProps) {
     })
   }
 
-  const handleResetMfa = () => {
-    startResetMfa(async () => {
-      const res = await resetProviderMfaAction(data.userId)
-      if (res.success && res.data) {
-        setData((prev) => applyLivePatch(prev, res.data))
-        toast.success(res.message || "MFA reset successfully")
-        router.refresh()
+  const handleSendPasswordReset = () => {
+    startSendReset(async () => {
+      const res = await sendProviderPasswordResetAction(data.userId)
+      if (res.success) {
+        toast.success(`Password reset email sent to ${data.email}`)
       } else {
-        toast.error(res.error || "Failed to reset MFA")
+        toast.error(res.error || "Failed to send password reset email")
       }
     })
   }
 
-  const handleRevokeSessions = () => {
+  const handleSendSecurityWarning = () => {
     if (
       !confirm(
-        "This will restrict the account, clear MFA, and require admin re-activation. Continue?"
+        `Send a high-priority security alert to ${data.email}? The provider will be advised to review their account immediately.`
       )
     ) {
       return
     }
 
-    startRevoke(async () => {
-      const res = await revokeProviderSessionsAction(data.userId)
-      if (res.success && res.data) {
-        setData((prev) => applyLivePatch(prev, res.data))
-        setIsActive(res.data.isActive)
-        toast.success(res.message || "Sessions revoked")
-        router.refresh()
+    startSendWarning(async () => {
+      const res = await sendProviderSecurityWarningAction(data.userId)
+      if (res.success) {
+        toast.success(`Security warning sent to ${data.email}`)
       } else {
-        toast.error(res.error || "Failed to revoke sessions")
+        toast.error(res.error || "Failed to send security warning")
       }
     })
   }
@@ -204,7 +197,7 @@ export function ManageAccessForm({ initialData }: ManageAccessFormProps) {
               <Select
                 value={isActive ? "active" : "inactive"}
                 onValueChange={(val) => setIsActive(val === "active")}
-                disabled={isSaving || isRevoking}
+                disabled={isSaving || isSendingReset || isSendingWarning}
               >
                 <SelectTrigger className="h-12 rounded-xl border-slate-200 font-bold text-slate-700 focus:border-[#67BA2E] focus:ring-[#67BA2E]">
                   <SelectValue placeholder="Select status" />
@@ -271,8 +264,8 @@ export function ManageAccessForm({ initialData }: ManageAccessFormProps) {
           <div className="flex flex-col gap-3 pt-2 sm:flex-row">
             <Button
               onClick={handleSave}
-              disabled={isSaving || isRevoking || !hasUnsavedStatus}
-              className="h-12 flex-1 rounded-xl bg-[#67BA2E] font-black text-white shadow-lg shadow-emerald-100 hover:bg-[#5aa827]"
+              disabled={isSaving || isSendingReset || isSendingWarning || !hasUnsavedStatus}
+              className="h-12 md:flex-1 rounded-xl bg-[#67BA2E] font-black text-white shadow-lg shadow-emerald-100 hover:bg-[#5aa827]"
             >
               {isSaving ? (
                 <>
@@ -299,52 +292,50 @@ export function ManageAccessForm({ initialData }: ManageAccessFormProps) {
       <Card className="overflow-hidden rounded-3xl border-slate-200 bg-white shadow-sm">
         <CardHeader className="border-b border-slate-50 p-8">
           <CardTitle className="flex items-center gap-2 text-xl font-black text-slate-800">
-            <MonitorSmartphone className="size-5 text-[#67BA2E]" />
-            Security Controls
+            <Key className="size-5 text-[#67BA2E]" />
+            Credential Management
           </CardTitle>
           <CardDescription className="mt-1 font-medium text-slate-500">
-            MFA recovery and emergency session lockdown.
+            Handle account recovery and security alerts.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 p-8">
           <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-            <p className="text-xs font-bold text-slate-700">Account enrolled</p>
-            <p className="mt-1 text-[11px] font-medium text-slate-500">
-              {format(new Date(data.createdAt), "MMM dd, yyyy · hh:mm a")}
-            </p>
+            <p className="text-xs font-bold text-slate-700">Delivery address</p>
+            <p className="mt-1 truncate text-sm font-bold text-slate-800">{data.email}</p>
             <p className="mt-3 text-[10px] leading-relaxed text-slate-400">
-              Last security sync:{" "}
-              {format(new Date(data.updatedAt), "MMM dd, yyyy · hh:mm a")}
+              Account enrolled{" "}
+              {format(new Date(data.createdAt), "MMM dd, yyyy · hh:mm a")}
             </p>
           </div>
 
           <Button
             type="button"
             variant="outline"
-            disabled={isResettingMfa || isRevoking || !data.mfaEnabled}
-            onClick={handleResetMfa}
+            disabled={isSendingReset || isSendingWarning || isSaving}
+            onClick={handleSendPasswordReset}
             className="h-12 w-full rounded-xl border-slate-200 font-bold text-slate-700 hover:border-[#67BA2E]/30 hover:bg-emerald-50 hover:text-[#67BA2E]"
           >
-            {isResettingMfa ? (
+            {isSendingReset ? (
               <Loader2 className="mr-2 size-4 animate-spin" />
             ) : (
-              <KeyRound className="mr-2 size-4" />
+              <Key className="mr-2 size-4" />
             )}
-            Reset MFA
+            Send Password Reset
           </Button>
 
           <button
             type="button"
-            onClick={handleRevokeSessions}
-            disabled={isRevoking || isSaving}
-            className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-100 bg-red-50 font-bold text-red-600 transition-all hover:bg-red-100 disabled:opacity-50"
+            onClick={handleSendSecurityWarning}
+            disabled={isSendingWarning || isSendingReset || isSaving}
+            className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-100 bg-red-50 font-bold text-red-600 transition-all hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isRevoking ? (
+            {isSendingWarning ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
-              <LogOut className="size-4" />
+              <ShieldAlert className="size-4" />
             )}
-            Revoke All Sessions
+            Send Security Warning
           </button>
         </CardContent>
       </Card>

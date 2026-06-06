@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { DebouncedSearch } from "@/components/ui/debounced-search"
+import { formatNaira } from "@/lib/currency"
 
 interface BillingItem {
   id: string
@@ -56,7 +57,7 @@ export function BillingClient({ invoices }: BillingClientProps) {
               </div>
               <div className="flex flex-col">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Outstanding</span>
-                <span className="text-3xl font-black text-slate-800 tracking-tighter">${totalOutstanding.toLocaleString()}</span>
+                <span className="text-3xl font-black text-slate-800 tracking-tighter">{formatNaira(totalOutstanding)}</span>
               </div>
             </div>
           </CardContent>
@@ -156,7 +157,7 @@ export function BillingClient({ invoices }: BillingClientProps) {
                          </div>
                       </TableCell>
                       <TableCell>
-                         <span className="text-base font-black text-slate-700 tracking-tighter">${item.amount.toLocaleString()}</span>
+                         <span className="text-base font-black text-slate-700 tracking-tighter">{formatNaira(item.amount)}</span>
                       </TableCell>
                       <TableCell>
                          {item.status === "UNPAID" && (

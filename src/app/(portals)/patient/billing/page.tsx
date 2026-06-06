@@ -91,7 +91,7 @@ export default async function BillingPage({
 
   return (
     <div className="w-full py-6 md:py-8">
-      <div className="animate-slide-up pb-10">
+      <div className="animate-slide-up">
         {/* Header */}
         <div className="flex flex-col gap-2 mb-10">
           <h1 className="text-3xl font-black tracking-tight text-slate-800 flex items-center gap-3">
