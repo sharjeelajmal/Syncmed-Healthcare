@@ -2,9 +2,13 @@ import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import pg from "pg"
 
+/** Bump when PatientProfile or other queried models change shape (invalidates dev singleton). */
+const PRISMA_CLIENT_GENERATION = "patient-diagnoses-field-v1"
+
 declare global {
   var prisma: undefined | PrismaClient
   var pgPool: undefined | pg.Pool
+  var prismaClientGeneration: undefined | string
 }
 
 function getConnectionString(): string {
@@ -58,10 +62,21 @@ function getPrismaClient(): PrismaClient {
   })
 }
 
+if (
+  process.env.NODE_ENV !== "production" &&
+  globalThis.prisma &&
+  globalThis.prismaClientGeneration !== PRISMA_CLIENT_GENERATION
+) {
+  void globalThis.prisma.$disconnect()
+  globalThis.prisma = undefined
+  globalThis.pgPool = undefined
+}
+
 const prisma = globalThis.prisma ?? getPrismaClient()
 
 export default prisma
 
 if (process.env.NODE_ENV !== "production") {
   globalThis.prisma = prisma
+  globalThis.prismaClientGeneration = PRISMA_CLIENT_GENERATION
 }

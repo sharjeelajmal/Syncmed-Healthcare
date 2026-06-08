@@ -11,16 +11,16 @@ import {
   Calendar, 
   MapPin, 
   AlertCircle, 
-  FileText, 
   ClipboardList, 
   History,
   ArrowLeft,
   PlusCircle,
   Stethoscope,
-  ChevronRight,
   Shield
 } from "lucide-react"
 import { format, differenceInYears } from "date-fns"
+import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
+import { formatProviderDisplayName } from "@/lib/format-provider-name"
 import { auth } from "@/../auth"
 
 import prisma from "@/lib/prisma"
@@ -36,6 +36,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { VisitHistoryTable } from "./VisitHistoryTable"
+import { ClinicalSnapshot } from "./ClinicalSnapshot"
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -99,6 +100,11 @@ export default async function PatientChartPage({ params }: PageProps) {
           diagnoses: true
         }
       },
+      clinicalAssessments: {
+        orderBy: {
+          createdAt: 'desc'
+        },
+      },
       appointments: {
         orderBy: { scheduledAt: 'desc' },
         take: 1
@@ -116,7 +122,7 @@ export default async function PatientChartPage({ params }: PageProps) {
   const age = differenceInYears(new Date(), new Date(patient.dateOfBirth))
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="animate-slide-up">
       <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8 animate-slide-up">
         {/* Navigation & Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -143,7 +149,9 @@ export default async function PatientChartPage({ params }: PageProps) {
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
                 <span className="flex items-center gap-1">
                   <Stethoscope className="size-4" />
-                  Dr. {patient.assignedProvider?.user.lastName || "Unassigned"}
+                  {patient.assignedProvider
+                    ? formatProviderDisplayName(patient.assignedProvider)
+                    : "Unassigned"}
                 </span>
               </div>
             </div>
@@ -183,7 +191,7 @@ export default async function PatientChartPage({ params }: PageProps) {
               <CardContent className="p-6 space-y-6">
                 <InfoItem icon={<Phone />} label="Primary Phone" value={patient.phone} />
                 <InfoItem icon={<Mail />} label="Email Address" value={patient.user.email} />
-                <InfoItem icon={<Calendar />} label="Date of Birth" value={format(new Date(patient.dateOfBirth), "MMMM dd, yyyy")} />
+                <InfoItem icon={<Calendar />} label="Date of Birth" value={format(new Date(patient.dateOfBirth), DISPLAY_DATE_FORMAT)} />
                 <InfoItem icon={<MapPin />} label="Residential Address" value={patient.address} />
                 <InfoItem icon={<AlertCircle />} label="Emergency Contact" value={patient.emergencyContact} />
               </CardContent>
@@ -197,10 +205,12 @@ export default async function PatientChartPage({ params }: PageProps) {
                   Clinical Snapshot
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6 space-y-8">
-                <SnapshotItem title="Active Medications" items={patient.activeMedications} />
-                <SnapshotItem title="Allergies" items={patient.allergies} />
-                <SnapshotItem title="Chronic Conditions" items={patient.chronicConditions} />
+              <CardContent className="p-6">
+                <ClinicalSnapshot
+                  diagnoses={patient.diagnoses}
+                  activeMedications={patient.activeMedications}
+                  allergies={patient.allergies}
+                />
               </CardContent>
             </Card>
           </div>
@@ -217,7 +227,10 @@ export default async function PatientChartPage({ params }: PageProps) {
               </CardHeader>
               <CardContent className="p-0">
                 {patient.assessments.length > 0 ? (
-                  <VisitHistoryTable assessments={patient.assessments} />
+                  <VisitHistoryTable
+                    assessments={patient.assessments}
+                    clinicalAssessments={patient.clinicalAssessments}
+                  />
                 ) : (
                   <div className="flex flex-col items-center justify-center py-20 text-center">
                     <History className="size-12 text-slate-200 mb-4" />
@@ -247,26 +260,3 @@ function InfoItem({ icon, label, value }: { icon: React.ReactNode, label: string
   )
 }
 
-function SnapshotItem({ title, items }: { title: string, items: string[] }) {
-  return (
-    <div className="space-y-3">
-      <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center justify-between">
-        {title}
-        <ChevronRight size={14} className="text-slate-300" />
-      </h4>
-      <div className="p-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50">
-        {items && items.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {items.map((item, i) => (
-              <Badge key={i} variant="outline" className="bg-white border-slate-200 text-slate-700 font-bold">{item}</Badge>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[10px] text-center font-black text-slate-400 uppercase tracking-widest">No clinical records found</p>
-        )}
-      </div>
-    </div>
-  )
-}
-
-import { cn } from "@/lib/utils"

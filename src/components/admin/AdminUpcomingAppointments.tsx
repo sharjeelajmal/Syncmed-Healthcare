@@ -1,4 +1,6 @@
 import { format } from "date-fns"
+import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
+import { formatProviderDisplayName } from "@/lib/format-provider-name"
 import Link from "next/link"
 import { Activity, ChevronRight, Stethoscope } from "lucide-react"
 import { getAdminUpcomingAppointments } from "@/lib/admin-dashboard-data"
@@ -112,7 +114,7 @@ export async function AdminUpcomingAppointments() {
                     <TableCell className="px-8 py-5 font-bold text-slate-700 whitespace-nowrap">
                       <div className="flex flex-col">
                         <span className="text-sm text-slate-800">
-                          {format(new Date(apt.scheduledAt), "MMM dd, yyyy")}
+                          {format(new Date(apt.scheduledAt), DISPLAY_DATE_FORMAT)}
                         </span>
                         <span className="text-[10px] font-black text-[#67BA2E] uppercase tracking-wider mt-1">
                           {format(new Date(apt.scheduledAt), "hh:mm a")}
@@ -130,7 +132,7 @@ export async function AdminUpcomingAppointments() {
                     <TableCell>
                       <div className="flex items-center gap-2 text-slate-600 font-bold text-sm whitespace-nowrap">
                         <Stethoscope size={14} className="text-[#67BA2E]" />
-                        Dr. {apt.provider.user.firstName}
+                        {formatProviderDisplayName(apt.provider)}
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(apt.status)}</TableCell>

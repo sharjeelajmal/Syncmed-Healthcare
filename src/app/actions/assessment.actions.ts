@@ -5,13 +5,21 @@ import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { auth } from "@/../auth"
-
-export type AssessmentRiskLevel = "LOW" | "MODERATE" | "HIGH"
+import {
+  buildRiskScoreMap,
+  calculateTotalRiskScore,
+  deriveRiskLevel,
+  type AssessmentRiskLevel,
+  type MedicationDosageUnit,
+} from "@/lib/assessment-risk-score"
+import { getScoredQuestionsForAssessment } from "@/lib/assessment-questions"
 
 export interface AssessmentMedicationInput {
   name: string
   dosage: string
   frequency: string
+  dosageAmount?: string
+  dosageUnit?: MedicationDosageUnit
 }
 
 export interface AssessmentDiagnosisInput {
@@ -40,18 +48,6 @@ export interface SubmitAssessmentPayload {
 export type SubmitAssessmentResult =
   | { success: true; assessmentId: string; riskLevel: AssessmentRiskLevel }
   | { success: false; error: string }
-
-function deriveRiskLevel(totalRiskScore: number): AssessmentRiskLevel {
-  if (totalRiskScore <= 20) {
-    return "LOW"
-  }
-
-  if (totalRiskScore <= 45) {
-    return "MODERATE"
-  }
-
-  return "HIGH"
-}
 
 function parseOptionalDate(input?: string | Date | null): Date | null {
   if (!input) return null
@@ -82,13 +78,67 @@ function sanitizeMedicationEntries(
     .map((entry) => {
       const value =
         typeof entry === "object" && entry !== null ? (entry as Record<string, unknown>) : {}
+      const dosageAmount = String(value.dosageAmount ?? "").trim()
+      const dosageUnit = String(value.dosageUnit ?? "").trim()
+      const combinedDosage =
+        String(value.dosage ?? "").trim() ||
+        (dosageAmount ? `${dosageAmount}${dosageUnit ? ` ${dosageUnit}` : ""}` : "")
+
       return {
         name: String(value.name ?? "").trim(),
-        dosage: String(value.dosage ?? "").trim(),
+        dosage: combinedDosage,
         frequency: String(value.frequency ?? "").trim(),
+        dosageAmount: dosageAmount || undefined,
+        dosageUnit: (dosageUnit || undefined) as MedicationDosageUnit | undefined,
       }
     })
     .filter((entry) => entry.name && entry.dosage && entry.frequency)
+}
+
+function resolveAssessmentRiskScore(
+  assessmentData: Record<string, unknown>,
+  submittedScore: number
+): number {
+  const responses =
+    typeof assessmentData.responses === "object" && assessmentData.responses !== null
+      ? (assessmentData.responses as Record<string, string | string[]>)
+      : {}
+  const bmiVitals =
+    typeof assessmentData.bmiVitals === "object" && assessmentData.bmiVitals !== null
+      ? (assessmentData.bmiVitals as Record<string, unknown>)
+      : {}
+  const isFirstTimeAssessment = assessmentData.isFirstTimeAssessment !== false
+  const allQuestions = getScoredQuestionsForAssessment(isFirstTimeAssessment)
+
+  const calculatedScore = calculateTotalRiskScore({
+    answers: responses,
+    riskScoreMap: buildRiskScoreMap(allQuestions),
+    vitals: {
+      bloodPressure: String(bmiVitals.bloodPressure ?? ""),
+      bloodGlucose: String(bmiVitals.bloodGlucose ?? ""),
+      temperatureCelsius: String(bmiVitals.temperatureCelsius ?? ""),
+      respiration: String(bmiVitals.respiration ?? ""),
+      painScale: String(bmiVitals.painScale ?? "0"),
+      oxygenSaturation: String(bmiVitals.oxygenSaturation ?? ""),
+      calculatedBmi: Number(bmiVitals.calculatedBmi ?? 0),
+    },
+  })
+
+  if (calculatedScore !== submittedScore) {
+    return calculatedScore
+  }
+
+  return submittedScore
+}
+
+export async function getPatientPreviousAssessmentCount(patientId: string): Promise<number> {
+  if (!patientId.trim()) {
+    return 0
+  }
+
+  return prisma.assessment.count({
+    where: { patientId: patientId.trim() },
+  })
 }
 
 function sanitizeDiagnosisEntries(
@@ -202,7 +252,6 @@ export async function submitAssessment(
     const providerId = payload.providerId.trim()
     await assertAssessmentAccess(patientId, providerId)
 
-    const riskLevel = deriveRiskLevel(payload.totalRiskScore)
     const assessmentData =
       typeof payload.assessmentData === "object" && payload.assessmentData !== null
         ? (payload.assessmentData as Record<string, unknown>)
@@ -245,6 +294,8 @@ export async function submitAssessment(
 
     const medications = sanitizeMedicationEntries(payload.medications, assessmentData?.medications)
     const diagnoses = sanitizeDiagnosisEntries(payload.diagnoses, assessmentData?.diagnoses)
+    const totalRiskScore = resolveAssessmentRiskScore(assessmentData, payload.totalRiskScore)
+    const riskLevel = deriveRiskLevel(totalRiskScore)
 
     const assessment = await prisma.$transaction(async (tx) => {
       const createdAssessment = await tx.assessment.create({
@@ -286,7 +337,7 @@ export async function submitAssessment(
         data: {
           patientId,
           providerId,
-          totalRiskScore: payload.totalRiskScore,
+          totalRiskScore,
           riskLevel,
           bmi: payload.bmi,
           bmiCategory: payload.bmiCategory.trim(),

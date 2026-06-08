@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ReceiptUploadModal } from "@/components/ui/receipt-upload-modal"
 import { format } from "date-fns"
+import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
 import {
   Table,
   TableBody,
@@ -89,7 +90,7 @@ export function BillingClient({ invoices }: BillingClientProps) {
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Last Payment Date</span>
                 <span className="text-lg font-black text-slate-800 tracking-tight">
                   {lastPaidInvoice
-                    ? format(new Date(lastPaidInvoice.date), "MMM d, yyyy")
+                    ? format(new Date(lastPaidInvoice.date), DISPLAY_DATE_FORMAT)
                     : "No Payments Found"}
                 </span>
               </div>
@@ -137,7 +138,7 @@ export function BillingClient({ invoices }: BillingClientProps) {
                              <Bell className="size-5" />
                           </div>
                           <div className="flex flex-col">
-                             <span className="font-bold text-slate-700 text-sm">{format(new Date(item.date), "MMMM dd, yyyy")}</span>
+                             <span className="font-bold text-slate-700 text-sm">{format(new Date(item.date), DISPLAY_DATE_FORMAT)}</span>
                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-1">
                                <Clock className="size-3" />
                                {item.type === "APPOINTMENT" ? "Visit Invoice" : "Secondary Charges"}: #{item.id.slice(-6).toUpperCase()}

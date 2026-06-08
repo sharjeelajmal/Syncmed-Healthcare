@@ -147,6 +147,21 @@
   animation: slide-up 0.8s ease-out forwards;
 }
 
+/* Portal shell — light green wash on all edges (never dark) */
+.portal-shell-bg {
+  position: relative;
+  min-height: 100vh;
+  background-color: #fafdfb;
+  background-image:
+    radial-gradient(ellipse 48% 42% at 0% 0%, rgba(209, 250, 229, 0.55) 0%, transparent 58%),
+    radial-gradient(ellipse 48% 42% at 100% 0%, rgba(204, 251, 241, 0.5) 0%, transparent 58%),
+    radial-gradient(ellipse 44% 38% at 0% 100%, rgba(220, 252, 231, 0.45) 0%, transparent 55%),
+    radial-gradient(ellipse 44% 38% at 100% 100%, rgba(209, 250, 229, 0.45) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 35% at 50% 0%, rgba(236, 253, 245, 0.35) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 30% at 50% 100%, rgba(240, 253, 250, 0.3) 0%, transparent 55%),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 35%, #f6fef9 70%, #f8fafc 100%);
+}
+
 .glass-card {
   @apply bg-white/80 backdrop-blur-xl border border-white/40 shadow-[0_8px_32px_0_rgba(103,186,46,0.15)];
 }

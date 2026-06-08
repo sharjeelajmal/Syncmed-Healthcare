@@ -2,18 +2,28 @@
 
 import * as React from "react"
 import { format } from "date-fns"
+import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
+import { formatProviderDisplayName } from "@/lib/format-provider-name"
 import { ChevronRight, Calendar, Stethoscope, Hash, FileText } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PatientRecordModal } from "@/components/ui/patient-record-modal"
 import { DebouncedSearch } from "@/components/ui/debounced-search"
 import { Badge } from "@/components/ui/badge"
+import { PatientHealthTabs } from "@/components/patient/PatientHealthTabs"
+import type { VitalSignEntry } from "@/components/patient/PatientHealthTabs"
 
 interface RecordsListClientProps {
   records: any[]
+  healthData: {
+    diagnoses: string[]
+    medications: string[]
+    allergies: string[]
+    vitalSigns: VitalSignEntry[]
+  }
 }
 
-export function RecordsListClient({ records }: RecordsListClientProps) {
+export function RecordsListClient({ records, healthData }: RecordsListClientProps) {
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
 
@@ -24,6 +34,13 @@ export function RecordsListClient({ records }: RecordsListClientProps) {
 
   return (
     <div className="space-y-8">
+      <PatientHealthTabs
+        diagnoses={healthData.diagnoses}
+        medications={healthData.medications}
+        allergies={healthData.allergies}
+        vitalSigns={healthData.vitalSigns}
+      />
+
       {/* Premium Search Filter - Standardized */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <DebouncedSearch placeholder="Search by clinician, specialty or Ref ID..." />
@@ -49,7 +66,7 @@ export function RecordsListClient({ records }: RecordsListClientProps) {
                     </div>
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xl font-black text-slate-800 tracking-tight">{format(new Date(record.createdAt), "MMMM dd, yyyy")}</span>
+                        <span className="text-xl font-black text-slate-800 tracking-tight">{format(new Date(record.createdAt), DISPLAY_DATE_FORMAT)}</span>
                         <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 font-black text-[9px] uppercase tracking-widest px-2">Clinical</Badge>
                       </div>
                       <div className="flex items-center gap-4">
@@ -73,7 +90,7 @@ export function RecordsListClient({ records }: RecordsListClientProps) {
                          <div className="size-6 rounded-lg bg-[#67BA2E]/10 flex items-center justify-center text-[#67BA2E]">
                             <Stethoscope className="size-3" />
                          </div>
-                         <span className="font-bold text-slate-700 text-base leading-tight">Dr. {record.provider.user.firstName} {record.provider.user.lastName}</span>
+                         <span className="font-bold text-slate-700 text-base leading-tight">{formatProviderDisplayName(record.provider)}</span>
                       </div>
                     </div>
                   </div>

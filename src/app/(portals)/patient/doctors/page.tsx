@@ -14,6 +14,7 @@ import { differenceInYears, format } from "date-fns"
 
 import prisma from "@/lib/prisma"
 import { getPatientProfileForSession } from "@/lib/portal-auth"
+import { formatProviderDisplayName } from "@/lib/format-provider-name"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -25,14 +26,6 @@ import { OpenProviderChatButton } from "@/components/chat/OpenProviderChatButton
 
 function getProviderAvatarSrc(providerType: string) {
   return providerType === "REGISTERED_NURSE" ? "/female.png" : "/male.png"
-}
-
-function formatProviderDisplayName(provider: {
-  providerType: string
-  user: { firstName: string; lastName: string }
-}) {
-  const fullName = `${provider.user.firstName} ${provider.user.lastName}`
-  return provider.providerType === "REGISTERED_NURSE" ? `${fullName}, RN` : `Dr. ${fullName}`
 }
 
 function formatAvailabilitySummary(
@@ -72,7 +65,7 @@ export default async function MyDoctorsPage() {
     : ""
 
   return (
-    <div className="min-h-screen bg-slate-50/50 selection:bg-green-100">
+    <div className="selection:bg-green-100">
       <div className="w-full space-y-10 py-6 md:py-8 animate-in fade-in duration-700">
         
         {/* Header Section */}

@@ -11,6 +11,7 @@ import {
   ChevronRight
 } from "lucide-react"
 import { format, differenceInYears } from "date-fns"
+import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
 
 import {
   Table,
@@ -72,7 +73,7 @@ export function AssignedPatientsTable({ patients }: AssignedPatientsTableProps) 
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-bold text-slate-700 text-sm">
-                            {format(new Date(patient.dateOfBirth), "MMM dd, yyyy")}
+                            {format(new Date(patient.dateOfBirth), DISPLAY_DATE_FORMAT)}
                           </span>
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
                             {age} Years Old
@@ -95,7 +96,7 @@ export function AssignedPatientsTable({ patients }: AssignedPatientsTableProps) 
                         {lastVisit ? (
                           <div className="flex flex-col">
                             <span className="font-bold text-slate-700 text-sm">
-                              {format(new Date(lastVisit), "MMM dd, yyyy")}
+                              {format(new Date(lastVisit), DISPLAY_DATE_FORMAT)}
                             </span>
                             <span className="text-[10px] font-black text-[#67BA2E] uppercase tracking-widest mt-1 flex items-center gap-1">
                               <Calendar size={10} />

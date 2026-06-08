@@ -15,6 +15,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { format, addDays, isSameDay } from "date-fns"
+import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
+import { formatProviderDisplayNameFromUser } from "@/lib/format-provider-name"
  
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
@@ -199,7 +201,15 @@ export function AppointmentForm({ patients, providers }: { patients: any[], prov
                         className="input-premium h-12 w-full flex items-center justify-between px-4 font-normal text-slate-600"
                       >
                         <span className="truncate">
-                          {providerId ? "Dr. " + providers.find(p => p.providerProfile?.id === providerId)?.firstName + ' ' + providers.find(p => p.providerProfile?.id === providerId)?.lastName : "Select provider..."}
+                          {providerId ? (() => {
+                            const selected = providers.find(p => p.providerProfile?.id === providerId)
+                            return selected
+                              ? formatProviderDisplayNameFromUser(
+                                  { firstName: selected.firstName, lastName: selected.lastName },
+                                  selected.providerProfile?.providerType
+                                )
+                              : "Select provider..."
+                          })() : "Select provider..."}
                         </span>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -222,7 +232,7 @@ export function AppointmentForm({ patients, providers }: { patients: any[], prov
                             >
                               <Check className={cn("mr-3 h-4 w-4", providerId === provider.providerProfile?.id ? "opacity-100 text-[#67BA2E]" : "opacity-0")} />
                               <div className="flex flex-col text-left">
-                                 <span className="text-sm font-bold">Dr. {provider.firstName} {provider.lastName}</span>
+                                 <span className="text-sm font-bold">{formatProviderDisplayNameFromUser({ firstName: provider.firstName, lastName: provider.lastName }, provider.providerProfile?.providerType)}</span>
                                  <span className="text-[10px] opacity-60 uppercase tracking-tighter">{provider.providerProfile?.specialty}</span>
                               </div>
                             </CommandItem>
@@ -244,7 +254,7 @@ export function AppointmentForm({ patients, providers }: { patients: any[], prov
                       >
                         <div className="flex items-center">
                           <CalendarIcon className="mr-2 h-4 w-4 text-[#67BA2E]" />
-                          {date ? format(date, "MMM dd, yyyy") : <span>Select Date</span>}
+                          {date ? format(date, DISPLAY_DATE_FORMAT) : <span>Select Date</span>}
                         </div>
                       </Button>
                     </PopoverTrigger>

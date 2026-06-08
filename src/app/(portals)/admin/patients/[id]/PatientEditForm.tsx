@@ -14,6 +14,7 @@ import {
   Save 
 } from "lucide-react"
 import { format } from "date-fns"
+import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,7 +43,7 @@ interface PatientEditFormProps {
     address: string | null
     activeMedications?: string[]
     allergies?: string[]
-    chronicConditions?: string[]
+    diagnoses?: string[]
     membershipStatus?: string | null
     user: {
       firstName: string
@@ -168,7 +169,7 @@ export default function PatientEditForm({ patient, isReadOnly }: PatientEditForm
               >
                 <div className="flex items-center">
                   <CalendarIcon className="mr-2 h-4 w-4 text-[#67BA2E]" />
-                  {date ? format(date, "PPP") : <span>Select Date</span>}
+                  {date ? format(date, DISPLAY_DATE_FORMAT) : <span>Select Date</span>}
                 </div>
               </Button>
             </PopoverTrigger>
@@ -254,11 +255,11 @@ export default function PatientEditForm({ patient, isReadOnly }: PatientEditForm
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="chronicConditions" className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Chronic Conditions</Label>
+            <Label htmlFor="diagnoses" className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Diagnosis</Label>
             <Input 
-              id="chronicConditions" 
-              name="chronicConditions" 
-              defaultValue={patient.chronicConditions?.join(', ')}
+              id="diagnoses" 
+              name="diagnoses" 
+              defaultValue={patient.diagnoses?.join(', ')}
               placeholder="Hypertension, Asthma..." 
               readOnly={isReadOnly}
               disabled={isReadOnly}

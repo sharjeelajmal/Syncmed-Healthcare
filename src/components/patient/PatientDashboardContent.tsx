@@ -1,6 +1,8 @@
 import * as React from "react"
 import Link from "next/link"
 import { format } from "date-fns"
+import { DISPLAY_DATE_FORMAT, DISPLAY_DAY_DATE_FORMAT } from "@/lib/date-format"
+import { formatProviderDisplayName } from "@/lib/format-provider-name"
 import {
   Calendar,
   FileText,
@@ -180,13 +182,13 @@ function AppointmentDetails({
 }: {
   appointment: {
     scheduledAt: Date
-    provider: { user: { lastName: string } }
+    provider: { providerType?: string | null; user: { firstName: string; lastName: string } }
   }
 }) {
   return (
     <div className="space-y-2">
       <h2 className="text-4xl font-black text-slate-800 tracking-tighter">
-        {format(new Date(appointment.scheduledAt), "EEEE, MMMM dd")}
+        {format(new Date(appointment.scheduledAt), DISPLAY_DAY_DATE_FORMAT)}
       </h2>
       <div className="flex items-center gap-4 text-slate-500 font-bold">
         <span className="flex items-center gap-2">
@@ -196,7 +198,7 @@ function AppointmentDetails({
         <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
         <span className="flex items-center gap-2">
           <Stethoscope className="size-5 text-[#67BA2E]" />
-          Dr. {appointment.provider.user.lastName}
+          {formatProviderDisplayName(appointment.provider)}
         </span>
       </div>
     </div>
@@ -306,16 +308,16 @@ function AssessmentProviderMeta({
 }: {
   assessment: {
     createdAt: Date
-    provider: { user: { lastName: string } }
+    provider: { providerType?: string | null; user: { firstName: string; lastName: string } }
   }
 }) {
   return (
     <div className="flex flex-col">
       <span className="text-sm font-bold text-slate-800">
-        Dr. {assessment.provider.user.lastName}
+        {formatProviderDisplayName(assessment.provider)}
       </span>
       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-        {format(new Date(assessment.createdAt), "MMM dd, yyyy")}
+        {format(new Date(assessment.createdAt), DISPLAY_DATE_FORMAT)}
       </span>
     </div>
   )

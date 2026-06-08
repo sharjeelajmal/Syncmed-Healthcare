@@ -49,7 +49,7 @@ model PatientProfile {
   invoices           PaymentInvoice[]
   activeMedications  String[]         @default([])
   allergies          String[]         @default([])
-  chronicConditions  String[]         @default([])
+  diagnoses          String[]         @default([])
 
   @@map("patient_profiles")
 }

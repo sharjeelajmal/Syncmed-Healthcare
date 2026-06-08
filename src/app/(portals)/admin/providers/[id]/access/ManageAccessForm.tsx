@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { format, formatDistanceToNow } from "date-fns"
+import { DISPLAY_DATE_TIME_FORMAT } from "@/lib/date-format"
 import {
   ShieldCheck,
   ShieldAlert,
@@ -305,7 +306,7 @@ export function ManageAccessForm({ initialData }: ManageAccessFormProps) {
             <p className="mt-1 truncate text-sm font-bold text-slate-800">{data.email}</p>
             <p className="mt-3 text-[10px] leading-relaxed text-slate-400">
               Account enrolled{" "}
-              {format(new Date(data.createdAt), "MMM dd, yyyy · hh:mm a")}
+              {format(new Date(data.createdAt), DISPLAY_DATE_TIME_FORMAT)}
             </p>
           </div>
 

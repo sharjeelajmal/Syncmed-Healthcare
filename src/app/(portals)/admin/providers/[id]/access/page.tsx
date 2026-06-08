@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { ArrowLeft, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { resolveProviderUser } from "@/lib/resolve-provider-user"
+import { formatProviderDisplayNameFromUser } from "@/lib/format-provider-name"
 import { ManageAccessForm } from "./ManageAccessForm"
 
 export const dynamic = "force-dynamic"
@@ -53,8 +54,12 @@ export default async function ManageAccessPage({ params }: PageProps) {
             Manage Access
           </h1>
           <p className="font-medium text-slate-500">
-            Security credentials and platform authorization for Dr.{" "}
-            {provider.firstName} {provider.lastName}.
+            Security credentials and platform authorization for{" "}
+            {formatProviderDisplayNameFromUser(
+              { firstName: provider.firstName, lastName: provider.lastName },
+              provider.providerProfile?.providerType
+            )}
+            .
           </p>
         </div>
       </div>

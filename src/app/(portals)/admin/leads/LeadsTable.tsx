@@ -4,6 +4,7 @@ import * as React from "react"
 import { MoreVertical, CheckCircle2, XCircle, Mail, Loader2, Calendar, Phone, MailQuestion } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
+import { DISPLAY_DATE_FORMAT, DISPLAY_DATE_AT_TIME_FORMAT } from "@/lib/date-format"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -178,7 +179,7 @@ export function LeadsTable({
                     {/* Timestamp */}
                     <TableCell className="px-8 py-5 font-bold text-slate-700 whitespace-nowrap">
                       <div className="flex flex-col">
-                        <span className="text-sm text-slate-800">{format(new Date(lead.createdAt), "MMM dd, yyyy")}</span>
+                        <span className="text-sm text-slate-800">{format(new Date(lead.createdAt), DISPLAY_DATE_FORMAT)}</span>
                         <span className="text-[10px] font-black text-[#67BA2E] uppercase tracking-wider mt-1 flex items-center gap-1">
                           <Calendar size={10} />
                           {format(new Date(lead.createdAt), "hh:mm a")}
@@ -294,7 +295,7 @@ export function LeadsTable({
             <DialogHeader className="text-left">
               <DialogTitle className="text-lg font-black text-slate-800 tracking-tight">Confidential Inquiry</DialogTitle>
               <DialogDescription className="text-slate-400 font-medium text-xs mt-1">
-                Submitted by <span className="text-slate-600 font-bold">{viewingLead?.name}</span> on {viewingLead && format(new Date(viewingLead.createdAt), "MMMM dd, yyyy 'at' hh:mm a")}
+                Submitted by <span className="text-slate-600 font-bold">{viewingLead?.name}</span> on {viewingLead && format(new Date(viewingLead.createdAt), DISPLAY_DATE_AT_TIME_FORMAT)}
               </DialogDescription>
             </DialogHeader>
           </div>

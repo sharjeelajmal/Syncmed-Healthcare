@@ -2,6 +2,7 @@ import * as React from "react"
 import { FileText } from "lucide-react"
 import prisma from "@/lib/prisma"
 import { RecordsListClient } from "./RecordsListClient"
+import { buildPatientHealthData } from "@/lib/patient-health-data"
 import { auth } from "@/../auth"
 import { redirect } from "next/navigation"
 
@@ -54,9 +55,19 @@ export default async function PatientRecordsPage({
       },
       patient: {
         include: { user: true }
-      }
+      },
+      medications: true,
+      diagnoses: true,
     }
   })
+
+  const allAssessmentsForHealth = query
+    ? await prisma.assessment.findMany({
+        where: { patientId: patient.id },
+        orderBy: { createdAt: 'desc' },
+        include: { medications: true, diagnoses: true },
+      })
+    : assessments
 
   return (
     <div className="w-full py-6 md:py-8">
@@ -73,7 +84,15 @@ export default async function PatientRecordsPage({
         </div>
 
         {/* Content */}
-        <RecordsListClient records={assessments} />
+        <RecordsListClient
+          records={assessments}
+          healthData={buildPatientHealthData(
+            patient.diagnoses,
+            patient.activeMedications,
+            patient.allergies,
+            allAssessmentsForHealth
+          )}
+        />
       </div>
     </div>
   )

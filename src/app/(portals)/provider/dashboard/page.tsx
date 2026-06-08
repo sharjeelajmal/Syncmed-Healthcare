@@ -12,11 +12,9 @@ import {
   ArrowRight,
   Stethoscope,
   LayoutDashboard,
-  ArrowUpRight,
   Activity,
   ChevronRight,
   Shield,
-  TrendingUp,
   PlusCircle,
   FileText,
   Heart
@@ -24,6 +22,9 @@ import {
 import prisma from "@/lib/prisma"
 import { auth } from "../../../../../auth"
 import { startOfDay, endOfDay, format } from "date-fns"
+import { DISPLAY_DATE_TIME_FORMAT } from "@/lib/date-format"
+import { getProviderDashboardListData } from "@/lib/provider-dashboard-data"
+import { ProviderDashboardStatsClient } from "@/components/provider/ProviderDashboardStatsClient"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -37,6 +38,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { BannerInstallBtn } from "@/components/auth/BannerInstallBtn"
+import { formatProviderDisplayName } from "@/lib/format-provider-name"
 
 export default async function ProviderDashboardPage() {
   const session = await auth()
@@ -52,14 +54,15 @@ export default async function ProviderDashboardPage() {
     return <div className="p-10 text-center font-black text-slate-400 uppercase tracking-widest">Provider Profile Not Found</div>
   }
 
-  const sessionName = session?.user?.name || `Dr. ${provider.user.lastName}`
-  const providerFullName = `Dr. ${provider.user.lastName}`
+  const providerDisplayName = formatProviderDisplayName(provider)
+  const sessionName = session?.user?.name || providerDisplayName
+  const providerFullName = providerDisplayName
 
   const todayStart = startOfDay(new Date())
   const todayEnd = endOfDay(new Date())
 
   // Parallel Data Fetching
-  const [appointments, statsCounts, alerts, totalPatientsCount] = await Promise.all([
+  const [appointments, statsCounts, alerts, totalPatientsCount, listData] = await Promise.all([
     // 1. Today's Appointments
     prisma.appointment.findMany({
       where: {
@@ -117,19 +120,16 @@ export default async function ProviderDashboardPage() {
       where: {
         appointments: { some: { providerId: provider.id } }
       }
-    })
+    }),
+
+    // 5. List data for stat card modals
+    getProviderDashboardListData(provider.id),
   ])
 
   // Process stats
   const totalToday = appointments.length
   const pendingCount = statsCounts.find(s => s.status === 'PENDING')?._count || 0
   const completedCount = statsCounts.find(s => s.status === 'COMPLETED')?._count || 0
-
-  const stats = [
-    { title: "Today's Total", value: totalToday, icon: Calendar, color: "text-[#67BA2E]", bg: "bg-[#67BA2E]/10", border: "border-[#67BA2E]/20" },
-    { title: "Total Patients", value: totalPatientsCount, icon: User, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
-    { title: "Pending", value: pendingCount, icon: Clock, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
-  ]
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -204,16 +204,6 @@ export default async function ProviderDashboardPage() {
 
             {/* Bottom Quick Stats/Badges */}
             <div className="flex flex-row items-center gap-2 md:gap-3 mt-1.5 w-full md:w-auto animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-700">
-               <div className="flex-1 md:flex-initial w-1/2 md:w-auto flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3.5 bg-[#67BA2E]/5 border border-[#67BA2E]/10 rounded-xl md:rounded-2xl hover:bg-[#67BA2E]/10 transition-all cursor-pointer group/badge">
-                  <div className="p-1.5 md:p-2 bg-white rounded-lg shadow-sm group-hover/badge:scale-110 transition-transform">
-                    <TrendingUp className="size-3.5 md:size-4 text-[#67BA2E]" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-[8px] md:text-[10px] font-black text-[#67BA2E] uppercase tracking-wider leading-none mb-0.5">Performance</p>
-                    <p className="text-[10px] md:text-xs font-bold text-slate-700">Daily Efficiency</p>
-                  </div>
-               </div>
-               
                <BannerInstallBtn />
             </div>
           </div>
@@ -257,28 +247,12 @@ export default async function ProviderDashboardPage() {
         <p className="text-slate-500 font-medium ml-1">Welcome back, {providerFullName}. Here is your schedule for today.</p>
       </div>
 
-      {/* Premium Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-        {stats.map((stat, i) => (
-          <div key={i} className={`relative p-5 md:p-6 rounded-[2rem] bg-white border ${stat.border} shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden`}>
-            <div className={`absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity`}>
-               <stat.icon size={100} />
-            </div>
-            <div className="flex flex-col gap-4 relative z-10">
-              <div className={`size-10 md:size-12 rounded-2xl ${stat.bg} flex items-center justify-center ${stat.color} transition-transform group-hover:scale-110 duration-500`}>
-                <stat.icon className="size-5 md:size-6" />
-              </div>
-              <div>
-                <p className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{stat.title}</p>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <h3 className="text-2xl md:text-4xl font-black text-slate-800 tracking-tighter">{stat.value}</h3>
-                  <ArrowUpRight size={14} className={stat.color} />
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <ProviderDashboardStatsClient
+        totalToday={totalToday}
+        totalPatientsCount={totalPatientsCount}
+        pendingCount={pendingCount}
+        listData={listData}
+      />
 
       {/* Main Content: Schedule Table */}
       <div className="mt-12">
@@ -310,7 +284,7 @@ export default async function ProviderDashboardPage() {
                     <TableRow key={apt.id} className="group hover:bg-slate-50/50 transition-colors border-slate-100">
                       <TableCell className="px-8 py-5 font-bold text-[#67BA2E] whitespace-nowrap">
                          <div className="flex flex-col">
-                            <span className="text-sm">{format(new Date(apt.scheduledAt), "hh:mm a")}</span>
+                            <span className="text-sm">{format(new Date(apt.scheduledAt), DISPLAY_DATE_TIME_FORMAT)}</span>
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-1">Enc. ID: {apt.id.slice(0, 5)}</span>
                          </div>
                       </TableCell>

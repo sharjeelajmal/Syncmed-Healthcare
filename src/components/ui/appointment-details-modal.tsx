@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import { format } from "date-fns"
+import { DISPLAY_DAY_DATE_FORMAT } from "@/lib/date-format"
+import { formatProviderDisplayName } from "@/lib/format-provider-name"
 import { 
   Bell, 
   Clock, 
@@ -58,7 +60,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, appointment }: Appoin
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2 text-slate-700 font-bold text-base md:text-lg">
                   <Bell className="size-4 text-[#67BA2E]" />
-                  {format(new Date(appointment.scheduledAt), "EEEE, MMM dd, yyyy")}
+                  {format(new Date(appointment.scheduledAt), DISPLAY_DAY_DATE_FORMAT)}
                 </div>
                 <div className="flex items-center gap-2 text-slate-500 font-medium text-xs md:text-sm">
                   <Clock className="size-4 text-[#67BA2E]" />
@@ -76,7 +78,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, appointment }: Appoin
                 <User className="size-6 md:size-7" />
               </div>
               <div className="flex flex-col">
-                <span className="text-base md:text-lg font-black text-slate-800 tracking-tight">Dr. {appointment.provider.user.firstName} {appointment.provider.user.lastName}</span>
+                <span className="text-base md:text-lg font-black text-slate-800 tracking-tight">{formatProviderDisplayName(appointment.provider)}</span>
                 <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest">{appointment.provider.specialty}</span>
               </div>
             </div>

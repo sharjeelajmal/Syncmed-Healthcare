@@ -44,6 +44,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { PureCalendar } from "@/components/ui/pure-calendar"
 import { format } from "date-fns"
+import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
 import { toast } from "sonner"
 import { 
   getBlogPostsAction, 
@@ -312,7 +313,7 @@ function BlogManagementContent() {
     formData.append("authorBio", authorBio)
     
     // Construct dynamic clinical date string e.g. "May 18, 2026"
-    const dateString = format(publishDate, "MMM dd, yyyy")
+    const dateString = format(publishDate, DISPLAY_DATE_FORMAT)
     formData.append("date", dateString)
 
     formData.append("readTime", readTime)
@@ -646,7 +647,7 @@ function BlogManagementContent() {
                         >
                           <div className="flex items-center">
                             <CalendarIcon className="mr-2 h-4 w-4 text-[#67BA2E]" />
-                            {publishDate ? format(publishDate, "PPP") : <span>Select Published Date</span>}
+                            {publishDate ? format(publishDate, DISPLAY_DATE_FORMAT) : <span>Select Published Date</span>}
                           </div>
                         </Button>
                       </PopoverTrigger>

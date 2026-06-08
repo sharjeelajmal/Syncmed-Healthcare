@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache"
 import { PatientSchema } from "@/lib/validations"
 import { auth } from "@/../auth"
 import { sendAccountWelcomeEmail, sendProviderAssignmentEmail } from "@/lib/mail"
+import { formatProviderDisplayName } from "@/lib/format-provider-name"
 
 const MEMBERSHIP_STATUSES = [
   MembershipStatus.PLATINUM,
@@ -17,14 +18,6 @@ const MEMBERSHIP_STATUSES = [
 function parseMembershipStatus(value: FormDataEntryValue | null) {
   const status = value?.toString()
   return MEMBERSHIP_STATUSES.includes(status as MembershipStatus) ? (status as MembershipStatus) : MembershipStatus.SILVER
-}
-
-function formatProviderName(provider: {
-  providerType?: string | null
-  user: { firstName: string; lastName: string }
-}) {
-  const fullName = `${provider.user.firstName} ${provider.user.lastName}`
-  return provider.providerType === "REGISTERED_NURSE" ? `${fullName}, RN` : `Dr. ${fullName}`
 }
 
 function getErrorMessage(error: unknown) {
@@ -101,7 +94,7 @@ export async function createPatientAction(formData: FormData) {
     // Extract clinical data arrays
     const activeMedications = formData.get('activeMedications')?.toString().split(',').map(s => s.trim()).filter(Boolean) || []
     const allergies = formData.get('allergies')?.toString().split(',').map(s => s.trim()).filter(Boolean) || []
-    const chronicConditions = formData.get('chronicConditions')?.toString().split(',').map(s => s.trim()).filter(Boolean) || []
+    const diagnoses = formData.get('diagnoses')?.toString().split(',').map(s => s.trim()).filter(Boolean) || []
 
     await prisma.patientProfile.create({
       data: {
@@ -112,7 +105,7 @@ export async function createPatientAction(formData: FormData) {
         emergencyContact: "", 
         activeMedications,
         allergies,
-        chronicConditions,
+        diagnoses,
         membershipStatus,
       },
     })
@@ -192,7 +185,7 @@ export async function assignProviderAction(patientProfileId: string, providerId:
     if (assignedProvider?.user?.email) {
       await sendProviderAssignmentEmail({
         to: assignedProvider.user.email,
-        providerName: formatProviderName(assignedProvider),
+        providerName: formatProviderDisplayName(assignedProvider),
         patientName: `${patient.user.firstName} ${patient.user.lastName}`,
         patientId: patient.id,
       })
@@ -237,7 +230,7 @@ export async function updatePatientDetailsAction(patientProfileId: string, formD
     // Extract clinical data arrays
     const activeMedications = formData.get('activeMedications')?.toString().split(',').map(s => s.trim()).filter(Boolean) || []
     const allergies = formData.get('allergies')?.toString().split(',').map(s => s.trim()).filter(Boolean) || []
-    const chronicConditions = formData.get('chronicConditions')?.toString().split(',').map(s => s.trim()).filter(Boolean) || []
+    const diagnoses = formData.get('diagnoses')?.toString().split(',').map(s => s.trim()).filter(Boolean) || []
 
     // Update PatientProfile model
     await prisma.patientProfile.update({
@@ -248,7 +241,7 @@ export async function updatePatientDetailsAction(patientProfileId: string, formD
         address,
         activeMedications,
         allergies,
-        chronicConditions,
+        diagnoses,
         membershipStatus,
       }
     })

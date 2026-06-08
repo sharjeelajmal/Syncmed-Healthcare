@@ -2,6 +2,7 @@
  
  import * as React from "react"
  import { format } from "date-fns"
+ import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
  import { Calendar as CalendarIcon } from "lucide-react"
  
  import { cn } from "@/lib/utils"
@@ -34,7 +35,7 @@ export function CustomDatePicker({ value, onChange, placeholder = "Pick a date",
            )}
          >
            <CalendarIcon className="mr-2 h-4 w-4 text-[#67BA2E]" />
-           {value ? format(value, "PPP") : <span>{placeholder}</span>}
+           {value ? format(value, DISPLAY_DATE_FORMAT) : <span>{placeholder}</span>}
          </Button>
        </PopoverTrigger>
        <PopoverContent className="w-auto p-0 z-[100] bg-white border border-slate-200 shadow-xl rounded-md" align="start">

@@ -3,6 +3,8 @@
 import * as React from "react"
 import Link from "next/link"
 import { format } from "date-fns";
+import { DISPLAY_DATE_FORMAT } from "@/lib/date-format";
+import { formatProviderDisplayName } from "@/lib/format-provider-name";
 
 import { 
   Plus, 
@@ -201,7 +203,7 @@ export function AppointmentsTable({
                       <div className="flex flex-col">
                         <span className="flex items-center gap-2">
                           <Calendar className="size-3 text-[#67BA2E]" />
-                          {format(new Date(appointment.scheduledAt), "MMM dd, yyyy")}
+                          {format(new Date(appointment.scheduledAt), DISPLAY_DATE_FORMAT)}
                         </span>
                         <span className="flex items-center gap-2 text-[11px] text-slate-400 font-medium mt-1 uppercase">
                           <Clock className="size-3" />
@@ -220,7 +222,7 @@ export function AppointmentsTable({
                     <TableCell>
                       <div className="flex items-center gap-2 text-slate-600 font-semibold">
                         <Stethoscope className="size-4 text-[#67BA2E]" />
-                        Dr. {appointment.provider.user.firstName} {appointment.provider.user.lastName}
+                        {formatProviderDisplayName(appointment.provider)}
                       </div>
                     </TableCell>
                     <TableCell>

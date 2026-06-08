@@ -1,6 +1,7 @@
 import * as React from "react"
 import { CreditCard } from "lucide-react"
 import prisma from "@/lib/prisma"
+import { formatProviderDisplayName } from "@/lib/format-provider-name"
 import { BillingClient } from "./BillingClient"
 
 import { auth } from "@/../auth"
@@ -64,7 +65,7 @@ export default async function BillingPage({
       date: a.scheduledAt,
       amount: a.amount,
       status: a.paymentStatus, // UNPAID, PAID, VERIFICATION_PENDING
-      clinician: `Dr. ${a.provider.user.firstName} ${a.provider.user.lastName}`,
+      clinician: formatProviderDisplayName(a.provider),
       specialty: a.provider.specialty,
       initials: `${a.provider.user.firstName[0]}${a.provider.user.lastName[0]}`
     })),

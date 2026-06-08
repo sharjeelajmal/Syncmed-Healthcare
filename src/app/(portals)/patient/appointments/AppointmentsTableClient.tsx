@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import { format } from "date-fns"
+import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
+import { formatProviderDisplayName } from "@/lib/format-provider-name"
 import { 
   Bell, 
   Clock, 
@@ -66,7 +68,7 @@ export function AppointmentsTableClient({ appointments }: AppointmentsTableClien
                          <Bell className="size-5" />
                       </div>
                       <div className="flex flex-col">
-                         <span className="font-bold text-slate-700 text-sm">{format(new Date(app.scheduledAt), "MMM dd, yyyy")}</span>
+                         <span className="font-bold text-slate-700 text-sm">{format(new Date(app.scheduledAt), DISPLAY_DATE_FORMAT)}</span>
                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-1">
                            <Clock className="size-3" />
                            {format(new Date(app.scheduledAt), "hh:mm a")}
@@ -80,7 +82,7 @@ export function AppointmentsTableClient({ appointments }: AppointmentsTableClien
                           {app.provider.user.firstName[0]}{app.provider.user.lastName[0]}
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-bold text-slate-800 text-base leading-tight">Dr. {app.provider.user.firstName} {app.provider.user.lastName}</span>
+                          <span className="font-bold text-slate-800 text-base leading-tight">{formatProviderDisplayName(app.provider)}</span>
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{app.provider.specialty}</span>
                         </div>
                      </div>

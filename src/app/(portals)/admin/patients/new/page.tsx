@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { ArrowLeft, UserPlus, ShieldCheck, Loader2, Calendar as CalendarIcon, Phone, Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
+import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
@@ -166,7 +167,7 @@ export default function NewPatientPage() {
                       >
                         <div className="flex items-center">
                           <CalendarIcon className="mr-2 h-4 w-4 text-[#67BA2E]" />
-                          {date ? format(date, "PPP") : <span>Pick a clinical date</span>}
+                          {date ? format(date, DISPLAY_DATE_FORMAT) : <span>Pick a clinical date</span>}
                         </div>
                       </Button>
                     </PopoverTrigger>
@@ -226,10 +227,10 @@ export default function NewPatientPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="chronicConditions" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Chronic Conditions</Label>
+                    <Label htmlFor="diagnoses" className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Diagnosis</Label>
                     <Input 
-                      id="chronicConditions" 
-                      name="chronicConditions" 
+                      id="diagnoses" 
+                      name="diagnoses" 
                       placeholder="e.g. Hypertension, Type 2 Diabetes, Asthma (comma separated)" 
                       className="input-premium"
                     />

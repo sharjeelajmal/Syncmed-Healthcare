@@ -79,7 +79,7 @@ const specificationsData: Phase[] = [
         intent: "Operational Intent: To manage the secure digital onboarding of patients, handle profile edits, and initialize clinical records under enterprise standards.",
         breakdown: [
           "The Global Roster: Features deep indexing and search filters to isolate patient states, linked account parameters, and verification histories.",
-          "Clinical Snapshot Initialization: Allows the Administrator to initialize a patient’s record with historical medical parameters—specifically Active Medications, Allergies, and Chronic Conditions—using comma-separated array strings.",
+          "Clinical Snapshot Initialization: Allows the Administrator to initialize a patient’s record with historical medical parameters—specifically Active Medications, Allergies, and Diagnosis—using comma-separated array strings.",
           "Provider Assignment Engine: Maps specific patients to designated primary physicians, immediately initializing the relational table layer that populates individual provider rosters."
         ],
         advantage: "Real-World Advantage: Ensures seamless onboarding transitions. Doctors never receive a blank slate; the admin initializes the patient's record beforehand so that critical clinical alerts (e.g., severe allergies) are automatically illuminated the moment the provider opens the chart."
@@ -187,7 +187,7 @@ const specificationsData: Phase[] = [
           "Visual Metric Badges: Patient ki key medical identifiers ko separate content wrappers mein convert karta hai:",
           "Active Medications: Currently items prescribed.",
           "Allergies Alert Panel: High-risk chemical/food allergies jo admin ne initialize ki thi.",
-          "Chronic Conditions: Long-term diagnosed pathologies."
+          "Diagnosis: Long-term diagnosed pathologies."
         ],
         advantage: "Real-World Advantage: Total diagnostic accuracy. Agar patient ko kisi medicine (e.g., Penicillin) se severe allergy hai, toh doctor profile kholte hi screen par text-based standard rows ke bajaye responsive safety tags dekhega, ensuring absolute standard healthcare compliance."
       },
@@ -354,7 +354,7 @@ export default function CompleteFlowPage() {
         },
         {
           label: "Patient Baseline Charting",
-          desc: "The Admin securely registers the patient's profile and initializes their Clinical Snapshot (Allergies, Chronic Conditions). This ensures that primary doctors receive critical clinical alerts on day one."
+          desc: "The Admin securely registers the patient's profile and initializes their Clinical Snapshot (Allergies, Diagnosis). This ensures that primary doctors receive critical clinical alerts on day one."
         }
       ],
       icon: Shield
@@ -422,7 +422,7 @@ export default function CompleteFlowPage() {
         },
         {
           label: "Immutable Charting",
-          desc: "The doctor initializes the encounter. They are greeted by prominent allergy alerts and chronic conditions tags mapped in Step 1. The doctor documents the symptoms, diagnosis, care plan, and prescriptions securely."
+          desc: "The doctor initializes the encounter. They are greeted by prominent allergy alerts and diagnosis tags mapped in Step 1. The doctor documents the symptoms, diagnosis, care plan, and prescriptions securely."
         }
       ],
       icon: Stethoscope

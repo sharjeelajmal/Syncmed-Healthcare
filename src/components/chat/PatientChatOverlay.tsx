@@ -25,6 +25,9 @@ import { toast } from "sonner"
 import { pusherClient } from "@/lib/pusher-client"
 import { CustomAudioPlayer } from "@/components/chat/CustomAudioPlayer"
 import { PATIENT_CHAT_OPEN_EVENT } from "@/lib/patient-chat"
+import { format } from "date-fns"
+import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
+import { formatProviderDisplayNameFromUser } from "@/lib/format-provider-name"
 
 export function PatientChatOverlay() {
   const { data: session } = useSession();
@@ -366,7 +369,7 @@ export function PatientChatOverlay() {
     if (date.toDateString() === today.toDateString()) return "Today";
     if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
     
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    return format(date, DISPLAY_DATE_FORMAT);
   }
 
   return (
@@ -375,7 +378,7 @@ export function PatientChatOverlay() {
       <div 
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "fixed z-[100] transition-all duration-500 ease-in-out right-6 cursor-pointer flex items-center justify-center size-14 md:size-16 rounded-full bg-[#67BA2E] shadow-[0_8px_30px_rgb(103,186,46,0.4)] hover:scale-110 active:scale-95 group",
+          "fixed z-[200] transition-all duration-500 ease-in-out right-6 cursor-pointer flex items-center justify-center size-14 md:size-16 rounded-full bg-[#67BA2E] shadow-[0_8px_30px_rgb(103,186,46,0.4)] hover:scale-110 active:scale-95 group",
           isKeyboardOpen ? "bottom-4" : "bottom-24 md:bottom-8",
           isOpen && "md:right-[980px] lg:right-[1130px] !bg-slate-800 shadow-xl",
           isOpen && "max-md:hidden"
@@ -448,7 +451,7 @@ export function PatientChatOverlay() {
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center">
-                      <p className="font-bold text-sm truncate leading-tight">Dr. {contact.lastName}</p>
+                      <p className="font-bold text-sm truncate leading-tight">{formatProviderDisplayNameFromUser({ firstName: contact.firstName, lastName: contact.lastName }, contact.providerType)}</p>
                       {contact.unreadCount > 0 && selectedPatient?.id !== contact.id && (
                         <Badge className="bg-red-500 hover:bg-red-600 text-white size-5 flex items-center justify-center rounded-full p-0 text-[10px] shadow-sm ml-2 shrink-0">
                           {contact.unreadCount}
@@ -550,7 +553,7 @@ export function PatientChatOverlay() {
                   <Button variant="ghost" size="icon" className="md:hidden -ml-2 text-[#67BA2E]" onClick={() => setView('list')}><ChevronLeft className="size-6" /></Button>
                   <Avatar className="size-10 border border-slate-100 shadow-sm"><AvatarFallback className="bg-emerald-50 text-[#67BA2E] font-black">{selectedPatient.firstName[0]}{selectedPatient.lastName[0]}</AvatarFallback></Avatar>
                   <div>
-                    <h3 className="font-bold text-slate-800 text-sm md:text-base leading-none mb-1">Dr. {selectedPatient.firstName} {selectedPatient.lastName}</h3>
+                    <h3 className="font-bold text-slate-800 text-sm md:text-base leading-none mb-1">{formatProviderDisplayNameFromUser({ firstName: selectedPatient.firstName, lastName: selectedPatient.lastName }, selectedPatient.providerType)}</h3>
                     <span className={cn("text-[10px] font-black uppercase tracking-widest", selectedPatient.isOnline ? "text-[#67BA2E]" : "text-slate-400")}>{selectedPatient.isOnline ? "Online" : "Offline"}</span>
                   </div>
                 </div>
@@ -560,13 +563,13 @@ export function PatientChatOverlay() {
                     <SheetContent className="w-full sm:w-[400px] border-l-0 sm:border-l p-6 overflow-y-auto z-[110]">
                       <SheetHeader>
                         <SheetTitle>Doctor Profile</SheetTitle>
-                        <SheetDescription>Professional details for Dr. {selectedPatient.lastName}</SheetDescription>
+                        <SheetDescription>Professional details for {formatProviderDisplayNameFromUser({ firstName: selectedPatient.firstName, lastName: selectedPatient.lastName }, selectedPatient.providerType)}</SheetDescription>
                       </SheetHeader>
                       <div className="mt-8 flex flex-col items-center">
                         <Avatar className="size-24 rounded-3xl border-4 border-slate-50 shadow-xl mb-4">
                           <AvatarFallback className="bg-[#67BA2E]/10 text-[#67BA2E] font-black text-3xl">{selectedPatient.firstName[0]}{selectedPatient.lastName[0]}</AvatarFallback>
                         </Avatar>
-                        <h2 className="text-xl font-black text-slate-800">Dr. {selectedPatient.firstName} {selectedPatient.lastName}</h2>
+                        <h2 className="text-xl font-black text-slate-800">{formatProviderDisplayNameFromUser({ firstName: selectedPatient.firstName, lastName: selectedPatient.lastName }, selectedPatient.providerType)}</h2>
                         <span className={cn("text-[10px] font-black uppercase tracking-widest mt-1", selectedPatient.isOnline ? "text-[#67BA2E]" : "text-slate-400")}>{selectedPatient.isOnline ? "Online" : "Offline"}</span>
                       </div>
                       

@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import { format } from "date-fns"
+import { DISPLAY_DATE_FORMAT, DISPLAY_DATE_TIME_FORMAT } from "@/lib/date-format"
+import { formatProviderDisplayName } from "@/lib/format-provider-name"
 import { Download, Stethoscope, ChevronRight, Loader2 } from "lucide-react"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
@@ -100,7 +102,7 @@ export function PatientRecordModal({ isOpen, onClose, record }: PatientRecordMod
               <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-widest">Document ID</p>
               <p className="font-bold text-[#0f172a]">{record.id.toUpperCase()}</p>
               <p className="text-[10px] font-black text-[#94a3b8] uppercase tracking-widest mt-4">Date of Service</p>
-              <p className="font-bold text-[#0f172a]">{format(new Date(record.createdAt), "MMMM dd, yyyy")}</p>
+              <p className="font-bold text-[#0f172a]">{format(new Date(record.createdAt), DISPLAY_DATE_FORMAT)}</p>
             </div>
           </div>
 
@@ -108,7 +110,7 @@ export function PatientRecordModal({ isOpen, onClose, record }: PatientRecordMod
           <div className="bg-[#f8fafc] p-6 rounded-2xl border border-[#f1f5f9] print:bg-transparent print:border-none print:p-0">
              <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-black text-[#94a3b8] uppercase tracking-widest">Attending Provider</span>
-                <p className="text-lg font-bold text-[#0f172a]">Dr. {record.provider.user.firstName} {record.provider.user.lastName}</p>
+                <p className="text-lg font-bold text-[#0f172a]">{formatProviderDisplayName(record.provider)}</p>
                 <p className="text-sm font-medium text-[#67BA2E]">{record.provider.specialty}</p>
              </div>
           </div>
@@ -140,7 +142,7 @@ export function PatientRecordModal({ isOpen, onClose, record }: PatientRecordMod
           <div className="space-y-8">
              <div className="space-y-3">
                 <h3 className="text-[10px] font-black text-[#94a3b8] uppercase tracking-[0.4em]">Chief Complaint</h3>
-                <p className="text-[#1e293b] leading-relaxed font-medium">{notes.chiefComplaint || "Routine follow-up for chronic condition management."}</p>
+                <p className="text-[#1e293b] leading-relaxed font-medium">{notes.chiefComplaint || "Routine follow-up for diagnosis management."}</p>
              </div>
              <div className="space-y-3">
                 <h3 className="text-[10px] font-black text-[#94a3b8] uppercase tracking-[0.4em]">Diagnosis & Assessment</h3>
@@ -156,7 +158,7 @@ export function PatientRecordModal({ isOpen, onClose, record }: PatientRecordMod
           <div className="pt-12 border-t border-[#f1f5f9] flex justify-between items-end">
              <div className="space-y-1">
                 <p className="text-[10px] font-medium text-[#94a3b8] italic">This is a certified electronic medical record.</p>
-                <p className="text-[10px] font-medium text-[#94a3b8] italic">Generated on {new Date().toLocaleString()}</p>
+                <p className="text-[10px] font-medium text-[#94a3b8] italic">Generated on {format(new Date(), DISPLAY_DATE_TIME_FORMAT)}</p>
              </div>
              {record.patientSignatureUrl && (
                 <div className="text-right">

@@ -9,7 +9,6 @@ import {
   Activity,
   Shield,
   CheckCircle2,
-  TrendingUp,
 } from "lucide-react"
 import {
   AdminDashboardStats,
@@ -106,20 +105,6 @@ function AdminDashboardHero({ userName }: { userName: string }) {
           </div>
 
           <div className="flex flex-row items-center gap-2 md:gap-3 mt-1.5 w-full md:w-auto animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-700">
-            <div className="flex-1 md:flex-initial w-1/2 md:w-auto flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3.5 bg-[#67BA2E]/5 border border-[#67BA2E]/10 rounded-xl md:rounded-2xl hover:bg-[#67BA2E]/10 transition-all cursor-pointer group/badge">
-              <div className="p-1.5 md:p-2 bg-white rounded-lg shadow-sm group-hover/badge:scale-110 transition-transform">
-                <TrendingUp className="size-3.5 md:size-4 text-[#67BA2E]" />
-              </div>
-              <div className="text-left">
-                <p className="text-[8px] md:text-[10px] font-black text-[#67BA2E] uppercase tracking-wider leading-none mb-0.5">
-                  Systems
-                </p>
-                <p className="text-[10px] md:text-xs font-bold text-slate-700">
-                  All Nodes Active
-                </p>
-              </div>
-            </div>
-
             <BannerInstallBtn />
           </div>
         </div>

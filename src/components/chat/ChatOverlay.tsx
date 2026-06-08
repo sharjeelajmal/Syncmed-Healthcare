@@ -19,6 +19,8 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
+import { format } from "date-fns"
+import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
 import { toast } from "sonner"
 import { pusherClient } from "@/lib/pusher-client"
 import { CustomAudioPlayer } from "@/components/chat/CustomAudioPlayer"
@@ -325,7 +327,7 @@ export function ChatOverlay() {
     if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
     
     // Example: "October 12, 2026"
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    return format(date, DISPLAY_DATE_FORMAT);
   }
 
   return (
@@ -334,7 +336,7 @@ export function ChatOverlay() {
       <div 
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "fixed z-[100] transition-all duration-500 ease-in-out right-6 cursor-pointer flex items-center justify-center size-14 md:size-16 rounded-full bg-[#67BA2E] shadow-[0_8px_30px_rgb(103,186,46,0.4)] hover:scale-110 active:scale-95 group",
+          "fixed z-[200] transition-all duration-500 ease-in-out right-6 cursor-pointer flex items-center justify-center size-14 md:size-16 rounded-full bg-[#67BA2E] shadow-[0_8px_30px_rgb(103,186,46,0.4)] hover:scale-110 active:scale-95 group",
           isKeyboardOpen ? "bottom-4" : "bottom-24 md:bottom-8",
           isOpen && "md:right-[980px] lg:right-[1130px] !bg-slate-800 shadow-xl", // Adjusted for massive width
           isOpen && "max-md:hidden" // Hide on mobile when open
@@ -540,7 +542,7 @@ export function ChatOverlay() {
                         </div>
                         <div className="flex flex-col bg-slate-50/50 p-3.5 rounded-2xl border border-slate-100">
                           <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">Date of Birth</span>
-                          <span className="text-sm font-bold text-slate-700">{selectedPatient.dob ? new Date(selectedPatient.dob).toLocaleDateString() : 'Not provided'}</span>
+                          <span className="text-sm font-bold text-slate-700">{selectedPatient.dob ? format(new Date(selectedPatient.dob), DISPLAY_DATE_FORMAT) : 'Not provided'}</span>
                         </div>
                         <div className="flex flex-col bg-slate-50/50 p-3.5 rounded-2xl border border-slate-100">
                           <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">Residential Address</span>

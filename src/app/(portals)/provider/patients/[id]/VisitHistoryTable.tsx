@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import { format } from "date-fns"
+import { DISPLAY_DATE_FORMAT, DISPLAY_DATE_TIME_FORMAT } from "@/lib/date-format"
+import { formatProviderDisplayName } from "@/lib/format-provider-name"
 import {
   FileText,
   FileSignature,
@@ -11,6 +13,8 @@ import {
   Heart,
   Ruler,
   Gauge,
+  Thermometer,
+  Wind,
   Pill,
   ClipboardList,
   Stethoscope,
@@ -21,13 +25,18 @@ import {
 } from "lucide-react"
 
 import {
-  WIZARD_STEPS,
+  getWizardSteps,
   memberInfoFields,
   step2Sections,
   step3Sections,
   step4Sections,
   step5Questions,
-} from "@/app/(portals)/provider/assessments/new/AssessmentForm"
+} from "@/lib/assessment-questions"
+import {
+  normalizeBmiVitals,
+  parseAssessmentData,
+  formatVitalDisplay,
+} from "@/lib/assessment-vitals"
 
 import {
   Table,
@@ -91,6 +100,7 @@ interface DiagnosisEntry {
 
 interface Assessment {
   id: string
+  providerId?: string
   type?: string
   createdAt: string | Date
   signatureUrl?: string | null
@@ -107,8 +117,21 @@ interface Assessment {
   }
 }
 
+interface ClinicalAssessmentSnapshot {
+  providerId: string
+  createdAt: string | Date
+  totalRiskScore?: number
+  riskLevel?: string
+  bmi: number
+  bmiCategory: string
+  bloodPressure: string
+  bloodGlucose: string
+  assessmentData?: unknown
+}
+
 interface VisitHistoryTableProps {
   assessments: Assessment[]
+  clinicalAssessments?: ClinicalAssessmentSnapshot[]
 }
 
 const RISK_STYLES: Record<string, string> = {
@@ -147,13 +170,28 @@ function asDiagnosisEntries(value: unknown): DiagnosisEntry[] {
   return Array.isArray(value) ? (value as DiagnosisEntry[]) : []
 }
 
-function getClinicalData(visit: Assessment) {
-  const data = asJsonRecord(visit.data)
-  const bmiVitals = asJsonRecord(data.bmiVitals)
+function findMatchingClinicalAssessment(
+  visit: Assessment,
+  clinicalAssessments: ClinicalAssessmentSnapshot[]
+): ClinicalAssessmentSnapshot | undefined {
+  const visitTime = new Date(visit.createdAt).getTime()
+  return clinicalAssessments.find((record) => {
+    if (visit.providerId && record.providerId !== visit.providerId) return false
+    const recordTime = new Date(record.createdAt).getTime()
+    return Math.abs(recordTime - visitTime) <= 15_000
+  })
+}
+
+function getClinicalData(
+  visit: Assessment,
+  clinicalAssessments: ClinicalAssessmentSnapshot[] = []
+) {
+  const data = parseAssessmentData(visit.data)
   const summary = asJsonRecord(data.summary)
   const memberInfo = asJsonRecord(data.memberInfo)
   const responses = asJsonRecord(data.responses)
   const signatures = asJsonRecord(data.signatures)
+  const matchedClinical = findMatchingClinicalAssessment(visit, clinicalAssessments)
 
   const medications: MedicationEntry[] =
     visit.medications && visit.medications.length > 0
@@ -176,20 +214,19 @@ function getClinicalData(visit: Assessment) {
     asString(signatures.assessorSignature) ||
     ""
 
-  const weightKg =
-    visit.weightKg ??
-    (bmiVitals.weightKg !== undefined && bmiVitals.weightKg !== ""
-      ? Number(bmiVitals.weightKg)
-      : null)
-
-  const heightInches =
-    visit.heightInches ??
-    (bmiVitals.heightInches !== undefined && bmiVitals.heightInches !== ""
-      ? Number(bmiVitals.heightInches)
-      : null)
+  const vitals = normalizeBmiVitals({
+    data: visit.data,
+    weightKg: visit.weightKg,
+    heightInches: visit.heightInches,
+    clinicalBmi: matchedClinical?.bmi,
+    clinicalBmiCategory: matchedClinical?.bmiCategory,
+    clinicalBloodPressure: matchedClinical?.bloodPressure,
+    clinicalBloodGlucose: matchedClinical?.bloodGlucose,
+    clinicalAssessmentData: matchedClinical?.assessmentData,
+  })
 
   return {
-    bmiVitals,
+    vitals,
     summary,
     memberInfo,
     responses,
@@ -198,115 +235,216 @@ function getClinicalData(visit: Assessment) {
     soapNotes,
     followUpDate,
     signatureUrl,
-    weightKg,
-    heightInches,
-    riskLevel: asString(summary.riskLevel),
-    riskScore: asNumber(summary.totalRiskScore),
+    riskLevel: asString(summary.riskLevel) || matchedClinical?.riskLevel || "",
+    riskScore: asNumber(summary.totalRiskScore) ?? matchedClinical?.totalRiskScore,
     overallSummary: asString(summary.q98OverallAssessmentSummary),
     supervisorReview: asString(summary.supervisorReview),
   }
 }
 
-export function VisitHistoryTable({ assessments }: VisitHistoryTableProps) {
+function sortAssessmentsAscending(assessments: Assessment[]) {
+  return [...assessments].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  )
+}
+
+export function VisitHistoryTable({
+  assessments,
+  clinicalAssessments = [],
+}: VisitHistoryTableProps) {
+  const sortedAscending = React.useMemo(
+    () => sortAssessmentsAscending(assessments),
+    [assessments]
+  )
+  const initialAssessment = sortedAscending[0] ?? null
+  const followUpEncounters = React.useMemo(
+    () => sortedAscending.slice(1).reverse(),
+    [sortedAscending]
+  )
+
+  if (!initialAssessment) {
+    return null
+  }
+
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent border-slate-100">
-            <TableHead className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</TableHead>
-            <TableHead className="py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Summary</TableHead>
-            <TableHead className="py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Risk</TableHead>
-            <TableHead className="py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Provider</TableHead>
-            <TableHead className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {assessments.map((visit) => {
-            const c = getClinicalData(visit)
-            const riskClass = RISK_STYLES[c.riskLevel?.toUpperCase()] || "bg-slate-50 text-slate-500 border-slate-100"
+    <div className="space-y-8">
+      <VisitListSection
+        title="Initial Assessment"
+        description="The patient's first comprehensive assessment, including all factor tabs (1-11)."
+        visits={[initialAssessment]}
+        isInitialAssessment
+        clinicalAssessments={clinicalAssessments}
+      />
 
-            return (
-              <TableRow key={visit.id} className="group hover:bg-slate-50/50 border-slate-100">
-                <TableCell className="px-8 py-5">
-                  <div className="flex flex-col">
-                    <span className="font-bold text-slate-800 text-sm">{format(new Date(visit.createdAt), "MMM dd, yyyy")}</span>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-0.5">{format(new Date(visit.createdAt), "hh:mm a")}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span className="font-bold text-slate-700 text-sm line-clamp-1 max-w-[220px] block">
-                    {c.overallSummary || (c.diagnoses[0]?.name ? `Dx: ${c.diagnoses[0]?.name}` : "Clinical Assessment")}
-                  </span>
-                  <span className="text-[10px] font-bold text-slate-400 mt-0.5 block">
-                    {c.medications.length} meds · {c.diagnoses.length} dx
-                  </span>
-                </TableCell>
-                <TableCell>
-                  {c.riskLevel ? (
-                    <Badge className={`${riskClass} border font-black text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full`}>
-                      {c.riskLevel}{typeof c.riskScore === "number" ? ` · ${c.riskScore}` : ""}
-                    </Badge>
-                  ) : (
-                    <span className="text-slate-300 text-xs">—</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div className="size-6 rounded-full bg-[#67BA2E]/10 flex items-center justify-center text-[#67BA2E] font-black text-[8px] border border-[#67BA2E]/20">
-                      {visit.provider.user.firstName[0]}{visit.provider.user.lastName[0]}
-                    </div>
-                    <span className="text-[10px] font-black text-[#67BA2E] uppercase tracking-widest">Dr. {visit.provider.user.lastName}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="px-8 text-right">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="h-9 px-4 border-[#67BA2E]/20 text-[#67BA2E] font-bold text-[10px] uppercase tracking-widest hover:bg-[#67BA2E] hover:text-white rounded-lg transition-all gap-2"
-                      >
-                        <FileText size={14} />
-                        View Note
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="w-[calc(100%-1rem)] sm:max-w-[760px] max-h-[92dvh] rounded-2xl sm:rounded-[2rem] border-slate-200 p-0 overflow-hidden flex flex-col" closeButtonClassName="top-3 right-3 sm:top-5 sm:right-5 size-7 sm:size-9 bg-white/20 text-white hover:bg-white hover:text-[#5aa827]">
-                      {/* Header — fixed, never clips */}
-                      <div className="bg-[#67BA2E] p-4 sm:p-6 text-white flex-shrink-0">
-                        <DialogHeader>
-                          <div className="flex items-center gap-3">
-                            <div className="size-9 sm:size-11 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                              <Stethoscope className="size-5 sm:size-6" />
-                            </div>
-                            <div className="flex-1 min-w-0 pr-9 sm:pr-11">
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <DialogTitle className="text-base sm:text-xl font-black tracking-tight text-white leading-tight">Clinical Encounter Note</DialogTitle>
-                                <Badge className="bg-white/20 text-white border-transparent font-black text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-md flex-shrink-0">
-                                  #{visit.id.slice(0, 6).toUpperCase()}
-                                </Badge>
-                                {c.riskLevel ? (
-                                  <Badge className="bg-white text-[#67BA2E] border-transparent font-black text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-md flex-shrink-0">
-                                    {c.riskLevel}
-                                  </Badge>
-                                ) : null}
-                              </div>
-                              <DialogDescription className="text-white/80 font-medium text-[11px] mt-1 truncate">
-                                {format(new Date(visit.createdAt), "dd MMM yyyy · hh:mm a")}
-                              </DialogDescription>
-                            </div>
-                          </div>
-                        </DialogHeader>
-                      </div>
-
-                      <EncounterDetail c={c} visit={visit} />
-                    </DialogContent>
-                  </Dialog>
-                </TableCell>
-              </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
+      {followUpEncounters.length > 0 ? (
+        <VisitListSection
+          title="Follow-up Encounters"
+          description="Subsequent visit records. Factor tabs (1-11) are hidden for follow-up encounters."
+          visits={followUpEncounters}
+          isInitialAssessment={false}
+          clinicalAssessments={clinicalAssessments}
+        />
+      ) : (
+        <div className="px-8 py-6 border-t border-slate-100">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Follow-up Encounters</p>
+          <p className="text-sm font-medium text-slate-500 mt-2">No follow-up encounters recorded yet.</p>
+        </div>
+      )}
     </div>
+  )
+}
+
+function VisitListSection({
+  title,
+  description,
+  visits,
+  isInitialAssessment,
+  clinicalAssessments,
+}: {
+  title: string
+  description: string
+  visits: Assessment[]
+  isInitialAssessment: boolean
+  clinicalAssessments: ClinicalAssessmentSnapshot[]
+}) {
+  return (
+    <div className={isInitialAssessment ? "" : "border-t border-slate-100"}>
+      <div className="px-8 py-5 bg-slate-50/60 border-b border-slate-100">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-black text-slate-800 tracking-tight">{title}</h3>
+          <Badge className="bg-[#67BA2E]/10 text-[#67BA2E] border-[#67BA2E]/20 font-black text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full">
+            {visits.length} {visits.length === 1 ? "record" : "records"}
+          </Badge>
+        </div>
+        <p className="text-xs font-medium text-slate-500 mt-1">{description}</p>
+      </div>
+
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent border-slate-100">
+              <TableHead className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</TableHead>
+              <TableHead className="py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Summary</TableHead>
+              <TableHead className="py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Risk</TableHead>
+              <TableHead className="py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Provider</TableHead>
+              <TableHead className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {visits.map((visit) => (
+              <VisitRow
+                key={visit.id}
+                visit={visit}
+                isInitialAssessment={isInitialAssessment}
+                clinicalAssessments={clinicalAssessments}
+              />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  )
+}
+
+function VisitRow({
+  visit,
+  isInitialAssessment,
+  clinicalAssessments,
+}: {
+  visit: Assessment
+  isInitialAssessment: boolean
+  clinicalAssessments: ClinicalAssessmentSnapshot[]
+}) {
+  const c = getClinicalData(visit, clinicalAssessments)
+  const riskClass = RISK_STYLES[c.riskLevel?.toUpperCase()] || "bg-slate-50 text-slate-500 border-slate-100"
+
+  return (
+    <TableRow className="group hover:bg-slate-50/50 border-slate-100">
+      <TableCell className="px-8 py-5">
+        <div className="flex flex-col">
+          <span className="font-bold text-slate-800 text-sm">{format(new Date(visit.createdAt), DISPLAY_DATE_FORMAT)}</span>
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-0.5">{format(new Date(visit.createdAt), "hh:mm a")}</span>
+          {isInitialAssessment ? (
+            <Badge className="mt-2 w-fit bg-blue-50 text-blue-600 border-blue-100 font-black text-[8px] uppercase tracking-widest px-2 py-0.5 rounded-full">
+              Initial
+            </Badge>
+          ) : (
+            <Badge className="mt-2 w-fit bg-slate-100 text-slate-600 border-slate-200 font-black text-[8px] uppercase tracking-widest px-2 py-0.5 rounded-full">
+              Follow-up
+            </Badge>
+          )}
+        </div>
+      </TableCell>
+      <TableCell>
+        <span className="font-bold text-slate-700 text-sm line-clamp-1 max-w-[220px] block">
+          {c.overallSummary || (c.diagnoses[0]?.name ? `Dx: ${c.diagnoses[0]?.name}` : "Clinical Assessment")}
+        </span>
+        <span className="text-[10px] font-bold text-slate-400 mt-0.5 block">
+          {c.medications.length} meds · {c.diagnoses.length} dx
+        </span>
+      </TableCell>
+      <TableCell>
+        {c.riskLevel ? (
+          <Badge className={`${riskClass} border font-black text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full`}>
+            {c.riskLevel}{typeof c.riskScore === "number" ? ` · ${c.riskScore}` : ""}
+          </Badge>
+        ) : (
+          <span className="text-slate-300 text-xs">—</span>
+        )}
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          <div className="size-6 rounded-full bg-[#67BA2E]/10 flex items-center justify-center text-[#67BA2E] font-black text-[8px] border border-[#67BA2E]/20">
+            {visit.provider.user.firstName[0]}{visit.provider.user.lastName[0]}
+          </div>
+          <span className="text-[10px] font-black text-[#67BA2E] uppercase tracking-widest">{formatProviderDisplayName(visit.provider)}</span>
+        </div>
+      </TableCell>
+      <TableCell className="px-8 text-right">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              className="h-9 px-4 border-[#67BA2E]/20 text-[#67BA2E] font-bold text-[10px] uppercase tracking-widest hover:bg-[#67BA2E] hover:text-white rounded-lg transition-all gap-2"
+            >
+              <FileText size={14} />
+              View Note
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="w-[calc(100%-1rem)] sm:max-w-[760px] max-h-[92dvh] rounded-2xl sm:rounded-[2rem] border-slate-200 p-0 overflow-hidden flex flex-col" closeButtonClassName="top-3 right-3 sm:top-5 sm:right-5 size-7 sm:size-9 bg-white/20 text-white hover:bg-white hover:text-[#5aa827]">
+            <div className="bg-[#67BA2E] p-4 sm:p-6 text-white flex-shrink-0">
+              <DialogHeader>
+                <div className="flex items-center gap-3">
+                  <div className="size-9 sm:size-11 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                    <Stethoscope className="size-5 sm:size-6" />
+                  </div>
+                  <div className="flex-1 min-w-0 pr-9 sm:pr-11">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <DialogTitle className="text-base sm:text-xl font-black tracking-tight text-white leading-tight">
+                        {isInitialAssessment ? "Initial Assessment Note" : "Follow-up Encounter Note"}
+                      </DialogTitle>
+                      <Badge className="bg-white/20 text-white border-transparent font-black text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-md flex-shrink-0">
+                        #{visit.id.slice(0, 6).toUpperCase()}
+                      </Badge>
+                      {c.riskLevel ? (
+                        <Badge className="bg-white text-[#67BA2E] border-transparent font-black text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-md flex-shrink-0">
+                          {c.riskLevel}
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <DialogDescription className="text-white/80 font-medium text-[11px] mt-1 truncate">
+                      {format(new Date(visit.createdAt), DISPLAY_DATE_TIME_FORMAT)}
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+            </div>
+
+            <EncounterDetail c={c} visit={visit} isInitialAssessment={isInitialAssessment} />
+          </DialogContent>
+        </Dialog>
+      </TableCell>
+    </TableRow>
   )
 }
 
@@ -369,18 +507,34 @@ function FlatResponses({ questions, responses }: { questions: typeof step5Questi
   )
 }
 
-function EncounterDetail({ c, visit }: { c: ClinicalData; visit: Assessment }) {
+function EncounterDetail({
+  c,
+  visit,
+  isInitialAssessment,
+}: {
+  c: ClinicalData
+  visit: Assessment
+  isInitialAssessment: boolean
+}) {
+  const wizardSteps = React.useMemo(
+    () => getWizardSteps(isInitialAssessment),
+    [isInitialAssessment]
+  )
   const [activeTab, setActiveTab] = React.useState(0)
+  const activeStep = wizardSteps[activeTab]
+
+  React.useEffect(() => {
+    setActiveTab(0)
+  }, [isInitialAssessment])
 
   return (
     <>
-      {/* Tab navigation — its OWN scroll context so tabs never get clipped */}
       <div className="border-b border-slate-100 bg-white flex-shrink-0">
         <div
           className="flex gap-1.5 px-3 sm:px-5 py-3 overflow-x-auto"
           style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
         >
-          {WIZARD_STEPS.map((label, index) => (
+          {wizardSteps.map((label, index) => (
             <button
               key={label}
               type="button"
@@ -397,10 +551,8 @@ function EncounterDetail({ c, visit }: { c: ClinicalData; visit: Assessment }) {
         </div>
       </div>
 
-      {/* Scrollable content — takes remaining height */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-7">
-        {/* Tab 0: Member Info */}
-        {activeTab === 0 ? (
+        {activeStep === "Member Info" ? (
           <Section icon={<UserSquare2 className="size-3 text-[#67BA2E]" />} title="Member Information">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {memberInfoFields.map((field) => {
@@ -413,37 +565,45 @@ function EncounterDetail({ c, visit }: { c: ClinicalData; visit: Assessment }) {
           </Section>
         ) : null}
 
-        {/* Tab 1: Factors 1-4 */}
-        {activeTab === 1 ? (
+        {activeStep === "Factors 1-4" ? (
           <Section icon={<ListChecks className="size-3 text-[#67BA2E]" />} title="Factors 1-4 Responses">
             <SectionResponses sections={step2Sections} responses={c.responses} />
           </Section>
         ) : null}
 
-        {/* Tab 2: Factors 5-8 */}
-        {activeTab === 2 ? (
+        {activeStep === "Factors 5-8" ? (
           <Section icon={<ListChecks className="size-3 text-[#67BA2E]" />} title="Factors 5-8 Responses">
             <SectionResponses sections={step3Sections} responses={c.responses} />
           </Section>
         ) : null}
 
-        {/* Tab 3: Factors 9-11 */}
-        {activeTab === 3 ? (
+        {activeStep === "Factors 9-11" ? (
           <Section icon={<ListChecks className="size-3 text-[#67BA2E]" />} title="Factors 9-11 Responses">
             <SectionResponses sections={step4Sections} responses={c.responses} />
           </Section>
         ) : null}
 
-        {/* Tab 4: BMI & Vitals */}
-        {activeTab === 4 ? (
+        {activeStep === "BMI & Vitals" ? (
           <div className="space-y-8">
-            <Section icon={<Activity className="size-3 text-[#67BA2E]" />} title="Biometric Vitals">
+            <Section icon={<Activity className="size-3 text-[#67BA2E]" />} title="BMI & Physical Health Indicators">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <VitalBox icon={<Heart />} label="Blood Pressure" value={c.bmiVitals.bloodPressure ? `${c.bmiVitals.bloodPressure} mmHg` : "--"} />
-                <VitalBox icon={<Droplet />} label="Blood Glucose" value={c.bmiVitals.bloodGlucose ? `${c.bmiVitals.bloodGlucose}` : "--"} />
-                <VitalBox icon={<Gauge />} label="BMI" value={c.bmiVitals.calculatedBmi ? `${c.bmiVitals.calculatedBmi} ${c.bmiVitals.bmiCategory ? `(${c.bmiVitals.bmiCategory})` : ""}` : "--"} />
-                <VitalBox icon={<Scale />} label="Weight" value={c.weightKg ? `${c.weightKg} kg` : "--"} />
-                <VitalBox icon={<Ruler />} label="Height" value={c.heightInches ? `${c.heightInches} in` : "--"} />
+                <VitalBox icon={<Scale />} label="Weight" value={formatVitalDisplay(c.vitals.weightKg, " kg")} />
+                <VitalBox icon={<Ruler />} label="Height" value={formatVitalDisplay(c.vitals.heightInches, " in")} />
+                <VitalBox
+                  icon={<Gauge />}
+                  label="BMI"
+                  value={
+                    c.vitals.calculatedBmi
+                      ? `${c.vitals.calculatedBmi}${c.vitals.bmiCategory ? ` (${c.vitals.bmiCategory})` : ""}`
+                      : "--"
+                  }
+                />
+                <VitalBox icon={<Heart />} label="Blood Pressure" value={formatVitalDisplay(c.vitals.bloodPressure, " mmHg")} />
+                <VitalBox icon={<Droplet />} label="Blood Glucose" value={formatVitalDisplay(c.vitals.bloodGlucose)} />
+                <VitalBox icon={<Thermometer />} label="Temperature" value={formatVitalDisplay(c.vitals.temperatureCelsius, " °C")} />
+                <VitalBox icon={<Wind />} label="Respiration" value={formatVitalDisplay(c.vitals.respiration, " /min")} />
+                <VitalBox icon={<Activity />} label="Pain Scale" value={c.vitals.painScale !== "" ? `${c.vitals.painScale} / 10` : "--"} />
+                <VitalBox icon={<Droplet />} label="Oxygen Saturation" value={formatVitalDisplay(c.vitals.oxygenSaturation, " %")} />
               </div>
             </Section>
 
@@ -492,7 +652,7 @@ function EncounterDetail({ c, visit }: { c: ClinicalData; visit: Assessment }) {
               <Section icon={<CalendarClock className="size-3 text-[#67BA2E]" />} title="Follow-up Plan">
                 <div className="inline-flex items-center gap-2 p-3 px-4 bg-[#67BA2E]/5 rounded-xl border border-[#67BA2E]/15">
                   <CalendarClock className="size-4 text-[#67BA2E]" />
-                  <span className="font-black text-slate-700 text-sm">{format(new Date(c.followUpDate), "PPP")}</span>
+                  <span className="font-black text-slate-700 text-sm">{format(new Date(c.followUpDate), DISPLAY_DATE_FORMAT)}</span>
                 </div>
               </Section>
             ) : null}
@@ -503,8 +663,7 @@ function EncounterDetail({ c, visit }: { c: ClinicalData; visit: Assessment }) {
           </div>
         ) : null}
 
-        {/* Tab 5: Summary & Sign */}
-        {activeTab === 5 ? (
+        {activeStep === "Summary & Sign" ? (
           <div className="space-y-8">
             <div className="grid grid-cols-2 gap-4">
               <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
@@ -557,7 +716,7 @@ function EncounterDetail({ c, visit }: { c: ClinicalData; visit: Assessment }) {
                 <div className="size-8 rounded-full bg-slate-100 flex items-center justify-center font-black text-[10px] text-slate-400">
                   {visit.provider.user.firstName[0]}{visit.provider.user.lastName[0]}
                 </div>
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Digitally Signed by Dr. {visit.provider.user.lastName}</span>
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Digitally Signed by {formatProviderDisplayName(visit.provider)}</span>
               </div>
               <span className="text-[10px] font-bold text-slate-400 uppercase italic">Confidential Medical Record</span>
             </div>
@@ -584,7 +743,7 @@ function formatMaybeDate(raw: unknown): string {
   const value = String(raw)
   const parsed = new Date(value)
   if (!Number.isNaN(parsed.getTime()) && /\d{4}-\d{2}-\d{2}/.test(value)) {
-    return format(parsed, "PPP")
+    return format(parsed, DISPLAY_DATE_FORMAT)
   }
   return value
 }

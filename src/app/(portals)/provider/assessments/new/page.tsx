@@ -47,7 +47,7 @@ export default async function NewAssessmentPage({ searchParams }: PageProps) {
 
   const sessionProvider = await getProviderProfileForSession()
 
-  const [patient, provider] = await Promise.all([
+  const [patient, provider, previousAssessmentCount] = await Promise.all([
     prisma.patientProfile.findFirst({
       where: {
         AND: [
@@ -65,6 +65,13 @@ export default async function NewAssessmentPage({ searchParams }: PageProps) {
       include: { user: true },
     }),
     Promise.resolve({ id: sessionProvider.id }),
+    prisma.assessment.count({
+      where: {
+        patient: {
+          OR: [{ id: patientId }, { userId: patientId }],
+        },
+      },
+    }),
   ])
 
   if (!patient || !provider) {
@@ -108,7 +115,11 @@ export default async function NewAssessmentPage({ searchParams }: PageProps) {
             <CardDescription className="font-medium text-slate-500">Document the patient's vitals, observations, and treatment trajectory.</CardDescription>
           </CardHeader>
           <CardContent className="p-8 md:p-10">
-            <AssessmentForm patientId={patient.id} providerId={provider.id} />
+            <AssessmentForm
+              patientId={patient.id}
+              providerId={provider.id}
+              isFirstTimeAssessment={previousAssessmentCount === 0}
+            />
           </CardContent>
         </Card>
       </div>

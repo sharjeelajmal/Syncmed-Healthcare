@@ -77,9 +77,7 @@ export function PatientPortalNavigation({ userId }: PatientPortalNavigationProps
   ]
 
   return (
-    <>
-      {/* Top Navbar (Desktop Only) */}
-      <header className="sticky top-0 z-50 w-full overflow-x-clip border-b bg-white/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full overflow-x-clip border-b bg-white/80 backdrop-blur-md">
         <div className={portalShellClass}>
           <div className={cn(portalHeaderRowClass, "py-1")}>
             <div className={portalHeaderBrandClass}>
@@ -155,45 +153,78 @@ export function PatientPortalNavigation({ userId }: PatientPortalNavigationProps
           </div>
         </div>
       </header>
+  )
+}
 
-      {/* Mobile & tablet bottom navigation */}
-      <div className={portalBottomNavClass}>
-        <nav className="flex items-center justify-between">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== "/patient/dashboard" && pathname.startsWith(item.href))
-            return (
-              <Link 
-                key={item.href} 
-                href={item.href}
-                className="flex flex-col items-center justify-center gap-1 group"
+export function PatientPortalBottomNav({ userId }: { userId: string | null }) {
+  const pathname = usePathname()
+  const [unpaidCount, setUnpaidCount] = React.useState(0)
+
+  React.useEffect(() => {
+    if (!userId) return
+
+    let cancelled = false
+    fetchPatientUnpaidCountAction(userId).then((count) => {
+      if (!cancelled) setUnpaidCount(count)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
+
+  const navItems: NavItem[] = [
+    { name: "Home", href: "/patient/dashboard", icon: LayoutDashboard },
+    { name: "Appointments", href: "/patient/appointments", icon: Bell },
+    { name: "My Health", href: "/patient/records", icon: HeartPulse },
+    { name: "Billing", href: "/patient/billing", icon: Wallet, badge: unpaidCount },
+  ]
+
+  return (
+    <div className={portalBottomNavClass}>
+      <nav className="flex items-center justify-between">
+        {navItems.map((item) => {
+          const isActive =
+            pathname === item.href ||
+            (item.href !== "/patient/dashboard" && pathname.startsWith(item.href))
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="group flex flex-col items-center justify-center gap-1"
+            >
+              <div
+                className={cn(
+                  "relative rounded-2xl p-2 transition-all duration-300",
+                  isActive
+                    ? "scale-110 bg-emerald-50 text-[#67BA2E]"
+                    : "text-slate-400 group-active:scale-95"
+                )}
               >
-                <div className={cn(
-                  "p-2 rounded-2xl transition-all duration-300 relative",
-                  isActive ? "bg-emerald-50 text-[#67BA2E] scale-110" : "text-slate-400 group-active:scale-95"
-                )}>
-                  <item.icon 
-                    className={cn(
-                      "size-6 transition-all",
-                      isActive ? "fill-[#67BA2E]" : "fill-none stroke-[2px]"
-                    )} 
-                  />
-                  {item.badge && item.badge > 0 && (
-                    <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white ring-2 ring-white animate-pulse">
-                      {item.badge}
-                    </span>
+                <item.icon
+                  className={cn(
+                    "size-6 transition-all",
+                    isActive ? "fill-[#67BA2E]" : "fill-none stroke-[2px]"
                   )}
-                </div>
-                <span className={cn(
+                />
+                {item.badge != null && item.badge > 0 && (
+                  <span className="absolute right-1 top-1 flex h-4 w-4 animate-pulse items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white ring-2 ring-white">
+                    {item.badge > 9 ? "9+" : item.badge}
+                  </span>
+                )}
+              </div>
+              <span
+                className={cn(
                   "text-[10px] font-black uppercase tracking-widest transition-all",
                   isActive ? "text-[#67BA2E] opacity-100" : "text-slate-400 opacity-60"
-                )}>
-                  {item.name}
-                </span>
-              </Link>
-            )
-          })}
-        </nav>
-      </div>
-    </>
+                )}
+              >
+                {item.name}
+              </span>
+            </Link>
+          )
+        })}
+      </nav>
+    </div>
   )
 }

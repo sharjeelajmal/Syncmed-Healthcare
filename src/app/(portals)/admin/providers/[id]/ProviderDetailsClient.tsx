@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input"
 import { formatNaira } from "@/lib/currency"
 import { Label } from "@/components/ui/label"
 import { updateProviderAction } from "@/app/actions/provider.actions"
+import { formatProviderDisplayNameFromUser } from "@/lib/format-provider-name"
 
 interface ProviderDetailsClientProps {
   provider: any
@@ -103,7 +104,10 @@ export function ProviderDetailsClient({ provider, stats }: ProviderDetailsClient
                         />
                       </div>
                     ) : (
-                      `Dr. ${provider.firstName} ${provider.lastName}`
+                      formatProviderDisplayNameFromUser(
+                        { firstName: provider.firstName, lastName: provider.lastName },
+                        provider.providerProfile?.providerType
+                      )
                     )}
                   </CardTitle>
                   {!isEditing && (

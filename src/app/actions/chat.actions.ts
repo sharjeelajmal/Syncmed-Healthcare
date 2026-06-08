@@ -351,7 +351,8 @@ export async function getPatientContacts(patientUserId: string) {
     if (patientProfile.assignedProvider?.user) {
       providerMap.set(patientProfile.assignedProvider.user.id, {
         ...patientProfile.assignedProvider.user,
-        specialty: patientProfile.assignedProvider.specialty
+        specialty: patientProfile.assignedProvider.specialty,
+        providerType: patientProfile.assignedProvider.providerType,
       });
     }
     const providers = Array.from(providerMap.values());
@@ -389,6 +390,7 @@ export async function getPatientContacts(patientUserId: string) {
         email: providerUser.email,
         isOnline: Boolean(isOnline),
         specialty: providerUser.specialty,
+        providerType: providerUser.providerType,
         unreadCount,
         lastMessageAt: lastMsg ? lastMsg.createdAt : new Date(0)
       };

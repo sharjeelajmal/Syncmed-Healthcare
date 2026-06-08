@@ -50,3 +50,39 @@ export async function getAdminUpcomingAppointments() {
     },
   })
 }
+
+export async function getAdminDashboardListData() {
+  const todayStart = startOfDay(new Date())
+  const todayEnd = endOfDay(new Date())
+
+  const [patients, providers, appointments, todaysAppointments] =
+    await Promise.all([
+      prisma.patientProfile.findMany({
+        orderBy: { user: { createdAt: "desc" } },
+        include: { user: true },
+      }),
+      prisma.providerProfile.findMany({
+        orderBy: { user: { createdAt: "desc" } },
+        include: { user: true },
+      }),
+      prisma.appointment.findMany({
+        orderBy: { scheduledAt: "desc" },
+        include: {
+          patient: { include: { user: true } },
+          provider: { include: { user: true } },
+        },
+      }),
+      prisma.appointment.findMany({
+        where: {
+          scheduledAt: { gte: todayStart, lte: todayEnd },
+        },
+        orderBy: { scheduledAt: "asc" },
+        include: {
+          patient: { include: { user: true } },
+          provider: { include: { user: true } },
+        },
+      }),
+    ])
+
+  return { patients, providers, appointments, todaysAppointments }
+}

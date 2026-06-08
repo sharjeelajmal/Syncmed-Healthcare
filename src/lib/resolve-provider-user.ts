@@ -18,6 +18,7 @@ export async function resolveProviderUser(id: string) {
       providerProfile: {
         select: {
           id: true,
+          providerType: true,
           specialty: true,
           licenseNumber: true,
           consultationFee: true,

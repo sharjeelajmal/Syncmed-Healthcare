@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { updateProviderAction } from "@/app/actions/provider.actions"
+import { formatProviderDisplayNameFromUser } from "@/lib/format-provider-name"
 
 export function EditProviderForm({ provider }: { provider: any }) {
   const router = useRouter()
@@ -54,7 +55,7 @@ export function EditProviderForm({ provider }: { provider: any }) {
               </div>
               <div>
                 <CardTitle className="text-2xl sm:text-3xl font-black tracking-tight">Edit Provider Profile</CardTitle>
-                <CardDescription className="text-emerald-50/90 font-medium mt-1">Update credentials for Dr. {provider.firstName} {provider.lastName}.</CardDescription>
+                <CardDescription className="text-emerald-50/90 font-medium mt-1">Update credentials for {formatProviderDisplayNameFromUser({ firstName: provider.firstName, lastName: provider.lastName }, provider.providerProfile?.providerType)}.</CardDescription>
               </div>
             </div>
           </div>

@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { formatProviderDisplayNameFromUser } from "@/lib/format-provider-name"
 import { 
   UserPlus, 
   ShieldCheck, 
@@ -79,7 +80,10 @@ export function ProviderTable({
                         </div>
                         <div className="flex flex-col">
                           <span className="font-bold text-slate-800 text-base leading-tight">
-                            Dr. {provider.firstName} {provider.lastName}
+                            {formatProviderDisplayNameFromUser(
+                              { firstName: provider.firstName, lastName: provider.lastName },
+                              provider.providerProfile?.providerType
+                            )}
                           </span>
                           <span className="text-[11px] font-black text-emerald-600 uppercase tracking-tighter mt-1 flex items-center gap-1">
                             <Mail size={10} />

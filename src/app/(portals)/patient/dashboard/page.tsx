@@ -1,6 +1,6 @@
 import * as React from "react"
 import { Suspense } from "react"
-import { Calendar, Activity, Heart, CheckCircle2 } from "lucide-react"
+import { Calendar, Heart, CheckCircle2 } from "lucide-react"
 import { auth } from "../../../../../auth"
 import { BannerInstallBtn } from "@/components/auth/BannerInstallBtn"
 import {
@@ -24,8 +24,7 @@ export default async function PatientDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="w-full space-y-8 animate-slide-up py-6 md:py-8">
+    <div className="w-full space-y-8 animate-slide-up py-6 md:py-8">
         <div className="relative overflow-hidden bg-white border border-slate-200 rounded-[2rem] md:rounded-[3rem] p-6 md:p-14 mb-8 shadow-2xl shadow-slate-100 group animate-in fade-in duration-1000">
           <div className="absolute inset-0 z-0 overflow-hidden">
             <PatientHeroBackground />
@@ -62,7 +61,6 @@ export default async function PatientDashboard() {
               </div>
 
               <div className="flex flex-row items-center gap-2 md:gap-3 mt-1.5 w-full md:w-auto animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-700">
-                <PatientVitalsBadge />
                 <BannerInstallBtn />
               </div>
             </div>
@@ -74,7 +72,6 @@ export default async function PatientDashboard() {
         <Suspense fallback={<PatientDashboardContentSkeleton />}>
           <PatientDashboardContent sessionUserId={sessionUserId} />
         </Suspense>
-      </div>
     </div>
   )
 }
@@ -102,24 +99,6 @@ function PatientHeroCalendarIcon() {
   return (
     <div className="size-8 md:size-10 rounded-lg md:rounded-xl bg-white flex items-center justify-center shadow-sm">
       <Calendar className="size-4 md:size-5 text-[#67BA2E]" />
-    </div>
-  )
-}
-
-function PatientVitalsBadge() {
-  return (
-    <div className="flex-1 md:flex-initial w-1/2 md:w-auto flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3.5 bg-[#67BA2E]/5 border border-[#67BA2E]/10 rounded-xl md:rounded-2xl hover:bg-[#67BA2E]/10 transition-all cursor-pointer group/badge">
-      <div className="p-1.5 md:p-2 bg-white rounded-lg shadow-sm group-hover/badge:scale-110 transition-transform">
-        <Activity className="size-3.5 md:size-4 text-[#67BA2E]" />
-      </div>
-      <div className="text-left">
-        <p className="text-[8px] md:text-[10px] font-black text-[#67BA2E] uppercase tracking-wider leading-none mb-0.5">
-          Vitals
-        </p>
-        <p className="text-[10px] md:text-xs font-bold text-slate-700">
-          Active Monitoring
-        </p>
-      </div>
     </div>
   )
 }

@@ -15,6 +15,8 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { PortalShellDecor } from "@/components/portal/PortalShellDecor"
+import { ClientBodyPortal } from "@/components/portal/ClientBodyPortal"
 import {
   portalHeaderActionsClass,
   portalHeaderBrandClass,
@@ -62,7 +64,8 @@ export default function ProviderPortalLayout({
   ]
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="portal-shell-bg flex min-h-screen flex-col">
+      <PortalShellDecor />
       <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md overflow-x-hidden">
         <div className={portalShellClass}>
           <div className={portalHeaderRowClass}>
@@ -134,7 +137,7 @@ export default function ProviderPortalLayout({
         </div>
       </header>
 
-      <main className={cn(portalShellClass, "pt-8", portalMainBottomPadding)}>
+      <main className={cn(portalShellClass, "relative z-[1] flex-1 pt-8", portalMainBottomPadding)}>
         <div className="animate-in fade-in duration-300 ease-out fill-mode-both">
           {children}
         </div>
@@ -186,7 +189,9 @@ export default function ProviderPortalLayout({
         </nav>
       </div>
 
-      <ChatOverlay />
+      <ClientBodyPortal>
+        <ChatOverlay />
+      </ClientBodyPortal>
     </div>
   )
 }

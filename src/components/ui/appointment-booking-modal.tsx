@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { PureCalendar } from "@/components/ui/pure-calendar"
 import { getProviderSlots, createAppointmentAction } from "@/app/actions/appointment.actions"
+import { formatProviderDisplayName } from "@/lib/format-provider-name"
 import { cn } from "@/lib/utils"
 import {
   Dialog,
@@ -138,7 +139,7 @@ export function AppointmentBookingModal({ isOpen, onClose, patientId, providers 
               <DialogTitle className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Clinical Booking</DialogTitle>
               <DialogDescription className="text-slate-500 font-medium italic text-[10px] sm:text-xs">
                 {step === 1 && "Choose your preferred healthcare professional."}
-                {step === 2 && `Schedule your encounter with Dr. ${selectedProvider?.user.lastName}`}
+                {step === 2 && selectedProvider && `Schedule your encounter with ${formatProviderDisplayName(selectedProvider)}`}
               </DialogDescription>
             </div>
             {step > 1 && (
@@ -190,7 +191,7 @@ export function AppointmentBookingModal({ isOpen, onClose, patientId, providers 
                             <Stethoscope className="size-4 sm:size-5" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-black text-slate-800 tracking-tight text-[11px] sm:text-sm leading-tight break-words">Dr. {p.user.lastName}</h3>
+                            <h3 className="font-black text-slate-800 tracking-tight text-[11px] sm:text-sm leading-tight break-words">{formatProviderDisplayName(p)}</h3>
                             <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1 truncate">{p.specialty}</p>
                           </div>
                         </CardContent>

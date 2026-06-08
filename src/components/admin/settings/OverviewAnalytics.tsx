@@ -25,6 +25,7 @@ import {
   ChevronDown
 } from "lucide-react"
 import { format, subDays } from "date-fns"
+import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
 import { getAdminAnalytics } from "@/app/actions/analytics.actions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -107,7 +108,7 @@ export function OverviewAnalytics() {
             )}>
               <Calendar size={14} />
               {range === "custom" && startDate && endDate 
-                ? `${format(startDate, "MMM d")} - ${format(endDate, "MMM d")}`
+                ? `${format(startDate, DISPLAY_DATE_FORMAT)} - ${format(endDate, DISPLAY_DATE_FORMAT)}`
                 : "Custom Range"
               }
             </button>

@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Users } from "lucide-react"
 import prisma from "@/lib/prisma"
+import { formatProviderDisplayName } from "@/lib/format-provider-name"
 import { getProviderProfileForSession } from "@/lib/portal-auth"
 
 export const dynamic = "force-dynamic"
@@ -53,7 +54,7 @@ export default async function ProviderPatientsPage({ searchParams }: PageProps) 
           </div>
           My Patients
         </h1>
-        <p className="text-slate-500 font-medium ml-1">Manage and review your assigned patient roster for Dr. {provider.user.lastName}.</p>
+        <p className="text-slate-500 font-medium ml-1">Manage and review your assigned patient roster for {formatProviderDisplayName(provider)}.</p>
       </div>
 
       <AssignedPatientsTable patients={patients} />
