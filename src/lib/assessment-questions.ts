@@ -29,23 +29,35 @@ interface MemberInfoField {
   type?: "date" | "text"
 }
 
-export const WIZARD_STEPS = [
-  "Member Info",
+import { ROUTINE_REASSESSMENT_WIZARD_STEPS } from "@/lib/assessment-reassessment-fields"
+
+export { ROUTINE_REASSESSMENT_WIZARD_STEPS } from "@/lib/assessment-reassessment-fields"
+
+const INITIAL_ONLY_WIZARD_STEPS = [
   "Factors 1-4",
   "Factors 5-8",
   "Factors 9-11",
+] as const
+
+export const WIZARD_STEPS = [
+  "Member Info",
+  ...INITIAL_ONLY_WIZARD_STEPS,
+  ...ROUTINE_REASSESSMENT_WIZARD_STEPS,
   "BMI & Vitals",
   "Summary & Sign",
 ] as const
 
 export const FOLLOW_UP_WIZARD_STEPS = [
   "Member Info",
+  ...ROUTINE_REASSESSMENT_WIZARD_STEPS,
   "BMI & Vitals",
   "Summary & Sign",
 ] as const
 
 export function getWizardSteps(isFirstTimeAssessment: boolean) {
-  return isFirstTimeAssessment ? WIZARD_STEPS : FOLLOW_UP_WIZARD_STEPS
+  return isFirstTimeAssessment
+    ? [...WIZARD_STEPS]
+    : [...FOLLOW_UP_WIZARD_STEPS]
 }
 
 interface MemberInfoField {

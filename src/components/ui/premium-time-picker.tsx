@@ -15,11 +15,14 @@ interface TimePickerProps {
   value: string // Format: "HH:mm" (24h)
   onChange: (value: string) => void
   disabled?: boolean
+  placeholder?: string
 }
 
-export function PremiumTimePicker({ value, onChange, disabled }: TimePickerProps) {
+export function PremiumTimePicker({ value, onChange, disabled, placeholder = "Select time" }: TimePickerProps) {
+  const hasValue = Boolean(value && value.includes(":"))
+  const normalizedValue = hasValue ? value : "00:00"
   // Convert 24h string to 12h components
-  const [hours24, minutes] = value.split(":").map(Number)
+  const [hours24, minutes] = normalizedValue.split(":").map(Number)
   const isPM = hours24 >= 12
   const hours12 = hours24 % 12 || 12
 
@@ -48,7 +51,13 @@ export function PremiumTimePicker({ value, onChange, disabled }: TimePickerProps
           )}
         >
           <Clock className="mr-1.5 sm:mr-2 size-3 sm:size-4 text-[#67BA2E]" />
-          {hours12.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')} {isPM ? "PM" : "AM"}
+          {hasValue ? (
+            <>
+              {hours12.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')} {isPM ? "PM" : "AM"}
+            </>
+          ) : (
+            <span className="font-normal text-slate-500">{placeholder}</span>
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-4 rounded-3xl border-slate-100 shadow-2xl bg-white animate-in zoom-in-95 duration-200">

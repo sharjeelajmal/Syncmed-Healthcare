@@ -41,3 +41,30 @@ export const AppointmentSchema = z.object({
 export const AccessControlSchema = z.object({
   isActive: z.boolean(),
 });
+
+// --- ASSESSMENT ---
+export {
+  AssessmentBmiVitalsSchema,
+  AssessmentDataSchema,
+  AssessmentDiagnosisSchema,
+  AssessmentFormSchema,
+  AssessmentMedicationSchema,
+  AssessmentMemberInfoSchema,
+  AssessmentResponsesSchema,
+  AssessmentSignaturesSchema,
+  AssessmentSummarySchema,
+  CaregiverStatusSchema,
+  CognitiveEmotionalSchema,
+  EliminationSchema,
+  FallRiskLevelSchema,
+  FallRiskMobilitySchema,
+  FunctionalStatusAdlsSchema,
+  HomeEnvironmentSchema,
+  MedicationManagementSchema,
+  NutritionHydrationSchema,
+  PainAssessmentSchema,
+  ReassessmentSignOffSchema,
+  RoutineHomeVisitReassessmentSchema,
+  VisitInfoSchema,
+  WoundSkinDeviceCareSchema,
+} from "./assessment";

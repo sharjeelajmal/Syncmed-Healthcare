@@ -14,6 +14,11 @@ import {
 } from "@/lib/assessment-risk-score"
 import { getScoredQuestionsForAssessment } from "@/lib/assessment-questions"
 
+const ASSESSMENT_TRANSACTION_OPTIONS = {
+  maxWait: 10_000,
+  timeout: 20_000,
+} as const
+
 export interface AssessmentMedicationInput {
   name: string
   dosage: string
@@ -348,7 +353,7 @@ export async function submitAssessment(
       })
 
       return createdAssessment
-    })
+    }, ASSESSMENT_TRANSACTION_OPTIONS)
 
     revalidatePath(payload.revalidatePathname ?? `/provider/patients/${patientId}`)
 
@@ -447,7 +452,7 @@ export async function createAssessmentAction(
       }
 
       return created
-    })
+    }, ASSESSMENT_TRANSACTION_OPTIONS)
 
     // 2. Find the active appointment for this patient/provider to update the billing amount
     // We look for a PENDING or SCHEDULED appointment for today

@@ -33,6 +33,11 @@ import {
   step5Questions,
 } from "@/lib/assessment-questions"
 import {
+  isRoutineReassessmentWizardStep,
+  ReassessmentStepView,
+} from "@/components/assessment/ReassessmentStepView"
+import type { RoutineHomeVisitReassessment } from "@/types/assessment"
+import {
   normalizeBmiVitals,
   parseAssessmentData,
   formatVitalDisplay,
@@ -170,6 +175,27 @@ function asDiagnosisEntries(value: unknown): DiagnosisEntry[] {
   return Array.isArray(value) ? (value as DiagnosisEntry[]) : []
 }
 
+function asRoutineHomeVisitReassessment(value: unknown): RoutineHomeVisitReassessment {
+  const record = asJsonRecord(value)
+  if (Object.keys(record).length === 0) return {}
+
+  return {
+    visitInfo: asJsonRecord(record.visitInfo) as RoutineHomeVisitReassessment["visitInfo"],
+    medicationManagement: asJsonRecord(record.medicationManagement) as RoutineHomeVisitReassessment["medicationManagement"],
+    painAssessment: asJsonRecord(record.painAssessment) as RoutineHomeVisitReassessment["painAssessment"],
+    woundSkinDeviceCare: asJsonRecord(record.woundSkinDeviceCare) as RoutineHomeVisitReassessment["woundSkinDeviceCare"],
+    functionalStatusAdls: asJsonRecord(record.functionalStatusAdls) as RoutineHomeVisitReassessment["functionalStatusAdls"],
+    fallRiskMobility: asJsonRecord(record.fallRiskMobility) as RoutineHomeVisitReassessment["fallRiskMobility"],
+    nutritionHydration: asJsonRecord(record.nutritionHydration) as RoutineHomeVisitReassessment["nutritionHydration"],
+    elimination: asJsonRecord(record.elimination) as RoutineHomeVisitReassessment["elimination"],
+    cognitiveEmotional: asJsonRecord(record.cognitiveEmotional) as RoutineHomeVisitReassessment["cognitiveEmotional"],
+    caregiverStatus: asJsonRecord(record.caregiverStatus) as RoutineHomeVisitReassessment["caregiverStatus"],
+    homeEnvironment: asJsonRecord(record.homeEnvironment) as RoutineHomeVisitReassessment["homeEnvironment"],
+    additionalNotes: asString(record.additionalNotes) || undefined,
+    signOff: asJsonRecord(record.signOff) as RoutineHomeVisitReassessment["signOff"],
+  }
+}
+
 function findMatchingClinicalAssessment(
   visit: Assessment,
   clinicalAssessments: ClinicalAssessmentSnapshot[]
@@ -225,6 +251,10 @@ function getClinicalData(
     clinicalAssessmentData: matchedClinical?.assessmentData,
   })
 
+  const routineHomeVisitReassessment = asRoutineHomeVisitReassessment(
+    data.routineHomeVisitReassessment
+  )
+
   return {
     vitals,
     summary,
@@ -235,6 +265,7 @@ function getClinicalData(
     soapNotes,
     followUpDate,
     signatureUrl,
+    routineHomeVisitReassessment,
     riskLevel: asString(summary.riskLevel) || matchedClinical?.riskLevel || "",
     riskScore: asNumber(summary.totalRiskScore) ?? matchedClinical?.totalRiskScore,
     overallSummary: asString(summary.q98OverallAssessmentSummary),
@@ -279,7 +310,7 @@ export function VisitHistoryTable({
       {followUpEncounters.length > 0 ? (
         <VisitListSection
           title="Follow-up Encounters"
-          description="Subsequent visit records. Factor tabs (1-11) are hidden for follow-up encounters."
+          description="Subsequent visit records. Factor tabs (1-11) are hidden; routine home visit reassessment sections are shown instead."
           visits={followUpEncounters}
           isInitialAssessment={false}
           clinicalAssessments={clinicalAssessments}
@@ -583,6 +614,12 @@ function EncounterDetail({
           </Section>
         ) : null}
 
+        {isRoutineReassessmentWizardStep(activeStep) ? (
+          <Section icon={<ListChecks className="size-3 text-[#67BA2E]" />} title={`Routine Home Visit — ${activeStep}`}>
+            <ReassessmentStepView step={activeStep} reassessment={c.routineHomeVisitReassessment} />
+          </Section>
+        ) : null}
+
         {activeStep === "BMI & Vitals" ? (
           <div className="space-y-8">
             <Section icon={<Activity className="size-3 text-[#67BA2E]" />} title="BMI & Physical Health Indicators">
@@ -694,6 +731,14 @@ function EncounterDetail({
               <Section icon={<ClipboardList className="size-3 text-[#67BA2E]" />} title="Supervisor Review">
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-slate-700 text-sm font-medium leading-relaxed whitespace-pre-wrap">
                   {c.supervisorReview}
+                </div>
+              </Section>
+            ) : null}
+
+            {c.routineHomeVisitReassessment.additionalNotes ? (
+              <Section icon={<ClipboardList className="size-3 text-[#67BA2E]" />} title="Routine Visit Additional Notes">
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-slate-700 text-sm font-medium leading-relaxed whitespace-pre-wrap">
+                  {c.routineHomeVisitReassessment.additionalNotes}
                 </div>
               </Section>
             ) : null}

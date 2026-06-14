@@ -69,6 +69,11 @@ import {
 import { PureCalendar } from "@/components/ui/pure-calendar"
 import { SignatureModal } from "@/components/ui/signature-modal"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  isRoutineReassessmentStep,
+  ReassessmentStepPanel,
+} from "@/components/assessment/ReassessmentStepPanel"
+import type { RoutineHomeVisitReassessment } from "@/types/assessment"
 
 interface AssessmentFormProps {
   patientId: string
@@ -206,6 +211,8 @@ export function AssessmentForm({
   const [diagnoses, setDiagnoses] = React.useState<DiagnosisDraft[]>([{ name: "" }])
   const [summaryText, setSummaryText] = React.useState("")
   const [supervisorReview, setSupervisorReview] = React.useState("")
+  const [reassessment, setReassessment] = React.useState<RoutineHomeVisitReassessment>({})
+  const [reassessmentAdditionalNotes, setReassessmentAdditionalNotes] = React.useState("")
 
   const { calculatedBmi, bmiCategory } = React.useMemo(() => {
     const weight = Number(weightKg)
@@ -529,6 +536,13 @@ export function AssessmentForm({
         signatures: {
           assessorSignature: signatureBase64,
         },
+        routineHomeVisitReassessment: {
+          ...reassessment,
+          additionalNotes: reassessmentAdditionalNotes.trim() || undefined,
+          signOff: {
+            signOffDate: new Date().toISOString().split("T")[0],
+          },
+        },
       }
 
       const result = await submitAssessment({
@@ -574,21 +588,17 @@ export function AssessmentForm({
 
       {!isFirstTimeAssessment ? (
         <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-          Follow-up assessment: factor tabs (1-11) are hidden because this patient already has prior assessments on record.
+          Routine home visit: initial intake factor tabs (1–11) are hidden. Complete visit info, reassessment sections, vitals, and sign-off.
         </div>
       ) : null}
 
-      <div
-        className={`grid gap-2 mb-8 ${
-          wizardSteps.length === 3 ? "grid-cols-1 md:grid-cols-3" : "grid-cols-2 md:grid-cols-6"
-        }`}
-      >
+      <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
         {wizardSteps.map((step, index) => (
           <button
             key={step}
             type="button"
             onClick={() => setCurrentStep(index)}
-            className={`rounded-xl px-2 py-2 text-[11px] font-bold transition border whitespace-nowrap overflow-hidden text-ellipsis ${
+            className={`shrink-0 rounded-xl px-3 py-2 text-[11px] font-bold transition border whitespace-nowrap ${
               index === currentStep
                 ? "bg-[#67BA2E] text-white border-[#67BA2E]"
                 : "bg-white text-slate-600 border-slate-200"
@@ -671,6 +681,14 @@ export function AssessmentForm({
               </section>
             ))}
           </div>
+        ) : null}
+
+        {isRoutineReassessmentStep(activeStep) ? (
+          <ReassessmentStepPanel
+            step={activeStep}
+            value={reassessment}
+            onChange={setReassessment}
+          />
         ) : null}
 
         {activeStep === "BMI & Vitals" ? (
@@ -954,6 +972,16 @@ export function AssessmentForm({
                 disabled={!isCaseManager}
                 className="min-h-24 border-slate-200 text-slate-700"
                 placeholder="Supervisor review notes."
+              />
+            </section>
+
+            <section className="rounded-2xl border border-slate-200 p-5 bg-white space-y-4">
+              <h3 className="text-lg font-bold text-slate-700">Routine Visit Additional Notes</h3>
+              <Textarea
+                value={reassessmentAdditionalNotes}
+                onChange={(event) => setReassessmentAdditionalNotes(event.target.value)}
+                className="min-h-28 border-slate-200 text-slate-700"
+                placeholder="Any additional observations from the home visit reassessment."
               />
             </section>
 
