@@ -28,7 +28,7 @@ export default async function ProviderSchedulePage() {
 
   if (!provider) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+      <div className="flex items-center justify-center min-h-screen">
         <p className="text-slate-500 font-bold uppercase tracking-widest">Provider Records Not Found</p>
       </div>
     )

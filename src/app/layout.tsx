@@ -37,7 +37,7 @@ export default function RootLayout({
         `}} />
       </head>
       <body
-        className={`${plusJakartaSans.variable} antialiased font-sans tracking-tight portal-shell-bg text-slate-900`}
+        className={`${plusJakartaSans.variable} antialiased font-sans tracking-tight bg-background text-slate-900`}
       >
         <Providers>
           <TooltipProvider>

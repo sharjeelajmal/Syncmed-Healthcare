@@ -26,7 +26,6 @@ import { AdminNotificationsProvider } from "@/contexts/AdminNotificationsContext
 import { NotificationBell } from "@/components/admin/NotificationBell"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { PortalShellDecor } from "@/components/portal/PortalShellDecor"
 import {
   portalHeaderActionsClass,
   portalHeaderBrandClass,
@@ -87,9 +86,7 @@ export function AdminLayoutClient({
 
   return (
     <AdminNotificationsProvider>
-      <div className="portal-shell-bg flex min-h-screen flex-col">
-        <PortalShellDecor />
-        <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md overflow-x-hidden">
+        <header className="sticky top-0 z-50 w-full border-b border-slate-200/60 bg-white/65 backdrop-blur-xl overflow-x-hidden">
           <div className={portalShellClass}>
             <div className={portalHeaderRowClass}>
             <div className={portalHeaderBrandClass}>
@@ -284,7 +281,6 @@ export function AdminLayoutClient({
             </nav>
           </div>
         )}
-      </div>
     </AdminNotificationsProvider>
   )
 }

@@ -77,7 +77,7 @@ export function PatientPortalNavigation({ userId }: PatientPortalNavigationProps
   ]
 
   return (
-    <header className="sticky top-0 z-50 w-full overflow-x-clip border-b bg-white/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full overflow-x-clip border-b border-slate-200/60 bg-white/65 backdrop-blur-xl">
         <div className={portalShellClass}>
           <div className={cn(portalHeaderRowClass, "py-1")}>
             <div className={portalHeaderBrandClass}>

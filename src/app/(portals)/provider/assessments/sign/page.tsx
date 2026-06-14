@@ -18,7 +18,7 @@ export default async function SignaturePage({ searchParams }: PageProps) {
 
   if (!assessmentId || !patientId) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md w-full rounded-[2rem] border-red-100 bg-white shadow-xl p-8 text-center">
           <div className="size-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6">
             <AlertCircle className="size-8 text-red-500" />
@@ -36,7 +36,7 @@ export default async function SignaturePage({ searchParams }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen">
       <div className="max-w-2xl mx-auto p-4 md:p-12 animate-slide-up space-y-8">
         {/* Header */}
         <div className="text-center space-y-3">

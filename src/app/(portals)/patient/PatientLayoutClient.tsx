@@ -7,7 +7,6 @@ import {
   PatientPortalNavigation,
   PatientPortalBottomNav,
 } from "./PatientPortalNavigation"
-import { PortalShellDecor } from "@/components/portal/PortalShellDecor"
 import { ClientBodyPortal } from "@/components/portal/ClientBodyPortal"
 
 const PatientChatOverlay = dynamic(
@@ -26,8 +25,7 @@ export function PatientLayoutClient({
   userId: string | null
 }) {
   return (
-    <div className="portal-shell-bg flex min-h-screen flex-col">
-      <PortalShellDecor />
+    <>
       <PatientPortalNavigation userId={userId} />
 
       <main className={cn(portalShellClass, "relative z-[1] flex-1", portalMainBottomPadding)}>
@@ -41,6 +39,6 @@ export function PatientLayoutClient({
       <ClientBodyPortal>
         <PatientChatOverlay />
       </ClientBodyPortal>
-    </div>
+    </>
   )
 }

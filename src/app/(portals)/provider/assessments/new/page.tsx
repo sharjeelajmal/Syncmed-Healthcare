@@ -28,7 +28,7 @@ export default async function NewAssessmentPage({ searchParams }: PageProps) {
 
   if (!patientId) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md w-full rounded-3xl border-red-100 bg-white shadow-xl p-8 text-center">
           <div className="size-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6">
             <ClipboardCheck className="size-8 text-red-500" />
@@ -81,7 +81,7 @@ export default async function NewAssessmentPage({ searchParams }: PageProps) {
   const age = differenceInYears(new Date(), new Date(patient.dateOfBirth))
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen">
       <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-8 animate-slide-up">
         {/* Navigation */}
         <Link href={`/provider/patients/${patient.id}`}>

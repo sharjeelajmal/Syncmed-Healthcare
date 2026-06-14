@@ -17,7 +17,7 @@ export const portalHeaderNavClass = "hidden min-w-0 items-center gap-1 overflow-
 
 /** Bottom tab bar hidden at xl+ */
 export const portalBottomNavClass =
-  "fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 px-6 py-3 pb-safe shadow-[0_-8px_30px_rgb(0,0,0,0.04)] backdrop-blur-lg xl:hidden"
+  "fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200/60 bg-white/70 px-6 py-3 pb-safe shadow-[0_-8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl xl:hidden"
 
 /** Optional desktop-only page tail spacing (no extra padding on mobile/tablet). */
 export const portalPageDesktopPadding = "pb-0 xl:pb-6"
