@@ -434,7 +434,7 @@ function BlogManagementContent() {
   }, [searchedBlogs, registryPage])
 
   return (
-    <div className="min-h-screen bg-slate-50/50 font-sans selection:bg-[#67BA2E]/20 selection:text-slate-900 overflow-x-hidden pt-20 pb-20">
+    <div className="min-h-screen font-sans selection:bg-[#67BA2E]/20 selection:text-slate-900 overflow-x-hidden pt-20 pb-20">
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 mt-6">

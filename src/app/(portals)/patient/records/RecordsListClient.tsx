@@ -11,7 +11,7 @@ import { PatientRecordModal } from "@/components/ui/patient-record-modal"
 import { DebouncedSearch } from "@/components/ui/debounced-search"
 import { Badge } from "@/components/ui/badge"
 import { PatientHealthTabs } from "@/components/patient/PatientHealthTabs"
-import type { VitalSignEntry } from "@/components/patient/PatientHealthTabs"
+import type { VitalSignEntry } from "@/types/patient-health"
 
 interface RecordsListClientProps {
   records: any[]

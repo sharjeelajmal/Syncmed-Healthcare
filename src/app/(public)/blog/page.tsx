@@ -184,7 +184,7 @@ function BlogContent() {
 
       {/* Featured Blog Section */}
       {currentPage === 1 && featuredPost && (
-        <section className="py-6 bg-white">
+        <section className="py-6">
           <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
             <motion.div 
               {...fadeUp}
@@ -236,7 +236,7 @@ function BlogContent() {
       )}
 
       {/* Search Bar Section */}
-      <section className="py-6 bg-white border-y border-slate-100">
+      <section className="py-6 border-y border-slate-100/80">
         <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-1 text-center md:text-left">
@@ -254,7 +254,7 @@ function BlogContent() {
       </section>
 
       {/* Blog Grid Section */}
-      <section className="py-6 bg-white min-h-[400px] relative">
+      <section className="py-6 min-h-[400px] relative">
         <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           {isLoading ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm z-50">
@@ -436,7 +436,7 @@ function BlogContent() {
 
 export default function BlogPage() {
   return (
-    <div className="min-h-screen bg-white font-sans selection:bg-[#67BA2E]/20 selection:text-slate-900 overflow-x-hidden scroll-smooth pt-14 md:pt-0">
+    <div className="min-h-screen font-sans selection:bg-[#67BA2E]/20 selection:text-slate-900 overflow-x-hidden scroll-smooth pt-14 md:pt-0">
       <Navbar />
       <main>
         <Suspense fallback={

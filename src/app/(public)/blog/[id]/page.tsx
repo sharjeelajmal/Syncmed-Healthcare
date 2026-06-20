@@ -8,22 +8,18 @@ import {
   ArrowRight,
   Clock, 
   Calendar, 
-  User, 
   Share2, 
   Bookmark,
   ChevronRight,
   Activity,
-  Shield,
   CheckCircle2
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { blogPosts } from "../data";
 import { getBlogPostByIdAction, getBlogPostsAction } from "@/app/actions/blog.actions";
 import Link from "next/link";
 
-// --- Animation Variants ---
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -45,7 +41,6 @@ export default function BlogDetailPage() {
         setPost(res.data);
       }
       
-      // Load related posts dynamically from Neon PostgreSQL
       const allRes = await getBlogPostsAction();
       if (allRes.success && allRes.data) {
         const filtered = allRes.data.filter((p: any) => String(p.id) !== String(id)).slice(0, 2);
@@ -58,7 +53,7 @@ export default function BlogDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white font-sans">
+      <div className="min-h-screen flex items-center justify-center font-sans">
         <div className="text-center space-y-6">
           <Activity className="size-16 text-[#67BA2E] animate-spin mx-auto" />
           <p className="text-xs font-black text-slate-400 uppercase tracking-widest animate-pulse">Syncing Medical Journal...</p>
@@ -69,7 +64,7 @@ export default function BlogDetailPage() {
 
   if (!post) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white font-sans">
+      <div className="min-h-screen flex items-center justify-center font-sans">
         <div className="text-center space-y-6">
           <Activity className="size-16 text-[#67BA2E] animate-pulse mx-auto" />
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Article Not Found</h1>
@@ -85,12 +80,11 @@ export default function BlogDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans selection:bg-[#67BA2E]/20 selection:text-slate-900 overflow-x-hidden pt-14 md:pt-0">
+    <div className="min-h-screen font-sans selection:bg-[#67BA2E]/20 selection:text-slate-900 overflow-x-hidden pt-14 md:pt-0">
       <Navbar />
 
       <main>
-        {/* Navigation / Back Button */}
-        <div className="bg-slate-50 border-b border-slate-100 py-4">
+        <div className="border-b border-slate-100/80 py-4">
           <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 flex items-center justify-between">
             <button 
               onClick={() => router.push('/blog')}
@@ -110,8 +104,7 @@ export default function BlogDetailPage() {
           </div>
         </div>
 
-        {/* Hero Section */}
-        <section className="relative py-6 md:py-10 overflow-hidden bg-white">
+        <section className="relative py-6 md:py-10 overflow-hidden">
           <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
               <motion.div 
@@ -133,7 +126,7 @@ export default function BlogDetailPage() {
 
                 <div className="flex flex-wrap items-center gap-6 md:gap-8 pt-6 md:pt-8 border-t border-slate-100">
                   <div className="flex items-center gap-4">
-                    <div className="size-10 md:size-12 rounded-2xl bg-slate-50 flex items-center justify-center text-[#67BA2E] shadow-inner font-black text-sm">
+                    <div className="size-10 md:size-12 rounded-2xl bg-white/80 flex items-center justify-center text-[#67BA2E] shadow-inner font-black text-sm">
                       {post.author.split(' ').map((n: string) => n[0]).join('')}
                     </div>
                     <div>
@@ -175,7 +168,6 @@ export default function BlogDetailPage() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent" />
                 </div>
-                {/* Decorative element */}
                 <div className="absolute -bottom-6 -right-6 size-32 bg-[#67BA2E]/10 rounded-full blur-3xl -z-10" />
                 <div className="absolute -top-6 -left-6 size-32 bg-blue-500/10 rounded-full blur-3xl -z-10" />
               </motion.div>
@@ -183,8 +175,7 @@ export default function BlogDetailPage() {
           </div>
         </section>
 
-        {/* Content Section */}
-        <section className="py-6 bg-white border-t border-slate-100">
+        <section className="py-6 border-t border-slate-100/80">
           <div className="max-w-4xl mx-auto px-5 sm:px-6 lg:px-8">
             <motion.div 
               {...fadeUp}
@@ -192,13 +183,12 @@ export default function BlogDetailPage() {
                 prose-headings:text-slate-900 prose-headings:font-black prose-headings:tracking-tight
                 prose-p:text-slate-600 prose-p:leading-relaxed prose-p:text-base md:prose-p:text-lg
                 prose-strong:text-[#67BA2E] prose-strong:font-black
-                prose-blockquote:border-l-4 prose-blockquote:border-[#67BA2E] prose-blockquote:bg-slate-50 prose-blockquote:p-6 md:prose-blockquote:p-8 prose-blockquote:rounded-r-[2rem] prose-blockquote:italic prose-blockquote:text-lg md:prose-blockquote:text-xl prose-blockquote:font-medium prose-blockquote:text-slate-700
+                prose-blockquote:border-l-4 prose-blockquote:border-[#67BA2E] prose-blockquote:bg-white/60 prose-blockquote:p-6 md:prose-blockquote:p-8 prose-blockquote:rounded-r-[2rem] prose-blockquote:italic prose-blockquote:text-lg md:prose-blockquote:text-xl prose-blockquote:font-medium prose-blockquote:text-slate-700
                 prose-img:rounded-[2rem] prose-img:shadow-xl"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
 
-            {/* Author Footer Card */}
-            <div className="mt-10 md:mt-16 p-6 md:p-10 bg-slate-50 rounded-[2.5rem] md:rounded-[3rem] border border-slate-100 flex flex-col md:flex-row items-center gap-6 md:gap-8 text-center md:text-left">
+            <div className="mt-10 md:mt-16 p-6 md:p-10 bg-white/70 backdrop-blur-sm rounded-[2.5rem] md:rounded-[3rem] border border-slate-100 flex flex-col md:flex-row items-center gap-6 md:gap-8 text-center md:text-left">
               <div className="size-20 md:size-24 rounded-[1.5rem] md:rounded-[2rem] bg-white shadow-xl flex items-center justify-center text-[#67BA2E] font-black text-2xl md:text-3xl">
                 {post.author.split(' ').map((n: string) => n[0]).join('')}
               </div>
@@ -215,8 +205,7 @@ export default function BlogDetailPage() {
           </div>
         </section>
 
-        {/* Related Articles Section */}
-        <section className="py-6 md:py-10 bg-slate-50/50">
+        <section className="py-6 md:py-10">
           <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-8 md:mb-12">
               <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Related Analysis</h2>

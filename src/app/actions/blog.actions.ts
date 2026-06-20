@@ -2,7 +2,7 @@
 
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
-import { blogPosts } from "../blog/data"
+import { blogPosts } from "../(public)/blog/data"
 import { z } from "zod"
 
 const BlogPostSchema = z.object({

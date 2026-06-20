@@ -1,7 +1,7 @@
 import * as React from "react"
 import { PortalShellDecor } from "@/components/portal/PortalShellDecor"
 
-/** Shared premium background shell for Admin, Provider, and Patient portals. */
+/** Shared premium mesh background for portals and public marketing pages. */
 export function PortalShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative min-h-screen">

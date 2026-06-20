@@ -1,4 +1,4 @@
-import type { VitalSignEntry } from "@/components/patient/PatientHealthTabs"
+import type { VitalSignEntry } from "@/types/patient-health"
 import { normalizeBmiVitals, parseAssessmentData } from "@/lib/assessment-vitals"
 
 type AssessmentWithRelations = {

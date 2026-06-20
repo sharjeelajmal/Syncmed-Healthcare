@@ -59,7 +59,7 @@ export default function ServicesPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-white font-sans selection:bg-[#67BA2E]/20 selection:text-slate-900 overflow-x-hidden scroll-smooth pt-14 md:pt-0 pb-20 md:pb-0">
+    <div className="min-h-screen font-sans selection:bg-[#67BA2E]/20 selection:text-slate-900 overflow-x-hidden scroll-smooth pt-14 md:pt-0 pb-20 md:pb-0">
       <Navbar />
 
       <main>
@@ -151,7 +151,7 @@ export default function ServicesPage() {
         </section>
 
         {/* Services Grid */}
-        <section className="py-6 md:py-10 bg-slate-50">
+        <section className="py-6 md:py-10">
           <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
             <motion.div 
               variants={staggerContainer}
@@ -168,7 +168,7 @@ export default function ServicesPage() {
         </section>
 
         {/* Pricing & Investment Section */}
-        <section className="py-6 md:py-10 bg-white relative overflow-hidden">
+        <section className="py-6 md:py-10 relative overflow-hidden">
            {/* Decorative elements */}
            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
            

@@ -63,7 +63,7 @@ export default function RequestConsultationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 selection:bg-[#67BA2E]/20 font-sans flex flex-col">
+    <div className="min-h-screen selection:bg-[#67BA2E]/20 font-sans flex flex-col">
       <Navbar />
 
       <main className="flex-grow pt-24 pb-16 px-4 md:px-8">

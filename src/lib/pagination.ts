@@ -1,4 +1,6 @@
 export const TABLE_PAGE_SIZE = 10
+export const HEALTH_LIST_PAGE_SIZE = 10
+export const HEALTH_VITALS_PAGE_SIZE = 5
 
 export function parsePageParam(
   value: string | undefined,

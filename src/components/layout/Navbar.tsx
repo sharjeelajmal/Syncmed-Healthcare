@@ -40,7 +40,7 @@ export const Navbar = () => {
   return (
     <>
       {/* Top Navbar (Hidden on max-[900px]) */}
-      <nav className="fixed top-0 z-50 w-full bg-white/80 backdrop-blur-lg border-b border-slate-100 max-[900px]:hidden">
+      <nav className="fixed top-0 z-50 w-full bg-white/65 backdrop-blur-xl border-b border-slate-200/60 max-[900px]:hidden">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between h-20 items-center">
             {/* Logo */}
@@ -117,7 +117,7 @@ export const Navbar = () => {
         </div>
       </nav>
       {/* Fixed Bottom Navigation (Visible on max-[900px]) */}
-      <div className="hidden max-[900px]:flex fixed bottom-0 left-0 right-0 z-[999] bg-white/90 backdrop-blur-xl border-t border-slate-200 justify-around p-3 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+      <div className="hidden max-[900px]:flex fixed bottom-0 left-0 right-0 z-[999] bg-white/70 backdrop-blur-xl border-t border-slate-200/60 justify-around p-3 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
         {[
           { name: "Home", icon: Home, href: "/", id: "top" },
           { name: "Services", icon: Briefcase, href: "/services", id: "services" },
@@ -146,7 +146,7 @@ export const Navbar = () => {
       </div>
 
       {/* Mobile Top Header (Visible on max-[900px]) */}
-      <div className="hidden max-[900px]:flex fixed top-0 left-0 right-0 z-[999] items-center justify-between px-4 h-14 bg-white/95 backdrop-blur-xl border-b border-slate-100 shadow-sm">
+      <div className="hidden max-[900px]:flex fixed top-0 left-0 right-0 z-[999] items-center justify-between px-4 h-14 bg-white/65 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
         <div className="flex-shrink-0">
           <img 
             src="/logo.png" 

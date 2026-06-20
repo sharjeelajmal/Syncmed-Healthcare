@@ -466,7 +466,7 @@ export default function CompleteFlowPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-[#67BA2E]/20 relative overflow-x-hidden pb-24">
+    <div className="min-h-screen text-slate-800 font-sans selection:bg-[#67BA2E]/20 relative overflow-x-hidden pb-24">
       
       {/* 1. Interactive Progress Bar */}
       <div className="fixed top-0 left-0 w-full h-[6px] bg-slate-100 z-[999]">
