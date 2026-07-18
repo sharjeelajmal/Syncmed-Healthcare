@@ -6,6 +6,7 @@ import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { MembershipTierBadge } from "@/components/ui/membership-tier-badge"
 import AssignProviderForm from "./AssignProviderForm"
 import PatientEditForm from "./PatientEditForm"
 import { formatProviderDisplayName } from "@/lib/format-provider-name"
@@ -81,6 +82,7 @@ export default async function PatientDetailsPage({
                     {patient.user.firstName} {patient.user.lastName}
                   </h1>
                   <div className="flex flex-wrap gap-3 mt-3">
+                    <MembershipTierBadge tier={patient.membershipStatus} />
                     <p className="bg-white/20 backdrop-blur-md border border-white/30 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-sm">
                       <UserCheck size={12} />
                       Verified Patient

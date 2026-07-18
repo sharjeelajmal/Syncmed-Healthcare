@@ -2,7 +2,9 @@ import * as React from "react"
 import { Suspense } from "react"
 import { Calendar, Heart, CheckCircle2 } from "lucide-react"
 import { auth } from "../../../../../auth"
+import prisma from "@/lib/prisma"
 import { BannerInstallBtn } from "@/components/auth/BannerInstallBtn"
+import { MembershipTierBadge } from "@/components/ui/membership-tier-badge"
 import {
   PatientDashboardContent,
   PatientDashboardContentSkeleton,
@@ -103,7 +105,12 @@ function PatientHeroCalendarIcon() {
   )
 }
 
-function PatientIdentityCard({ sessionUserId }: { sessionUserId: string }) {
+async function PatientIdentityCard({ sessionUserId }: { sessionUserId: string }) {
+  const profile = await prisma.patientProfile.findUnique({
+    where: { userId: sessionUserId },
+    select: { membershipStatus: true },
+  })
+
   return (
     <div className="hidden lg:flex flex-col gap-6 p-8 bg-white border border-slate-100 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 w-72 animate-in fade-in slide-in-from-right-8 duration-1000 relative">
       <div className="absolute -top-4 -right-4 size-12 bg-[#67BA2E] rounded-2xl flex items-center justify-center text-white shadow-xl rotate-12 group-hover:rotate-0 transition-transform duration-500">
@@ -129,7 +136,8 @@ function PatientIdentityCard({ sessionUserId }: { sessionUserId: string }) {
           </div>
         </div>
 
-        <div className="pt-4 border-t border-slate-50">
+        <div className="pt-4 border-t border-slate-50 flex flex-col items-start gap-2.5">
+          <MembershipTierBadge tier={profile?.membershipStatus} />
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-green-50 text-[#67BA2E] rounded-full border border-green-100">
             <CheckCircle2 size={12} className="fill-[#67BA2E] text-white" />
             <span className="text-[10px] font-black uppercase tracking-[0.1em]">

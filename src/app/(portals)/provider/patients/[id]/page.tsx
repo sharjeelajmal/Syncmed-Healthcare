@@ -35,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { MembershipTierBadge } from "@/components/ui/membership-tier-badge"
 import { VisitHistoryTable } from "./VisitHistoryTable"
 import { ClinicalSnapshot } from "./ClinicalSnapshot"
 
@@ -133,10 +134,11 @@ export default async function PatientChartPage({ params }: PageProps) {
               </Button>
             </Link>
             <div className="flex flex-col">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-3xl font-black text-slate-800 tracking-tight">
                   {patient.user.firstName} {patient.user.lastName}
                 </h1>
+                <MembershipTierBadge tier={patient.membershipStatus} />
                 <Badge className="bg-[#67BA2E]/10 text-[#67BA2E] border-[#67BA2E]/20 font-bold px-3 py-1 rounded-full text-xs">
                   MEMBER ID: {patient.id.slice(0, 8).toUpperCase()}
                 </Badge>

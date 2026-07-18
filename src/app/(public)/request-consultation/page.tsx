@@ -2,8 +2,7 @@
 
 import React, { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Shield, Lock, ArrowRight, ChevronLeft, Loader2, Sparkles, HelpCircle, HeartPulse, ChevronDown } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { Shield, Lock, ArrowRight, Loader2, Sparkles, HelpCircle, HeartPulse, ChevronDown, Download, FileText } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Navbar } from "@/components/layout/Navbar"
@@ -11,7 +10,6 @@ import { Footer } from "@/components/layout/Footer"
 import { submitLeadAction } from "@/app/actions/lead.actions"
 
 export default function RequestConsultationPage() {
-  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [inquiryType, setInquiryType] = useState("general")
   const [isOpen, setIsOpen] = useState(false)
@@ -67,16 +65,7 @@ export default function RequestConsultationPage() {
       <Navbar />
 
       <main className="flex-grow pt-24 pb-16 px-4 md:px-8">
-        <div className="max-w-4xl mx-auto w-full">
-          {/* Back Button */}
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-slate-500 hover:text-[#67BA2E] transition-colors mb-8 group font-bold text-xs uppercase tracking-wider"
-          >
-            <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-            Return
-          </button>
-
+        <div className="max-w-6xl mx-auto w-full">
           {/* Header section */}
           <div className="text-center mb-12 space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 shadow-xs text-[#67BA2E] text-[10px] font-black uppercase tracking-wider">
@@ -91,12 +80,12 @@ export default function RequestConsultationPage() {
             </p>
           </div>
 
-          {/* Grid Layout: Form on Left, Support Info on Right */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          {/* Grid Layout: Form on Left, Support Info on Right — equal height columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
             {/* Form Column */}
-            <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-100/60 p-6 md:p-10">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="lg:col-span-2 flex flex-col bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-100/60 p-6 md:p-10">
+              <form onSubmit={handleSubmit} className="flex flex-col flex-1 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
                   {/* Name */}
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-xs font-bold text-slate-600 uppercase tracking-widest block">
@@ -232,7 +221,7 @@ export default function RequestConsultationPage() {
                   </div>
                 </div>
 
-                <div className="pt-2">
+                <div className="mt-auto pt-2 border-t border-slate-100">
                   <Button
                     disabled={isLoading}
                     type="submit"
@@ -261,41 +250,63 @@ export default function RequestConsultationPage() {
               </form>
             </div>
 
-            {/* Info Side Column */}
-            <div className="space-y-6">
-              {/* Card 1: Concierge Info */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-                <div className="size-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#67BA2E]">
-                  <Sparkles size={20} />
+            {/* Info Side Column — unified panel, stretches to match form height */}
+            <aside className="flex flex-col bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-100/60 overflow-hidden">
+              {/* Intake Form Download */}
+              <div className="p-6 space-y-4 relative overflow-hidden border-b border-slate-100">
+                <div className="absolute -top-8 -right-8 size-28 rounded-full bg-[#67BA2E]/5 blur-2xl pointer-events-none" />
+                <div className="size-10 rounded-xl bg-[#67BA2E]/10 border border-[#67BA2E]/20 flex items-center justify-center text-[#67BA2E]">
+                  <FileText size={20} />
                 </div>
-                <h3 className="font-bold text-slate-800 text-base">Elite Clinical Care</h3>
-                <p className="text-slate-500 text-xs leading-relaxed">
-                  Our private medical clinic prioritizes absolute confidentiality, secure health records, and direct physician access.
-                </p>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-base">Patient Intake Form</h3>
+                  <p className="text-slate-500 text-xs leading-relaxed mt-1.5">
+                    Save time at your first visit — download and complete our home health intake form in advance.
+                  </p>
+                </div>
+                <a
+                  href="/pdfs/SyncMed_Home_Health_Intake_Form.pdf"
+                  download
+                  className="w-full h-11 bg-[#67BA2E] hover:bg-[#5aa827] text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-[#67BA2E]/10 transition-all active:scale-[0.98] hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                >
+                  <Download size={15} />
+                  Download Intake Form
+                </a>
               </div>
 
-              {/* Card 2: Next Steps */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-                <div className="size-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
-                  <HelpCircle size={20} />
+              {/* Info sections — flex-1 distributes remaining space evenly */}
+              <div className="flex flex-1 flex-col divide-y divide-slate-100">
+                <div className="flex flex-1 flex-col justify-center p-6 space-y-3">
+                  <div className="size-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#67BA2E]">
+                    <Sparkles size={20} />
+                  </div>
+                  <h3 className="font-bold text-slate-800 text-base">Elite Clinical Care</h3>
+                  <p className="text-slate-500 text-xs leading-relaxed">
+                    Our private medical clinic prioritizes absolute confidentiality, secure health records, and direct physician access.
+                  </p>
                 </div>
-                <h3 className="font-bold text-slate-800 text-base">Clinical Timelines</h3>
-                <p className="text-slate-500 text-xs leading-relaxed">
-                  Inquiries are reviewed by clinical intake staff. Approved registrations receive dashboard setup links within 24 hours.
-                </p>
-              </div>
 
-              {/* Card 3: Discretion */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-                <div className="size-10 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600">
-                  <HeartPulse size={20} />
+                <div className="flex flex-1 flex-col justify-center p-6 space-y-3">
+                  <div className="size-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+                    <HelpCircle size={20} />
+                  </div>
+                  <h3 className="font-bold text-slate-800 text-base">Clinical Timelines</h3>
+                  <p className="text-slate-500 text-xs leading-relaxed">
+                    Inquiries are reviewed by clinical intake staff. Approved registrations receive dashboard setup links within 24 hours.
+                  </p>
                 </div>
-                <h3 className="font-bold text-slate-800 text-base">Patient Sovereignty</h3>
-                <p className="text-slate-500 text-xs leading-relaxed">
-                  Every interaction is fully protected under global digital privacy standards.
-                </p>
+
+                <div className="flex flex-1 flex-col justify-center p-6 space-y-3">
+                  <div className="size-10 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600">
+                    <HeartPulse size={20} />
+                  </div>
+                  <h3 className="font-bold text-slate-800 text-base">Patient Sovereignty</h3>
+                  <p className="text-slate-500 text-xs leading-relaxed">
+                    Every interaction is fully protected under global digital privacy standards.
+                  </p>
+                </div>
               </div>
-            </div>
+            </aside>
           </div>
         </div>
       </main>

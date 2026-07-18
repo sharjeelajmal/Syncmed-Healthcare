@@ -174,7 +174,7 @@ export default function LandingPage() {
                     
                     <div className="space-y-1">
                       <h1 className="text-3xl md:text-6xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-tight animate-in fade-in slide-in-from-left-6 duration-1000">
-                        Healthcare
+                        Home Healthcare
                         <span className="block text-[#67BA2E] filter drop-shadow-sm">
                           Without Limits.
                         </span>
@@ -188,7 +188,7 @@ export default function LandingPage() {
                       <Activity className="size-4 md:size-5 text-[#67BA2E]" />
                     </div>
                     <p className="text-xs md:text-base font-bold text-slate-600 tracking-tight text-left">
-                      A private clinical sanctuary where world-class medicine meets absolute personalized attention.
+                      A private home clinical sanctuary where world-class medicine meets absolute personalized attention.
                     </p>
                   </div>
 

@@ -6,6 +6,7 @@ import { Users, Stethoscope, Calendar, Clock } from "lucide-react"
 import { DISPLAY_DATE_FORMAT, DISPLAY_DATE_TIME_FORMAT } from "@/lib/date-format"
 import { formatProviderDisplayName } from "@/lib/format-provider-name"
 import { Badge } from "@/components/ui/badge"
+import { MembershipTierBadge } from "@/components/ui/membership-tier-badge"
 import {
   DashboardStatsGrid,
   type DashboardStatConfig,
@@ -71,11 +72,7 @@ export function AdminDashboardStatsClient({
       key={p.id}
       title={`${p.user.firstName} ${p.user.lastName}`}
       subtitle={`Joined ${format(new Date(p.user.createdAt), DISPLAY_DATE_FORMAT)}`}
-      badge={
-        <Badge variant="outline" className="font-bold text-[10px] uppercase">
-          {p.membershipStatus}
-        </Badge>
-      }
+      badge={<MembershipTierBadge tier={p.membershipStatus} size="sm" />}
     />
   ))
 
