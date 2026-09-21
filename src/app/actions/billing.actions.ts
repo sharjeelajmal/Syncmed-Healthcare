@@ -18,6 +18,13 @@ export async function uploadReceiptAction(appointmentId: string, formData: FormD
       throw new Error("No file provided in form data")
     }
 
+    const rawPaidAmount = formData.get('paidAmount')
+    const paidAmount = rawPaidAmount ? parseFloat(rawPaidAmount.toString()) : null
+
+    if (!paidAmount || isNaN(paidAmount) || paidAmount <= 0) {
+      throw new Error("Invalid payment amount provided")
+    }
+
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
@@ -43,6 +50,7 @@ export async function uploadReceiptAction(appointmentId: string, formData: FormD
       data: {
         receiptData: secureUrl,
         paymentStatus: "VERIFICATION_PENDING",
+        amount: paidAmount,
       },
     })
 

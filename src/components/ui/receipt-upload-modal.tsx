@@ -13,28 +13,35 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { useRouter } from "next/navigation"
 import { uploadReceiptAction } from "@/app/actions/billing.actions"
 import { toast } from "sonner"
-import { formatNaira } from "@/lib/currency"
 
 interface ReceiptUploadModalProps {
   isOpen: boolean
   onClose: () => void
   appointmentId: string
-  amountToPay: number
+  amountToPay?: number
 }
 
 export function ReceiptUploadModal({
   isOpen,
   onClose,
   appointmentId,
-  amountToPay,
 }: ReceiptUploadModalProps) {
   const router = useRouter()
+  const [customAmount, setCustomAmount] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [file, setFile] = React.useState<File | null>(null)
   const [preview, setPreview] = React.useState<string | null>(null)
+
+  const handleModalClose = () => {
+    setFile(null)
+    setPreview(null)
+    setCustomAmount("")
+    onClose()
+  }
 
   const onDrop = React.useCallback((acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0]
@@ -61,6 +68,13 @@ export function ReceiptUploadModal({
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
+    
+    const parsedAmount = parseFloat(customAmount)
+    if (!customAmount || isNaN(parsedAmount) || parsedAmount <= 0) {
+      toast.error("Please enter a valid amount greater than 0")
+      return
+    }
+
     if (!file) {
       toast.error("Please select a file to upload")
       return
@@ -70,15 +84,14 @@ export function ReceiptUploadModal({
     try {
       const formData = new FormData()
       formData.append('file', file)
+      formData.append('paidAmount', customAmount)
 
       const result = await uploadReceiptAction(appointmentId, formData)
       
       if (result.success) {
         toast.success("Receipt uploaded to cloud successfully!")
         router.refresh()
-        onClose()
-        setFile(null)
-        setPreview(null)
+        handleModalClose()
       } else {
         toast.error(result.error || "Failed to upload receipt")
       }
@@ -91,7 +104,7 @@ export function ReceiptUploadModal({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleModalClose}>
       <DialogContent className="sm:max-w-md bg-white rounded-[2rem] border-0 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-3">
@@ -106,7 +119,6 @@ export function ReceiptUploadModal({
         </DialogHeader>
 
         <div className="p-6 space-y-4">
-          {/* Premium Bank Details Card */}
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Official Payment Gateway</span>
@@ -132,20 +144,29 @@ export function ReceiptUploadModal({
             </div>
             <div className="pt-2">
                <p className="text-[10px] font-bold text-slate-500 bg-white border border-slate-100 rounded-lg p-2 text-center leading-relaxed">
-                 Please transfer exactly <span className="text-[#67BA2E] font-black">{formatNaira(amountToPay)}</span> to the account above and upload the confirmation receipt.
+                 Please transfer your payment to the account above and enter the amount paid below along with the confirmation receipt.
                </p>
             </div>
           </div>
 
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount Due</span>
-              <span className="text-2xl font-black text-[#67BA2E] tracking-tighter">
-                {formatNaira(amountToPay)}
-              </span>
-            </div>
-            <div className="size-10 rounded-xl bg-[#67BA2E] flex items-center justify-center text-white shadow-lg shadow-emerald-100">
-               <Banknote className="size-5" />
+          <div className="space-y-2">
+            <Label htmlFor="customAmount" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+              Amount Paid
+            </Label>
+            <div className="relative">
+              <Input
+                id="customAmount"
+                type="number"
+                min="1"
+                step="any"
+                placeholder="Enter amount paid"
+                value={customAmount}
+                onChange={(e) => setCustomAmount(e.target.value)}
+                className="h-12 pl-4 pr-12 rounded-2xl border border-slate-200 bg-slate-50/50 font-bold text-slate-800 placeholder:text-slate-400 focus:bg-white text-sm"
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 size-7 rounded-xl bg-[#67BA2E]/10 flex items-center justify-center text-[#67BA2E]">
+                <Banknote className="size-4" />
+              </div>
             </div>
           </div>
 
@@ -191,14 +212,14 @@ export function ReceiptUploadModal({
         <DialogFooter className="p-6 pt-0 flex flex-row gap-3 bg-transparent border-t-0 m-0 shadow-none">
           <Button
             variant="outline"
-            onClick={onClose}
+            onClick={handleModalClose}
             className="md:flex-1 h-11 rounded-xl font-bold text-slate-500 border-slate-200 hover:bg-slate-50 transition-all uppercase tracking-widest text-[9px] px-6"
           >
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!file || isSubmitting}
+            disabled={!file || !customAmount || isSubmitting}
             className="md:flex-1 h-11 rounded-xl bg-[#67BA2E] hover:bg-[#5aa827] text-white font-black shadow-lg shadow-emerald-100 transition-all uppercase tracking-widest text-[9px] gap-2 border-0 px-6"
           >
             {isSubmitting ? (
