@@ -6,6 +6,51 @@ import { revalidatePath } from "next/cache"
 import { AppointmentSchema } from "@/lib/validations"
 import { format } from "date-fns"
 
+function parseScheduledTimeComponents(scheduledAtInput: string) {
+  const match = scheduledAtInput.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{1,2}):(\d{2}))?/);
+  if (match) {
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10);
+    const day = parseInt(match[3], 10);
+    const hours = match[4] !== undefined ? parseInt(match[4], 10) : 0;
+    const minutes = match[5] !== undefined ? parseInt(match[5], 10) : 0;
+
+    const dayDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+    const dayNames = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+    const dayName = dayNames[dayDate.getUTCDay()];
+    const timeStr = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+
+    return {
+      year,
+      month,
+      day,
+      hours,
+      minutes,
+      dayName,
+      timeStr,
+      minutesSinceMidnight: hours * 60 + minutes,
+    };
+  }
+
+  const d = new Date(scheduledAtInput);
+  const hours = d.getUTCHours();
+  const minutes = d.getUTCMinutes();
+  const dayNames = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+  const dayName = dayNames[d.getUTCDay()];
+  const timeStr = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+
+  return {
+    year: d.getUTCFullYear(),
+    month: d.getUTCMonth() + 1,
+    day: d.getUTCDate(),
+    hours,
+    minutes,
+    dayName,
+    timeStr,
+    minutesSinceMidnight: hours * 60 + minutes,
+  };
+}
+
 export async function createAppointmentAction(formData: FormData) {
   const patientId = formData.get('patientId') as string;
   const providerId = formData.get('providerId') as string;
@@ -28,8 +73,7 @@ export async function createAppointmentAction(formData: FormData) {
     }
 
     const scheduledDate = new Date(scheduledAt);
-    const dayName = format(scheduledDate, "EEEE").toUpperCase();
-    const timeStr = format(scheduledDate, "HH:mm");
+    const { dayName, minutesSinceMidnight } = parseScheduledTimeComponents(scheduledAt);
 
     // 2. Strict Availability Check
     const availability = await prisma.availability.findFirst({
@@ -41,11 +85,16 @@ export async function createAppointmentAction(formData: FormData) {
     });
 
     if (!availability) {
-      return { success: false, error: `Doctor is not available on ${format(scheduledDate, "EEEE")}.` };
+      const displayDay = dayName.charAt(0) + dayName.slice(1).toLowerCase();
+      return { success: false, error: `Doctor is not available on ${displayDay}.` };
     }
 
-    // Time boundary check (startTime <= timeStr < endTime)
-    if (timeStr < availability.startTime || timeStr >= availability.endTime) {
+    const [startH, startM] = availability.startTime.split(":").map(Number);
+    const [endH, endM] = availability.endTime.split(":").map(Number);
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+
+    if (minutesSinceMidnight < startMinutes || minutesSinceMidnight >= endMinutes) {
       return { success: false, error: 'Requested time slot is outside the doctor\'s office hours.' };
     }
 

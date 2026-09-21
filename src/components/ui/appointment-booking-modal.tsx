@@ -106,13 +106,14 @@ export function AppointmentBookingModal({ isOpen, onClose, patientId, providers 
       if (modifier === "PM" && hours < 12) hours += 12
       if (modifier === "AM" && hours === 12) hours = 0
 
-      const scheduledAt = new Date(selectedDate)
-      scheduledAt.setHours(hours, minutes, 0, 0)
+      const dateStr = format(selectedDate, "yyyy-MM-dd")
+      const timeFormatted = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`
+      const scheduledAtStr = `${dateStr}T${timeFormatted}`
 
       const formData = new FormData()
       formData.append("patientId", patientId)
       formData.append("providerId", selectedProvider.id)
-      formData.append("scheduledAt", scheduledAt.toISOString())
+      formData.append("scheduledAt", scheduledAtStr)
       formData.append("notes", "Patient Portal Booking (Modal)")
 
       const res = await createAppointmentAction(formData)

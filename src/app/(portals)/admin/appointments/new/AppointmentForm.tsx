@@ -89,17 +89,19 @@ export function AppointmentForm({ patients, providers }: { patients: any[], prov
     }
     setIsPending(true);
     try {
-      const scheduledDateTime = new Date(date);
       const [timeStr, modifier] = selectedTime.split(" ");
       let [hours, minutes] = timeStr.split(":").map(Number);
       if (modifier === "PM" && hours < 12) hours += 12;
       if (modifier === "AM" && hours === 12) hours = 0;
-      scheduledDateTime.setHours(hours, minutes, 0, 0);
+
+      const dateStr = format(date, "yyyy-MM-dd");
+      const timeFormatted = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
+      const scheduledAtStr = `${dateStr}T${timeFormatted}`;
 
       const formData = new FormData(e.currentTarget);
       formData.set("patientId", patientId);
       formData.set("providerId", providerId);
-      formData.set("scheduledAt", scheduledDateTime.toISOString());
+      formData.set("scheduledAt", scheduledAtStr);
 
       const res = await createAppointmentAction(formData);
       if (res?.error) {
