@@ -127,19 +127,15 @@ export function ReceiptUploadModal({
             <div className="grid grid-cols-2 gap-y-4">
               <div className="flex flex-col">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Bank Name</span>
-                <span className="text-xs font-bold text-slate-700">Chase Premium Banking</span>
+                <span className="text-xs font-bold text-slate-700">GTBank</span>
               </div>
               <div className="flex flex-col text-right">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Account Title</span>
-                <span className="text-xs font-bold text-slate-700">SyncMed Concierge Care</span>
+                <span className="text-xs font-bold text-slate-700">SyncMed Healthcare</span>
               </div>
-              <div className="flex flex-col">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Routing Number</span>
-                <span className="text-xs font-bold text-slate-700">021000021</span>
-              </div>
-              <div className="flex flex-col text-right">
+              <div className="col-span-2 flex items-center justify-between border-t border-slate-100 pt-3">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Account Number</span>
-                <span className="text-xs font-bold text-slate-700">9988776655</span>
+                <span className="text-xs font-bold text-slate-700 font-mono tracking-wider">3005438329</span>
               </div>
             </div>
             <div className="pt-2">
