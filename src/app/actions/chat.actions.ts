@@ -2,6 +2,7 @@
 
 import { auth } from "@/../auth"
 import prisma from "@/lib/prisma"
+import { isProviderLinkedToPatient, providerPatientScope } from "@/lib/care-team"
 import { v2 as cloudinary } from "cloudinary"
 import { pusherServer } from "@/lib/pusher"
 
@@ -34,7 +35,7 @@ async function canUsersChat(userAId: string, userBId: string) {
     where: { id: { in: [userAId, userBId] } },
     include: {
       providerProfile: { select: { id: true } },
-      patientProfile: { select: { id: true, assignedProviderId: true } },
+      patientProfile: { select: { id: true } },
     },
   })
 
@@ -49,7 +50,7 @@ async function canUsersChat(userAId: string, userBId: string) {
   if (!providerSide || !patientSide) return false
   if (!providerSide.providerProfile || !patientSide.patientProfile) return false
 
-  return patientSide.patientProfile.assignedProviderId === providerSide.providerProfile.id
+  return isProviderLinkedToPatient(providerSide.providerProfile.id, patientSide.patientProfile.id)
 }
 
 async function assertChatPairAccess(userAId: string, userBId: string) {
@@ -229,7 +230,7 @@ export async function getProviderContacts() {
     if (!provider) return [];
 
     const patients = await prisma.patientProfile.findMany({
-      where: { assignedProviderId: provider.id },
+      where: providerPatientScope(provider.id),
       include: { user: true }
     });
     const validPatients = patients.filter(p => p.user != null);
@@ -306,7 +307,7 @@ export async function getMockPatient() {
     const patient = await prisma.patientProfile.findFirst({
       where: {
         OR: [
-          { assignedProviderId: { not: null } },
+          { careTeam: { some: {} } },
           { appointments: { some: {} } }
         ]
       },
@@ -341,19 +342,27 @@ export async function getPatientContacts(patientUserId: string) {
     const patientProfile = await prisma.patientProfile.findUnique({
       where: { userId: patientUserId },
       include: {
-        assignedProvider: { include: { user: true } },
+        careTeam: { include: { provider: { include: { user: true } } } },
+        appointments: { select: { provider: { include: { user: true } } } },
       }
     });
 
     if (!patientProfile) return [];
 
     const providerMap = new Map();
-    if (patientProfile.assignedProvider?.user) {
-      providerMap.set(patientProfile.assignedProvider.user.id, {
-        ...patientProfile.assignedProvider.user,
-        specialty: patientProfile.assignedProvider.specialty,
-        providerType: patientProfile.assignedProvider.providerType,
-      });
+    // Same scope as providerPatientScope, seen from the patient side
+    const linkedProviders = [
+      ...patientProfile.careTeam.map(m => m.provider),
+      ...patientProfile.appointments.map(a => a.provider),
+    ];
+    for (const provider of linkedProviders) {
+      if (provider.user && !providerMap.has(provider.user.id)) {
+        providerMap.set(provider.user.id, {
+          ...provider.user,
+          specialty: provider.specialty,
+          providerType: provider.providerType,
+        });
+      }
     }
     const providers = Array.from(providerMap.values());
     const providerUserIds = providers.map(p => p.id);

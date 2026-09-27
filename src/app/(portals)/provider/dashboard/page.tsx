@@ -20,6 +20,7 @@ import {
   Heart
 } from "lucide-react"
 import prisma from "@/lib/prisma"
+import { providerPatientScope } from "@/lib/care-team"
 import { auth } from "../../../../../auth"
 import { startOfDay, endOfDay, format } from "date-fns"
 import { DISPLAY_DATE_TIME_FORMAT } from "@/lib/date-format"
@@ -117,9 +118,7 @@ export default async function ProviderDashboardPage() {
 
     // 4. Total Assigned Patients
     prisma.patientProfile.count({
-      where: {
-        appointments: { some: { providerId: provider.id } }
-      }
+      where: providerPatientScope(provider.id),
     }),
 
     // 5. List data for stat card modals

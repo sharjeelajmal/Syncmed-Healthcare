@@ -30,11 +30,7 @@ export default async function PatientDetailsPage({
     where: { userId: id },
     include: {
       user: true,
-      assignedProvider: {
-        include: {
-          user: true
-        }
-      }
+      careTeam: { select: { providerId: true } }
     }
   })
 
@@ -51,7 +47,8 @@ export default async function PatientDetailsPage({
 
   const formattedProviders = providers.map(p => ({
     id: p.id,
-    name: `${formatProviderDisplayName(p)} (${p.specialty})`
+    name: `${formatProviderDisplayName(p)} (${p.specialty})`,
+    providerType: p.providerType,
   }))
 
   return (
@@ -132,7 +129,7 @@ export default async function PatientDetailsPage({
                 <div>
                   <CardTitle className="text-xl font-black text-slate-900 tracking-tight">Clinical Assignment</CardTitle>
                   <CardDescription className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-0.5">
-                    {isReadOnly ? "Oversight Log" : "Assigned Physician"}
+                    {isReadOnly ? "Oversight Log" : "Doctors & Nurses"}
                   </CardDescription>
                 </div>
               </div>
@@ -140,30 +137,11 @@ export default async function PatientDetailsPage({
             <CardContent className="p-8">
               <AssignProviderForm 
                 patientId={patient.id} 
-                currentProviderId={patient.assignedProviderId || undefined} 
+                careTeamProviderIds={patient.careTeam.map((m) => m.providerId)}
                 providers={formattedProviders} 
                 isReadOnly={isReadOnly}
               />
               
-              {patient.assignedProvider && (
-                <div className="mt-10 p-6 bg-emerald-50/40 border border-emerald-100 rounded-[1.5rem] relative overflow-hidden group hover:bg-emerald-50 transition-all duration-300">
-                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
-                     <User size={40} />
-                  </div>
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-4 text-center">Primary Healthcare Provider</p>
-                  <div className="flex items-center gap-4 justify-center">
-                    <div className="size-12 rounded-2xl bg-[#67BA2E] text-white flex items-center justify-center text-sm font-black shadow-lg shadow-emerald-200">
-                      {patient.assignedProvider.providerType === "REGISTERED_NURSE" ? "RN" : "DR"}
-                    </div>
-                    <div>
-                      <p className="text-sm font-black text-slate-800">
-                        {formatProviderDisplayName(patient.assignedProvider)}
-                      </p>
-                      <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">{patient.assignedProvider.specialty}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>

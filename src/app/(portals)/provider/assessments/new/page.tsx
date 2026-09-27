@@ -10,6 +10,7 @@ import {
 import { differenceInYears } from "date-fns"
 
 import prisma from "@/lib/prisma"
+import { providerPatientScope } from "@/lib/care-team"
 import { getProviderProfileForSession } from "@/lib/portal-auth"
 
 export const dynamic = "force-dynamic"
@@ -54,12 +55,7 @@ export default async function NewAssessmentPage({ searchParams }: PageProps) {
           {
             OR: [{ id: patientId }, { userId: patientId }],
           },
-          {
-            OR: [
-              { assignedProviderId: sessionProvider.id },
-              { appointments: { some: { providerId: sessionProvider.id } } },
-            ],
-          },
+          providerPatientScope(sessionProvider.id),
         ],
       },
       include: { user: true },

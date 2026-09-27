@@ -171,18 +171,24 @@ export async function assignProviderAction(patientProfileId: string, providerId:
   }
 
   try {
-    const patient = await prisma.patientProfile.update({
-      where: { id: patientProfileId },
-      data: { assignedProviderId: providerId },
-      include: { user: true }
+    const existing = await prisma.careTeamMember.findUnique({
+      where: { patientId_providerId: { patientId: patientProfileId, providerId } },
+      select: { id: true },
     })
+    if (existing) {
+      return { success: false, error: "This provider is already on the patient's care team." }
+    }
 
-    const assignedProvider = await prisma.providerProfile.findUnique({
-      where: { id: providerId },
-      include: { user: true },
+    const member = await prisma.careTeamMember.create({
+      data: { patientId: patientProfileId, providerId },
+      include: {
+        patient: { include: { user: true } },
+        provider: { include: { user: true } },
+      },
     })
+    const { patient, provider: assignedProvider } = member
 
-    if (assignedProvider?.user?.email) {
+    if (assignedProvider.user?.email) {
       await sendProviderAssignmentEmail({
         to: assignedProvider.user.email,
         providerName: formatProviderDisplayName(assignedProvider),
@@ -191,13 +197,39 @@ export async function assignProviderAction(patientProfileId: string, providerId:
       })
     }
 
-    revalidatePath(`/admin/patients/${patient.userId}`)
-    revalidatePath("/admin/patients")
+    revalidateCareTeamPaths(patient.userId)
     return { success: true }
   } catch (err: unknown) {
     console.error("[ASSIGNMENT_ERROR]:", err)
-    return { error: `Failed to assign doctor: ${getErrorMessage(err)}` }
+    return { error: `Failed to assign provider: ${getErrorMessage(err)}` }
   }
+}
+
+export async function removeProviderAction(patientProfileId: string, providerId: string) {
+  const admin = await assertAdmin()
+  if (!admin.ok) {
+    return { success: false, error: admin.error }
+  }
+
+  try {
+    const member = await prisma.careTeamMember.delete({
+      where: { patientId_providerId: { patientId: patientProfileId, providerId } },
+      include: { patient: { select: { userId: true } } },
+    })
+
+    revalidateCareTeamPaths(member.patient.userId)
+    return { success: true }
+  } catch (err: unknown) {
+    console.error("[UNASSIGNMENT_ERROR]:", err)
+    return { error: `Failed to remove provider: ${getErrorMessage(err)}` }
+  }
+}
+
+function revalidateCareTeamPaths(patientUserId: string) {
+  revalidatePath(`/admin/patients/${patientUserId}`)
+  revalidatePath("/admin/patients")
+  revalidatePath("/provider", "layout")
+  revalidatePath("/patient", "layout")
 }
 
 export async function updatePatientDetailsAction(patientProfileId: string, formData: FormData) {

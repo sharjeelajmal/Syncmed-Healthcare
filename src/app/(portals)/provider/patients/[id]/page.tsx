@@ -24,6 +24,7 @@ import { formatProviderDisplayName } from "@/lib/format-provider-name"
 import { auth } from "@/../auth"
 
 import prisma from "@/lib/prisma"
+import { providerPatientScope } from "@/lib/care-team"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -74,20 +75,16 @@ export default async function PatientChartPage({ params }: PageProps) {
         ? {
             AND: [
               { OR: [{ id }, { userId: id }] },
-              {
-                OR: [
-                  { assignedProviderId: providerProfileId },
-                  { appointments: { some: { providerId: providerProfileId } } },
-                ],
-              },
+              providerPatientScope(providerProfileId),
             ],
           }
         : { OR: [{ id }, { userId: id }] }),
     },
     include: {
       user: true,
-      assignedProvider: {
-        include: { user: true }
+      careTeam: {
+        orderBy: { createdAt: "asc" },
+        include: { provider: { include: { user: true } } },
       },
       assessments: {
         orderBy: {
@@ -151,8 +148,8 @@ export default async function PatientChartPage({ params }: PageProps) {
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
                 <span className="flex items-center gap-1">
                   <Stethoscope className="size-4" />
-                  {patient.assignedProvider
-                    ? formatProviderDisplayName(patient.assignedProvider)
+                  {patient.careTeam.length > 0
+                    ? patient.careTeam.map((m) => formatProviderDisplayName(m.provider)).join(", ")
                     : "Unassigned"}
                 </span>
               </div>

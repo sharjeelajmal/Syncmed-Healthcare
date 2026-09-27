@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Users } from "lucide-react"
 import prisma from "@/lib/prisma"
+import { providerPatientScope } from "@/lib/care-team"
 import { formatProviderDisplayName } from "@/lib/format-provider-name"
 import { getProviderProfileForSession } from "@/lib/portal-auth"
 
@@ -20,10 +21,7 @@ export default async function ProviderPatientsPage({ searchParams }: PageProps) 
   // Fetch Assigned Patients (Directly assigned OR via Appointments)
   const patients = await prisma.patientProfile.findMany({
     where: {
-      OR: [
-        { assignedProviderId: provider.id },
-        { appointments: { some: { providerId: provider.id } } }
-      ],
+      ...providerPatientScope(provider.id),
       user: {
         OR: [
           { firstName: { contains: query || "", mode: "insensitive" } },

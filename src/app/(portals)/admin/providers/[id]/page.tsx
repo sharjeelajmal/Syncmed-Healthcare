@@ -4,6 +4,7 @@ export const revalidate = 0
 import * as React from "react"
 import { notFound } from "next/navigation"
 import prisma from "@/lib/prisma"
+import { providerPatientScope } from "@/lib/care-team"
 import { ProviderDetailsClient } from "./ProviderDetailsClient"
 import { resolveProviderUser } from "@/lib/resolve-provider-user"
 import NewProviderPage from "../new/page"
@@ -29,7 +30,7 @@ export default async function ProviderProfilePage({ params }: PageProps) {
   // Fetch stats
   const [totalPatients, totalAppointments] = await Promise.all([
     prisma.patientProfile.count({
-      where: { assignedProviderId: provider.providerProfile.id },
+      where: providerPatientScope(provider.providerProfile.id),
     }),
     prisma.appointment.count({
       where: { providerId: provider.providerProfile.id },

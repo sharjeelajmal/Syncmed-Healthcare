@@ -39,10 +39,11 @@ function formatAvailabilitySummary(
 export default async function MyDoctorsPage() {
   const patient = await getPatientProfileForSession()
 
-  const patientWithProvider = await prisma.patientProfile.findUnique({
-    where: { id: patient.id },
+  const careTeamMembers = await prisma.careTeamMember.findMany({
+    where: { patientId: patient.id },
+    orderBy: { createdAt: "asc" },
     include: {
-      assignedProvider: {
+      provider: {
         include: {
           user: true,
           availability: { where: { isActive: true }, orderBy: { day: "asc" } },
@@ -51,18 +52,26 @@ export default async function MyDoctorsPage() {
     },
   })
 
-  const doctor = patientWithProvider?.assignedProvider
-  const completedVisits = doctor
-    ? await prisma.appointment.count({
-        where: { providerId: doctor.id, patientId: patient.id, status: "COMPLETED" },
-      })
-    : 0
-  const yearsWithPlatform = doctor
-    ? Math.max(1, differenceInYears(new Date(), new Date(doctor.user.createdAt)))
-    : 0
-  const availabilityLabel = doctor
-    ? formatAvailabilitySummary(doctor.availability)
-    : ""
+  const completedVisitCounts = await prisma.appointment.groupBy({
+    by: ["providerId"],
+    where: {
+      patientId: patient.id,
+      status: "COMPLETED",
+      providerId: { in: careTeamMembers.map((m) => m.providerId) },
+    },
+    _count: true,
+  })
+  const visitsByProvider = new Map(completedVisitCounts.map((c) => [c.providerId, c._count]))
+
+  const careTeam = careTeamMembers.map(({ provider }) => ({
+    doctor: provider,
+    completedVisits: visitsByProvider.get(provider.id) ?? 0,
+    yearsWithPlatform: Math.max(1, differenceInYears(new Date(), new Date(provider.user.createdAt))),
+    availabilityLabel: formatAvailabilitySummary(provider.availability),
+  }))
+  // Referral requests go to the doctor first, falling back to any team member
+  const primaryProvider =
+    careTeam.find((m) => m.doctor.providerType === "MEDICAL_DOCTOR")?.doctor ?? careTeam[0]?.doctor
 
   return (
     <div className="selection:bg-green-100">
@@ -89,7 +98,7 @@ export default async function MyDoctorsPage() {
           <div className="flex items-center gap-4">
              <div className="hidden md:flex flex-col text-right">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Providers</span>
-                <span className="text-xl font-black text-slate-900">{doctor ? 1 : 0} Members</span>
+                <span className="text-xl font-black text-slate-900">{careTeam.length} {careTeam.length === 1 ? "Member" : "Members"}</span>
              </div>
              <div className="size-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center shadow-sm">
                 <Stethoscope className="size-6 text-[#67BA2E]" />
@@ -99,8 +108,8 @@ export default async function MyDoctorsPage() {
 
         {/* Doctor Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {doctor ? (
-            <Card className="group relative rounded-[2.5rem] border-slate-200 bg-white shadow-2xl shadow-slate-200/50 hover:shadow-green-100/50 transition-all duration-500 overflow-hidden border-b-[6px] border-b-[#67BA2E]">
+          {careTeam.length > 0 ? careTeam.map(({ doctor, completedVisits, yearsWithPlatform, availabilityLabel }) => (
+            <Card key={doctor.id} className="group relative rounded-[2.5rem] border-slate-200 bg-white shadow-2xl shadow-slate-200/50 hover:shadow-green-100/50 transition-all duration-500 overflow-hidden border-b-[6px] border-b-[#67BA2E]">
               <CardContent className="p-8 md:p-10 space-y-8">
                 
                 {/* Status Indicator */}
@@ -162,7 +171,9 @@ export default async function MyDoctorsPage() {
                    </div>
                    <div className="text-center space-y-1">
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Assigned</p>
-                      <p className="text-xs font-black text-slate-700">Primary</p>
+                      <p className="text-xs font-black text-slate-700">
+                        {doctor.providerType === "REGISTERED_NURSE" ? "Nurse" : "Doctor"}
+                      </p>
                    </div>
                 </div>
 
@@ -204,7 +215,7 @@ export default async function MyDoctorsPage() {
                 </div>
               </CardContent>
             </Card>
-          ) : (
+          )) : (
             /* Empty State */
             <Card className="col-span-full md:col-span-2 lg:col-span-3 rounded-[3rem] border-2 border-dashed border-slate-200 bg-white/50 p-12 md:p-20 text-center space-y-8">
               <div className="relative mx-auto size-24 md:size-32 bg-slate-100 rounded-[2.5rem] flex items-center justify-center group">
@@ -240,9 +251,9 @@ export default async function MyDoctorsPage() {
               Looking for specialized care? Send a secure message to your primary provider to request a referral to a SyncMed specialist.
             </p>
           </div>
-          {doctor ? (
+          {primaryProvider ? (
             <OpenProviderChatButton
-              providerUserId={doctor.user.id}
+              providerUserId={primaryProvider.user.id}
               variant="ghost"
               className="h-12 px-8 font-black text-[#67BA2E] uppercase tracking-widest text-xs gap-2 hover:bg-green-50 shrink-0"
             >

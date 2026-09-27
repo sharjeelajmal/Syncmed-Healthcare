@@ -1,5 +1,6 @@
 import { startOfDay, endOfDay } from "date-fns"
 import prisma from "@/lib/prisma"
+import { providerPatientScope } from "@/lib/care-team"
 
 export async function getProviderDashboardListData(providerId: string) {
   const todayStart = startOfDay(new Date())
@@ -15,7 +16,7 @@ export async function getProviderDashboardListData(providerId: string) {
       include: { patient: { include: { user: true } } },
     }),
     prisma.patientProfile.findMany({
-      where: { appointments: { some: { providerId } } },
+      where: providerPatientScope(providerId),
       orderBy: { user: { lastName: "asc" } },
       include: { user: true },
     }),

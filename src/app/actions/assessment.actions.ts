@@ -2,6 +2,7 @@
 
 import type { Prisma } from "@prisma/client"
 import prisma from "@/lib/prisma"
+import { isProviderLinkedToPatient } from "@/lib/care-team"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { auth } from "@/../auth"
@@ -227,22 +228,7 @@ async function assertAssessmentAccess(patientId: string, providerId: string) {
     throw new Error("Forbidden provider access")
   }
 
-  const patient = await prisma.patientProfile.findUnique({
-    where: { id: patientId },
-    select: {
-      assignedProviderId: true,
-      appointments: {
-        where: { providerId: provider.id },
-        select: { id: true },
-        take: 1,
-      },
-    },
-  })
-
-  const isAssignedProvider = patient?.assignedProviderId === provider.id
-  const hasProviderAppointment = Boolean(patient?.appointments?.length)
-
-  if (!patient || (!isAssignedProvider && !hasProviderAppointment)) {
+  if (!(await isProviderLinkedToPatient(provider.id, patientId))) {
     throw new Error("Provider is not assigned to this patient")
   }
 }

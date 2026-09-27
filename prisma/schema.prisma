@@ -40,11 +40,13 @@ model PatientProfile {
   phone              String
   address            String
   emergencyContact   String
+  /// DEPRECATED: superseded by `careTeam`. Kept only so existing data can be
+  /// backfilled (scripts/backfill-care-team.sql); drop once backfill is verified.
   assignedProviderId String?          @db.Uuid
+  careTeam           CareTeamMember[]
   appointments       Appointment[]
   assessments        Assessment[]
   clinicalAssessments ClinicalAssessment[]
-  assignedProvider   ProviderProfile? @relation("ProviderPatients", fields: [assignedProviderId], references: [id])
   user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoices           PaymentInvoice[]
   activeMedications  String[]         @default([])
@@ -65,10 +67,24 @@ model ProviderProfile {
   assessments     Assessment[]
   clinicalAssessments ClinicalAssessment[]
   availability    Availability[]
-  patients        PatientProfile[] @relation("ProviderPatients")
+  careTeamPatients CareTeamMember[]
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("provider_profiles")
+}
+
+/// A provider (doctor, nurse, ...) assigned to a patient's care team.
+model CareTeamMember {
+  id         String          @id @default(uuid()) @db.Uuid
+  patientId  String          @db.Uuid
+  providerId String          @db.Uuid
+  createdAt  DateTime        @default(now())
+  patient    PatientProfile  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  provider   ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([patientId, providerId])
+  @@index([providerId])
+  @@map("care_team_members")
 }
 
 model Availability {
