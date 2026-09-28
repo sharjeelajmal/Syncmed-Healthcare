@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { MembershipTierBadge } from "@/components/ui/membership-tier-badge"
 import AssignProviderForm from "./AssignProviderForm"
 import PatientEditForm from "./PatientEditForm"
+import { PatientBillingCard } from "./PatientBillingCard"
 import { formatProviderDisplayName } from "@/lib/format-provider-name"
 
 export const dynamic = "force-dynamic"
@@ -38,12 +39,32 @@ export default async function PatientDetailsPage({
     notFound()
   }
 
-  // Fetch all available providers
-  const providers = await prisma.providerProfile.findMany({
-    include: {
-      user: true
-    }
-  })
+  const [providers, billingAppointments, invoices] = await Promise.all([
+    prisma.providerProfile.findMany({
+      include: {
+        user: true
+      }
+    }),
+    prisma.appointment.findMany({
+      where: { patientId: patient.id },
+      orderBy: { scheduledAt: "desc" },
+      select: {
+        id: true,
+        scheduledAt: true,
+        amount: true,
+        paymentStatus: true,
+        receiptData: true,
+        provider: { select: { providerType: true, user: { select: { firstName: true, lastName: true } } } },
+      },
+    }),
+    prisma.paymentInvoice.findMany({
+      where: { patientId: patient.id },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, createdAt: true, amount: true, status: true, receiptUrl: true },
+    }),
+  ])
+
+  const patientName = { user: { firstName: patient.user.firstName, lastName: patient.user.lastName } }
 
   const formattedProviders = providers.map(p => ({
     id: p.id,
@@ -116,6 +137,16 @@ export default async function PatientDetailsPage({
               </div>
             </CardContent>
           </Card>
+
+          <PatientBillingCard
+            isReadOnly={isReadOnly}
+            appointments={billingAppointments.map((a) => ({
+              ...a,
+              scheduledAt: a.scheduledAt.toISOString(),
+              patient: patientName,
+            }))}
+            invoices={invoices.map((i) => ({ ...i, createdAt: i.createdAt.toISOString() }))}
+          />
         </div>
 
         {/* Right Column: Assignment Form */}

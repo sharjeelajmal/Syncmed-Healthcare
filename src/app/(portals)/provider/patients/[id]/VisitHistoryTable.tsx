@@ -69,6 +69,8 @@ const RESPONSE_SECTIONS = [
   { title: "Risk Summary & Care Plan", questions: step5Questions },
 ]
 
+const FACTOR_SECTIONS = [...step2Sections, ...step3Sections, ...step4Sections]
+
 const QUESTION_PROMPTS = new Map<string, string>()
 const QUESTION_OPTION_LABELS = new Map<string, Map<string, string>>()
 for (const section of RESPONSE_SECTIONS) {
@@ -118,6 +120,7 @@ interface Assessment {
   medications?: MedicationEntry[]
   diagnoses?: DiagnosisEntry[]
   provider: {
+    providerType?: string | null
     user: { firstName: string; lastName: string }
   }
 }
@@ -310,7 +313,7 @@ export function VisitHistoryTable({
       {followUpEncounters.length > 0 ? (
         <VisitListSection
           title="Follow-up Encounters"
-          description="Subsequent visit records. Factor tabs (1-11) are hidden; routine home visit reassessment sections are shown instead."
+          description="Subsequent visit records by nurses and doctors. Open a record to see every section that was completed."
           visits={followUpEncounters}
           isInitialAssessment={false}
           clinicalAssessments={clinicalAssessments}
@@ -547,16 +550,22 @@ function EncounterDetail({
   visit: Assessment
   isInitialAssessment: boolean
 }) {
+  // Show factor tabs for any visit that actually recorded factor responses,
+  // not only the initial assessment, so no completed section is hidden.
+  const hasFactorResponses = React.useMemo(
+    () =>
+      FACTOR_SECTIONS.some((section) =>
+        section.questions.some((q) => formatAnswer(q.id, c.responses[q.id]) !== "")
+      ),
+    [c.responses]
+  )
+  const showFactorTabs = isInitialAssessment || hasFactorResponses
   const wizardSteps = React.useMemo(
-    () => getWizardSteps(isInitialAssessment),
-    [isInitialAssessment]
+    () => getWizardSteps(showFactorTabs),
+    [showFactorTabs]
   )
   const [activeTab, setActiveTab] = React.useState(0)
   const activeStep = wizardSteps[activeTab]
-
-  React.useEffect(() => {
-    setActiveTab(0)
-  }, [isInitialAssessment])
 
   return (
     <>

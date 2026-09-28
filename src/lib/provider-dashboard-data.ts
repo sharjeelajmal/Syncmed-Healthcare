@@ -16,7 +16,7 @@ export async function getProviderDashboardListData(providerId: string) {
       include: { patient: { include: { user: true } } },
     }),
     prisma.patientProfile.findMany({
-      where: providerPatientScope(providerId),
+      where: await providerPatientScope(providerId),
       orderBy: { user: { lastName: "asc" } },
       include: { user: true },
     }),

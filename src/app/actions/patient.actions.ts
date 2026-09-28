@@ -131,36 +131,49 @@ export async function createPatientAction(formData: FormData) {
   }
 }
 
+/**
+ * Permanently deletes a patient account and everything attached to it.
+ * Relations without onDelete: Cascade are cleared explicitly, in one
+ * transaction so a failure never leaves a half-deleted patient behind.
+ * Care team, lab results and physician notes cascade from the profile.
+ */
 export async function deletePatientAction(userId: string) {
-  try {
-    const patientProfile = await prisma.patientProfile.findUnique({
-      where: { userId }
-    })
+  const admin = await assertAdmin()
+  if (!admin.ok) {
+    return { success: false, error: admin.error }
+  }
 
-    if (patientProfile) {
-      // Clear dependent clinical records first
-      await prisma.appointment.deleteMany({
-        where: { patientId: patientProfile.id }
-      })
-      await prisma.assessment.deleteMany({
-        where: { patientId: patientProfile.id }
-      })
-      // Purge the profile
-      await prisma.patientProfile.delete({
-        where: { id: patientProfile.id }
-      })
-    }
-    
-    // Delete the user record
-    await prisma.user.delete({
-      where: { id: userId }
+  try {
+    const user = await prisma.user.findFirst({
+      where: { id: userId, role: "PATIENT" },
+      select: { id: true, patientProfile: { select: { id: true } } },
     })
+    if (!user) {
+      return { success: false, error: "Patient account not found." }
+    }
+
+    const patientId = user.patientProfile?.id
+
+    await prisma.$transaction(async (tx) => {
+      if (patientId) {
+        await tx.appointment.deleteMany({ where: { patientId } })
+        await tx.assessment.deleteMany({ where: { patientId } })
+        await tx.clinicalAssessment.deleteMany({ where: { patientId } })
+        await tx.paymentInvoice.deleteMany({ where: { patientId } })
+        await tx.patientProfile.delete({ where: { id: patientId } })
+      }
+      await tx.message.deleteMany({ where: { OR: [{ senderId: userId }, { receiverId: userId }] } })
+      await tx.aiChatMessage.deleteMany({ where: { userId } })
+      await tx.user.delete({ where: { id: userId } })
+    }, { maxWait: 10_000, timeout: 20_000 })
 
     revalidatePath("/admin/patients")
+    revalidatePath("/admin/dashboard")
+    revalidatePath("/provider", "layout")
     return { success: true }
   } catch (err: unknown) {
-    console.error("[CRITICAL_BACKEND_ERROR]:", err)
-    return { error: `Failed to delete record: ${getErrorMessage(err)}` }
+    console.error("[DELETE_PATIENT_ERROR]:", err)
+    return { success: false, error: `Failed to delete patient: ${getErrorMessage(err)}` }
   }
 }
 

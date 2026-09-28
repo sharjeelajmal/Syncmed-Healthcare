@@ -10,8 +10,10 @@ import {
   User, 
   FileText, 
   XCircle,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from "lucide-react"
+import { toast } from "sonner"
 
 import {
   Dialog,
@@ -21,6 +23,9 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { PatientRecordModal } from "@/components/ui/patient-record-modal"
+import { getAppointmentClinicalRecordAction } from "@/app/actions/patient-record.actions"
+import type { ClinicalRecordView } from "@/lib/clinical-record"
 
 interface AppointmentDetailsModalProps {
   isOpen: boolean
@@ -29,7 +34,21 @@ interface AppointmentDetailsModalProps {
 }
 
 export function AppointmentDetailsModal({ isOpen, onClose, appointment }: AppointmentDetailsModalProps) {
+  const [record, setRecord] = React.useState<ClinicalRecordView | null>(null)
+  const [isLoadingRecord, startLoadingRecord] = React.useTransition()
+
   if (!appointment) return null
+
+  const handleViewRecord = () => {
+    startLoadingRecord(async () => {
+      const res = await getAppointmentClinicalRecordAction(appointment.id)
+      if (res.success) {
+        setRecord(res.record)
+      } else {
+        toast.error(res.error)
+      }
+    })
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -43,7 +62,8 @@ export function AppointmentDetailsModal({ isOpen, onClose, appointment }: Appoin
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <>
+    <Dialog open={isOpen && !record} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="w-[95vw] md:max-w-md rounded-3xl border-slate-200 shadow-2xl bg-white p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-0">
           <div className="flex flex-col gap-1">
@@ -87,8 +107,12 @@ export function AppointmentDetailsModal({ isOpen, onClose, appointment }: Appoin
           {/* Section C: Quick Actions */}
           <div className="flex flex-col gap-3 pt-2">
             {appointment.status === 'COMPLETED' && (
-              <Button className="h-12 w-full bg-[#67BA2E] hover:bg-[#5aa827] text-white font-black rounded-xl shadow-lg transition-all uppercase tracking-widest text-xs gap-2 border-0">
-                <FileText className="size-4" />
+              <Button
+                onClick={handleViewRecord}
+                disabled={isLoadingRecord}
+                className="h-12 w-full bg-[#67BA2E] hover:bg-[#5aa827] text-white font-black rounded-xl shadow-lg transition-all uppercase tracking-widest text-xs gap-2 border-0"
+              >
+                {isLoadingRecord ? <Loader2 className="size-4 animate-spin" /> : <FileText className="size-4" />}
                 View Clinical Record
                 <ChevronRight className="size-4 ml-auto" />
               </Button>
@@ -103,5 +127,15 @@ export function AppointmentDetailsModal({ isOpen, onClose, appointment }: Appoin
         </div>
       </DialogContent>
     </Dialog>
+
+    <PatientRecordModal
+      isOpen={record !== null}
+      onClose={() => {
+        setRecord(null)
+        onClose()
+      }}
+      record={record}
+    />
+    </>
   )
 }

@@ -22,6 +22,7 @@ export async function resolveProviderUser(id: string) {
           specialty: true,
           licenseNumber: true,
           consultationFee: true,
+          hasUniversalAccess: true,
         },
       },
     },

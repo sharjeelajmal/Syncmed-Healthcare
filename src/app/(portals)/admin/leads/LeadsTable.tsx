@@ -104,6 +104,13 @@ export function LeadsTable({
         </Badge>
       )
     }
+    if (type === "career_application") {
+      return (
+        <Badge variant="outline" className="bg-violet-50 border-violet-200 text-violet-600 font-bold text-[10px] rounded-full px-2.5 py-0.5 whitespace-nowrap">
+          Career Application
+        </Badge>
+      )
+    }
     return (
       <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-600 font-bold text-[10px] rounded-full px-2.5 py-0.5 whitespace-nowrap">
         General Question
@@ -302,7 +309,16 @@ export function LeadsTable({
           <div className="p-6 bg-white space-y-6">
             <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100 max-h-96 overflow-y-auto">
               <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap font-medium">
-                {viewingLead?.message}
+                {/* Career applications carry a CV link; make URLs clickable. */}
+                {viewingLead?.message.split(/(https:\/\/\S+)/g).map((part, i) =>
+                  part.startsWith("https://") ? (
+                    <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-[#67BA2E] font-bold underline break-all">
+                      {part}
+                    </a>
+                  ) : (
+                    <React.Fragment key={i}>{part}</React.Fragment>
+                  )
+                )}
               </p>
             </div>
             

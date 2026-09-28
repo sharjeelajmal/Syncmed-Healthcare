@@ -121,7 +121,12 @@ export function ProviderTable({
                       )}
                     </TableCell>
                     <TableCell className="text-right px-8">
-                      <ProviderTableActions userId={provider.id} isActive={provider.isActive} />
+                      <ProviderTableActions
+                        userId={provider.id}
+                        providerName={`${provider.firstName} ${provider.lastName}`.trim()}
+                        isActive={provider.isActive}
+                        hasUniversalAccess={Boolean(provider.providerProfile?.hasUniversalAccess)}
+                      />
                     </TableCell>
                   </TableRow>
                 ))

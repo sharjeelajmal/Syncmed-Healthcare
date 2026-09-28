@@ -1,4 +1,15 @@
 import { BrevoClient } from "@getbrevo/brevo"
+import { leadTypeLabel } from "@/lib/lead-types"
+
+/** Escape user-supplied text before interpolating it into email HTML. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+}
 
 const SENDER = { name: "SyncMed Health", email: "support@syncmed.health" } as const
 
@@ -54,19 +65,19 @@ export async function sendLeadNotificationEmail(lead: {
     await apiInstance.sendTransacEmail({
       sender: SENDER,
       to: [{ email: adminEmail }],
-      subject: `New Lead: ${lead.name} (${lead.type === "patient_registration" ? "New Patient Registration" : "General Inquiry"})`,
+      subject: `New Lead: ${lead.name} (${leadTypeLabel(lead.type)})`,
       htmlContent: `
         <div style="font-family: sans-serif; padding: 24px; max-width: 480px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px;">
           <h2 style="color: #0f172a; font-weight: 900; margin-bottom: 4px;">SyncMed Concierge</h2>
           <p style="color: #67BA2E; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-top: 0;">New Lead Notification</p>
           <p style="color: #475569; font-size: 14px;">A new lead has been submitted through the public inquiry form.</p>
           <div style="background: #f8fafc; padding: 16px; margin: 20px 0; border-radius: 12px; font-size: 14px; color: #334155; line-height: 1.6; border: 1px solid #f1f5f9;">
-            <strong>Name:</strong> ${lead.name}<br/>
-            <strong>Email:</strong> ${lead.email}<br/>
-            <strong>Phone:</strong> ${lead.phone || 'Not Provided'}<br/>
-            <strong>Inquiry Type:</strong> ${lead.type === 'patient_registration' ? 'New Patient Registration' : 'General Question'}<br/>
+            <strong>Name:</strong> ${escapeHtml(lead.name)}<br/>
+            <strong>Email:</strong> ${escapeHtml(lead.email)}<br/>
+            <strong>Phone:</strong> ${escapeHtml(lead.phone || 'Not Provided')}<br/>
+            <strong>Inquiry Type:</strong> ${leadTypeLabel(lead.type)}<br/>
             <strong>Message:</strong><br/>
-            <p style="margin-top: 8px; font-style: italic; color: #475569; padding-left: 8px; border-left: 2px solid #67BA2E;">"${lead.message}"</p>
+            <p style="margin-top: 8px; font-style: italic; color: #475569; padding-left: 8px; border-left: 2px solid #67BA2E; white-space: pre-wrap;">"${escapeHtml(lead.message)}"</p>
           </div>
           <p style="color: #94a3b8; font-size: 11px;">This notification was automatically sent by the SyncMed Healthcare platform.</p>
         </div>
@@ -97,11 +108,9 @@ export async function sendLeadConfirmationEmail(lead: {
         <div style="font-family: sans-serif; padding: 24px; max-width: 480px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px;">
           <h2 style="color: #0f172a; font-weight: 900; margin-bottom: 4px; font-family: 'Inter', sans-serif;">SyncMed Healthcare</h2>
           <p style="color: #67BA2E; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-top: 0;">Inquiry Received</p>
-          <p style="color: #475569; font-size: 14px; line-height: 1.6;">Dear <strong>${lead.name}</strong>,</p>
+          <p style="color: #475569; font-size: 14px; line-height: 1.6;">Dear <strong>${escapeHtml(lead.name)}</strong>,</p>
           <p style="color: #475569; font-size: 14px; line-height: 1.6;">
-            Thank you for reaching out to SyncMed Healthcare. We have successfully received your inquiry regarding <strong>${
-              lead.type === "patient_registration" ? "New Patient Registration" : "General Question"
-            }</strong>.
+            Thank you for reaching out to SyncMed Healthcare. We have successfully received your inquiry regarding <strong>${leadTypeLabel(lead.type)}</strong>.
           </p>
           <p style="color: #475569; font-size: 14px; line-height: 1.6;">
             Our administrative and clinical support staff are reviewing your details. We aim to respond to all inquiries within 24 to 48 business hours.

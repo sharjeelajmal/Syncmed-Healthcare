@@ -26,6 +26,7 @@ model User {
   patientProfile   PatientProfile?
   providerProfile  ProviderProfile?
   aiMessages       AiChatMessage[]
+  labResultsUploaded LabResult[]
   image            String?
   notificationPreferences Json? @default("{\"newPatients\":true,\"appointments\":true,\"systemUpdates\":false}")
 
@@ -52,6 +53,8 @@ model PatientProfile {
   activeMedications  String[]         @default([])
   allergies          String[]         @default([])
   diagnoses          String[]         @default([])
+  labResults         LabResult[]
+  physicianNotes     PhysicianNote[]
 
   @@map("patient_profiles")
 }
@@ -63,11 +66,14 @@ model ProviderProfile {
   specialty       String
   licenseNumber   String
   consultationFee Float            @default(150.0)
+  /// When true the provider can open every patient chart, not just their roster.
+  hasUniversalAccess Boolean       @default(false)
   appointments    Appointment[]
   assessments     Assessment[]
   clinicalAssessments ClinicalAssessment[]
   availability    Availability[]
   careTeamPatients CareTeamMember[]
+  physicianNotes  PhysicianNote[]
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("provider_profiles")
@@ -85,6 +91,41 @@ model CareTeamMember {
   @@unique([patientId, providerId])
   @@index([providerId])
   @@map("care_team_members")
+}
+
+/// A lab report (PDF) attached to a patient's chart.
+model LabResult {
+  id           String         @id @default(uuid()) @db.Uuid
+  patientId    String         @db.Uuid
+  /// User.id of whoever uploaded the file (provider or admin).
+  uploadedById String         @db.Uuid
+  title        String
+  fileUrl      String
+  notes        String?
+  createdAt    DateTime       @default(now())
+  patient      PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  uploadedBy   User           @relation(fields: [uploadedById], references: [id])
+
+  @@index([patientId])
+  @@map("lab_results")
+}
+
+/// A physician's encounter note on a patient's chart.
+model PhysicianNote {
+  id             String          @id @default(uuid()) @db.Uuid
+  patientId      String          @db.Uuid
+  providerId     String          @db.Uuid
+  noteDate       DateTime        @default(now())
+  chiefComplaint String?
+  assessment     String
+  plan           String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  patient        PatientProfile  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  provider       ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@map("physician_notes")
 }
 
 model Availability {

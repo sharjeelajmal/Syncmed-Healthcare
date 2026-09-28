@@ -1,11 +1,14 @@
 "use client"
 
 import * as React from "react"
-import { CreditCard, History, Clock, Info, Bell, ChevronRight } from "lucide-react"
+import { CreditCard, History, Clock, Info, Bell, ChevronRight, Eye, Download, Loader2 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ReceiptUploadModal } from "@/components/ui/receipt-upload-modal"
+import { ReceiptViewerDialog } from "@/components/ui/receipt-viewer-dialog"
+import { toast } from "sonner"
+import { downloadPaymentVoucher } from "./payment-voucher"
 import { format } from "date-fns"
 import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
 import {
@@ -28,15 +31,31 @@ interface BillingItem {
   clinician: string
   specialty: string
   initials: string
+  receiptUrl: string | null
 }
 
 interface BillingClientProps {
   invoices: BillingItem[]
+  patientName: string
 }
 
-export function BillingClient({ invoices }: BillingClientProps) {
+export function BillingClient({ invoices, patientName }: BillingClientProps) {
   const [selectedInvoice, setSelectedInvoice] = React.useState<BillingItem | null>(null)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
+  const [viewingReceipt, setViewingReceipt] = React.useState<string | null>(null)
+  const [downloadingId, setDownloadingId] = React.useState<string | null>(null)
+
+  const handleDownloadVoucher = async (item: BillingItem) => {
+    setDownloadingId(item.id)
+    try {
+      await downloadPaymentVoucher(item, patientName)
+    } catch (error) {
+      console.error("Voucher generation failed", error)
+      toast.error("Could not generate the voucher. Please try again.")
+    } finally {
+      setDownloadingId(null)
+    }
+  }
 
   const lastPaidInvoice = invoices
     .filter((item) => item.status === "PAID")
@@ -183,7 +202,7 @@ export function BillingClient({ invoices }: BillingClientProps) {
                          )}
                       </TableCell>
                       <TableCell className="text-right px-8">
-                        <div className="flex justify-end">
+                        <div className="flex flex-wrap justify-end items-center gap-2">
                           {item.status === 'UNPAID' && (
                             <Button 
                               onClick={() => { setSelectedInvoice(item); setIsModalOpen(true); }}
@@ -196,8 +215,25 @@ export function BillingClient({ invoices }: BillingClientProps) {
                           {item.status === 'VERIFICATION_PENDING' && (
                              <span className="text-amber-500 font-black text-[10px] uppercase tracking-widest bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100">Reviewing</span>
                           )}
+                          {item.receiptUrl && item.status !== 'UNPAID' && (
+                            <Button
+                              variant="outline"
+                              onClick={() => setViewingReceipt(item.receiptUrl)}
+                              className="h-9 px-3 border-slate-200 text-slate-600 font-bold rounded-lg text-[10px] uppercase tracking-wider gap-1.5"
+                            >
+                              <Eye className="size-3.5" />
+                              View Receipt
+                            </Button>
+                          )}
                           {item.status === 'PAID' && (
-                            <span className="text-[#67BA2E] font-black text-[10px] uppercase tracking-widest bg-[#67BA2E]/10 px-3 py-1.5 rounded-lg border border-[#67BA2E]/20">Verified</span>
+                            <Button
+                              onClick={() => handleDownloadVoucher(item)}
+                              disabled={downloadingId === item.id}
+                              className="h-9 px-3 bg-[#67BA2E] hover:bg-[#5aa827] text-white font-bold rounded-lg text-[10px] uppercase tracking-wider gap-1.5"
+                            >
+                              {downloadingId === item.id ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+                              Download Voucher
+                            </Button>
                           )}
                         </div>
                       </TableCell>
@@ -214,6 +250,8 @@ export function BillingClient({ invoices }: BillingClientProps) {
           </div>
         )}
       </div>
+
+      <ReceiptViewerDialog url={viewingReceipt} onClose={() => setViewingReceipt(null)} />
 
       {selectedInvoice && (
         <ReceiptUploadModal 

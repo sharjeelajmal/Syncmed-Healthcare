@@ -230,7 +230,7 @@ export async function getProviderContacts() {
     if (!provider) return [];
 
     const patients = await prisma.patientProfile.findMany({
-      where: providerPatientScope(provider.id),
+      where: await providerPatientScope(provider.id),
       include: { user: true }
     });
     const validPatients = patients.filter(p => p.user != null);

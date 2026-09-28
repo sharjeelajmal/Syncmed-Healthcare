@@ -2,9 +2,8 @@
 
 import * as React from "react"
 import { format } from "date-fns"
-import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
-import { formatProviderDisplayName } from "@/lib/format-provider-name"
-import { ChevronRight, Calendar, Stethoscope, Hash, FileText } from "lucide-react"
+import { DISPLAY_DATE_FORMAT, DISPLAY_DATE_TIME_FORMAT } from "@/lib/date-format"
+import { ChevronRight, Calendar, Stethoscope, Hash, FileText, FlaskConical, Download } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PatientRecordModal } from "@/components/ui/patient-record-modal"
@@ -12,9 +11,20 @@ import { DebouncedSearch } from "@/components/ui/debounced-search"
 import { Badge } from "@/components/ui/badge"
 import { PatientHealthTabs } from "@/components/patient/PatientHealthTabs"
 import type { VitalSignEntry } from "@/types/patient-health"
+import type { ClinicalRecordView } from "@/lib/clinical-record"
+
+export interface PatientLabResult {
+  id: string
+  title: string
+  fileUrl: string
+  notes: string | null
+  createdAt: string
+  uploadedByName: string
+}
 
 interface RecordsListClientProps {
-  records: any[]
+  records: ClinicalRecordView[]
+  labResults: PatientLabResult[]
   healthData: {
     diagnoses: string[]
     medications: string[]
@@ -23,11 +33,11 @@ interface RecordsListClientProps {
   }
 }
 
-export function RecordsListClient({ records, healthData }: RecordsListClientProps) {
-  const [selectedRecord, setSelectedRecord] = React.useState<any>(null)
+export function RecordsListClient({ records, labResults, healthData }: RecordsListClientProps) {
+  const [selectedRecord, setSelectedRecord] = React.useState<ClinicalRecordView | null>(null)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
 
-  const handleViewRecord = (record: any) => {
+  const handleViewRecord = (record: ClinicalRecordView) => {
     setSelectedRecord(record)
     setIsModalOpen(true)
   }
@@ -66,8 +76,10 @@ export function RecordsListClient({ records, healthData }: RecordsListClientProp
                     </div>
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xl font-black text-slate-800 tracking-tight">{format(new Date(record.createdAt), DISPLAY_DATE_FORMAT)}</span>
-                        <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 font-black text-[9px] uppercase tracking-widest px-2">Clinical</Badge>
+                        <span className="text-xl font-black text-slate-800 tracking-tight">{format(new Date(record.date), DISPLAY_DATE_FORMAT)}</span>
+                        <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 font-black text-[9px] uppercase tracking-widest px-2">
+                          {record.hasAssessment ? "Clinical" : "Physician Note"}
+                        </Badge>
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
@@ -90,7 +102,7 @@ export function RecordsListClient({ records, healthData }: RecordsListClientProp
                          <div className="size-6 rounded-lg bg-[#67BA2E]/10 flex items-center justify-center text-[#67BA2E]">
                             <Stethoscope className="size-3" />
                          </div>
-                         <span className="font-bold text-slate-700 text-base leading-tight">{formatProviderDisplayName(record.provider)}</span>
+                         <span className="font-bold text-slate-700 text-base leading-tight">{record.providerName}</span>
                       </div>
                     </div>
                   </div>
@@ -120,8 +132,51 @@ export function RecordsListClient({ records, healthData }: RecordsListClientProp
         )}
       </div>
 
-      <PatientRecordModal 
-        isOpen={isModalOpen} 
+      {/* Lab Results */}
+      <div className="space-y-6">
+        <h2 className="text-xl font-black text-slate-800 tracking-tight uppercase flex items-center gap-2 px-1">
+          <FlaskConical className="size-5 text-[#67BA2E]" />
+          Lab Results
+          <div className="h-[2px] flex-1 bg-slate-100 rounded-full" />
+        </h2>
+
+        {labResults.length > 0 ? (
+          <div className="grid gap-4">
+            {labResults.map((lab) => (
+              <Card key={lab.id} className="border-slate-200 shadow-sm bg-white rounded-2xl">
+                <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="size-12 shrink-0 rounded-xl bg-[#67BA2E]/10 flex items-center justify-center text-[#67BA2E]">
+                    <FileText className="size-6" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-black text-slate-800 break-words">{lab.title}</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                      {format(new Date(lab.createdAt), DISPLAY_DATE_TIME_FORMAT)} · {lab.uploadedByName}
+                    </p>
+                    {lab.notes ? (
+                      <p className="text-sm font-medium text-slate-600 mt-2 whitespace-pre-wrap break-words">{lab.notes}</p>
+                    ) : null}
+                  </div>
+                  <Button asChild className="h-11 px-6 rounded-xl bg-[#67BA2E] hover:bg-[#5aa827] text-white font-black uppercase tracking-widest text-[10px] gap-2 shrink-0">
+                    <a href={lab.fileUrl} target="_blank" rel="noopener noreferrer">
+                      <Download className="size-4" />
+                      View / Download PDF
+                    </a>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="py-12 text-center bg-white border-2 border-dashed border-slate-200 rounded-[2rem]">
+            <FlaskConical className="size-10 text-slate-200 mx-auto mb-3" />
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No lab results yet.</p>
+          </div>
+        )}
+      </div>
+
+      <PatientRecordModal
+        isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)} 
         record={selectedRecord} 
       />

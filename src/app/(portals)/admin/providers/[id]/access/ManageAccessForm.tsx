@@ -34,8 +34,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 import {
   updateProviderAccessAction,
+  updateProviderUniversalAccessAction,
   sendProviderPasswordResetAction,
   sendProviderSecurityWarningAction,
 } from "@/app/actions/provider.actions"
@@ -53,6 +55,7 @@ export type ProviderAccessSnapshot = {
   updatedAt: string
   specialty: string
   licenseNumber: string
+  hasUniversalAccess: boolean
 }
 
 type AccessLiveData = {
@@ -87,6 +90,24 @@ export function ManageAccessForm({ initialData }: ManageAccessFormProps) {
   const [isSaving, startSave] = React.useTransition()
   const [isSendingReset, startSendReset] = React.useTransition()
   const [isSendingWarning, startSendWarning] = React.useTransition()
+  const [isSavingChartAccess, startSaveChartAccess] = React.useTransition()
+
+  const handleUniversalAccessChange = (enabled: boolean) => {
+    startSaveChartAccess(async () => {
+      const res = await updateProviderUniversalAccessAction(data.userId, enabled)
+      if (res.success) {
+        setData((prev) => ({ ...prev, hasUniversalAccess: enabled }))
+        toast.success(
+          enabled
+            ? "Provider can now open every patient chart"
+            : "Provider limited to their assigned patients"
+        )
+        router.refresh()
+      } else {
+        toast.error(res.error || "Failed to update chart access")
+      }
+    })
+  }
 
   React.useEffect(() => {
     setData(initialData)
@@ -237,6 +258,25 @@ export function ManageAccessForm({ initialData }: ManageAccessFormProps) {
                 </span>
               </div>
             </div>
+          </div>
+
+          <div className="flex items-start justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
+            <div>
+              <Label htmlFor="universal-access" className="text-sm font-black text-slate-800">
+                Universal Chart Access
+              </Label>
+              <p className="mt-1 text-xs font-medium text-slate-500">
+                Lets this provider open and document on every patient chart, not only
+                patients on their care team or schedule. Saves immediately.
+              </p>
+            </div>
+            <Switch
+              id="universal-access"
+              checked={data.hasUniversalAccess}
+              onCheckedChange={handleUniversalAccessChange}
+              disabled={isSavingChartAccess}
+              className="mt-1 data-checked:bg-[#67BA2E]"
+            />
           </div>
 
           <div className="grid gap-4 rounded-2xl border border-slate-100 bg-slate-50/60 p-5 md:grid-cols-2">

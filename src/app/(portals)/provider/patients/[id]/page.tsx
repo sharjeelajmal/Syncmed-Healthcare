@@ -16,11 +16,14 @@ import {
   ArrowLeft,
   PlusCircle,
   Stethoscope,
-  Shield
+  Shield,
+  FilePenLine,
+  FlaskConical
 } from "lucide-react"
 import { format, differenceInYears } from "date-fns"
 import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
 import { formatProviderDisplayName } from "@/lib/format-provider-name"
+import { parseAssessmentData } from "@/lib/assessment-vitals"
 import { auth } from "@/../auth"
 
 import prisma from "@/lib/prisma"
@@ -39,6 +42,9 @@ import {
 import { MembershipTierBadge } from "@/components/ui/membership-tier-badge"
 import { VisitHistoryTable } from "./VisitHistoryTable"
 import { ClinicalSnapshot } from "./ClinicalSnapshot"
+import { PhysicianNoteDialog } from "./PhysicianNoteDialog"
+import { PhysicianNotesList } from "./PhysicianNotesList"
+import { LabResultsPanel } from "./LabResultsPanel"
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -55,15 +61,17 @@ export default async function PatientChartPage({ params }: PageProps) {
   }
 
   let providerProfileId: string | null = null
+  let isPhysician = false
   if (role === "PROVIDER") {
     const providerProfile = await prisma.providerProfile.findUnique({
       where: { userId: sessionUserId },
-      select: { id: true },
+      select: { id: true, providerType: true },
     })
     if (!providerProfile) {
       notFound()
     }
     providerProfileId = providerProfile.id
+    isPhysician = providerProfile.providerType === "MEDICAL_DOCTOR"
   } else if (role !== "ADMIN") {
     notFound()
   }
@@ -75,7 +83,7 @@ export default async function PatientChartPage({ params }: PageProps) {
         ? {
             AND: [
               { OR: [{ id }, { userId: id }] },
-              providerPatientScope(providerProfileId),
+              await providerPatientScope(providerProfileId),
             ],
           }
         : { OR: [{ id }, { userId: id }] }),
@@ -106,6 +114,18 @@ export default async function PatientChartPage({ params }: PageProps) {
       appointments: {
         orderBy: { scheduledAt: 'desc' },
         take: 1
+      },
+      physicianNotes: {
+        orderBy: { noteDate: 'desc' },
+        include: { provider: { include: { user: true } } }
+      },
+      labResults: {
+        orderBy: { createdAt: 'desc' },
+        include: {
+          uploadedBy: {
+            select: { firstName: true, lastName: true, providerProfile: { select: { providerType: true } } }
+          }
+        }
       }
     }
   })
@@ -118,6 +138,35 @@ export default async function PatientChartPage({ params }: PageProps) {
   const isLocked = latestAppointment ? latestAppointment.paymentStatus !== "PAID" : false
 
   const age = differenceInYears(new Date(), new Date(patient.dateOfBirth))
+
+  const activeMedications = mergeUnique([
+    ...patient.activeMedications,
+    ...latestAssessmentMedications(patient.assessments),
+  ])
+  const diagnoses = mergeUnique([
+    ...patient.diagnoses,
+    ...patient.assessments.flatMap((a) => a.diagnoses.map((d) => d.name)),
+  ])
+
+  const physicianNotes = patient.physicianNotes.map((n) => ({
+    id: n.id,
+    noteDate: n.noteDate.toISOString(),
+    chiefComplaint: n.chiefComplaint,
+    assessment: n.assessment,
+    plan: n.plan,
+    authorName: formatProviderDisplayName(n.provider),
+  }))
+
+  const labResults = patient.labResults.map((l) => ({
+    id: l.id,
+    title: l.title,
+    fileUrl: l.fileUrl,
+    notes: l.notes,
+    createdAt: l.createdAt.toISOString(),
+    uploadedByName: l.uploadedBy.providerProfile
+      ? formatProviderDisplayName({ providerType: l.uploadedBy.providerProfile.providerType, user: l.uploadedBy })
+      : `${l.uploadedBy.firstName} ${l.uploadedBy.lastName}`,
+  }))
 
   return (
     <div className="animate-slide-up">
@@ -156,6 +205,8 @@ export default async function PatientChartPage({ params }: PageProps) {
             </div>
           </div>
 
+          <div className="flex flex-col md:flex-row md:items-start gap-3">
+          {isPhysician ? <PhysicianNoteDialog patientId={patient.id} /> : null}
           {isLocked ? (
             <div className="flex flex-col md:items-end gap-1">
               <Button disabled className="h-10 px-6 bg-slate-100 text-slate-400 rounded-lg font-black border border-slate-200 flex items-center gap-2 w-full md:w-auto text-xs uppercase tracking-wider">
@@ -174,6 +225,7 @@ export default async function PatientChartPage({ params }: PageProps) {
               </Button>
             </Link>
           )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -206,17 +258,18 @@ export default async function PatientChartPage({ params }: PageProps) {
               </CardHeader>
               <CardContent className="p-6">
                 <ClinicalSnapshot
-                  diagnoses={patient.diagnoses}
-                  activeMedications={patient.activeMedications}
+                  patientId={patient.id}
+                  diagnoses={diagnoses}
+                  activeMedications={activeMedications}
                   allergies={patient.allergies}
                 />
               </CardContent>
             </Card>
           </div>
 
-          {/* Right Column: Visit History */}
-          <div className="lg:col-span-2">
-            <Card className="rounded-3xl border-slate-200 shadow-sm bg-white overflow-hidden h-full">
+          {/* Right Column: Visit History, Physician Notes, Lab Results */}
+          <div className="lg:col-span-2 space-y-8">
+            <Card className="rounded-3xl border-slate-200 shadow-sm bg-white overflow-hidden">
               <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-8 py-6">
                 <CardTitle className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
                   <History className="size-6 text-[#67BA2E]" />
@@ -238,11 +291,84 @@ export default async function PatientChartPage({ params }: PageProps) {
                 )}
               </CardContent>
             </Card>
+
+            <Card className="rounded-3xl border-slate-200 shadow-sm bg-white overflow-hidden">
+              <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-8 py-6">
+                <CardTitle className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                  <FilePenLine className="size-6 text-[#67BA2E]" />
+                  Physician Notes
+                </CardTitle>
+                <CardDescription className="font-medium text-slate-500">Encounter notes, impressions and treatment plans.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 sm:p-8">
+                <PhysicianNotesList notes={physicianNotes} />
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-3xl border-slate-200 shadow-sm bg-white overflow-hidden">
+              <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-8 py-6">
+                <CardTitle className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                  <FlaskConical className="size-6 text-[#67BA2E]" />
+                  Lab Results
+                </CardTitle>
+                <CardDescription className="font-medium text-slate-500">Uploaded lab reports (PDF).</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 sm:p-8">
+                <LabResultsPanel patientId={patient.id} labResults={labResults} />
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
     </div>
   )
+}
+
+/** Case-insensitive de-duplication that keeps the first spelling seen. */
+function mergeUnique(values: string[]): string[] {
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const raw of values) {
+    const value = raw.trim()
+    const key = value.toLowerCase()
+    if (!value || seen.has(key)) continue
+    seen.add(key)
+    result.push(value)
+  }
+  return result
+}
+
+type MedicationLike = { name?: unknown; dosage?: unknown; frequency?: unknown }
+
+/**
+ * The most recent assessment that recorded medications is the current med list.
+ * Assessments store meds as Medication rows; older ones only in data.medications.
+ * `assessments` must be ordered newest first.
+ */
+function latestAssessmentMedications(
+  assessments: { data: unknown; medications: MedicationLike[] }[]
+): string[] {
+  for (const assessment of assessments) {
+    const dataMeds = parseAssessmentData(assessment.data).medications
+    const meds: MedicationLike[] =
+      assessment.medications.length > 0
+        ? assessment.medications
+        : Array.isArray(dataMeds)
+          ? (dataMeds as MedicationLike[])
+          : []
+
+    const labels = meds
+      .map((m) => {
+        const name = String(m?.name ?? "").trim()
+        if (!name) return ""
+        const detail = [m.dosage, m.frequency].map((v) => String(v ?? "").trim()).filter(Boolean).join(", ")
+        return detail ? `${name} — ${detail}` : name
+      })
+      .filter(Boolean)
+
+    if (labels.length > 0) return labels
+  }
+  return []
 }
 
 function InfoItem({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {

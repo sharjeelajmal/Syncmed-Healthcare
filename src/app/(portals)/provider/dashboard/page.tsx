@@ -118,7 +118,7 @@ export default async function ProviderDashboardPage() {
 
     // 4. Total Assigned Patients
     prisma.patientProfile.count({
-      where: providerPatientScope(provider.id),
+      where: await providerPatientScope(provider.id),
     }),
 
     // 5. List data for stat card modals

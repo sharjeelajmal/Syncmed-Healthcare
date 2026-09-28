@@ -33,6 +33,7 @@ export default async function ManageAccessPage({ params }: PageProps) {
     updatedAt: provider.updatedAt.toISOString(),
     specialty: provider.providerProfile.specialty,
     licenseNumber: provider.providerProfile.licenseNumber,
+    hasUniversalAccess: provider.providerProfile.hasUniversalAccess,
   }
 
   return (

@@ -132,6 +132,9 @@ export async function updateProviderAction(userId: string, formData: FormData) {
 }
 
 export async function toggleProviderStatusAction(userId: string, currentStatus: boolean) {
+  const admin = await assertAdmin()
+  if (!admin.ok) return { success: false, error: admin.error }
+
   try {
     await prisma.user.update({
       where: { id: userId },
@@ -193,6 +196,107 @@ export async function updateProviderAccessAction(
   } catch (err: unknown) {
     console.error("[UPDATE_ACCESS_ERROR]:", err)
     return { success: false, error: "Failed to update account access." }
+  }
+}
+
+export async function updateProviderUniversalAccessAction(
+  userId: string,
+  hasUniversalAccess: boolean
+) {
+  const admin = await assertAdmin()
+  if (!admin.ok) return { success: false, error: admin.error }
+
+  try {
+    const profile = await prisma.providerProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    })
+    if (!profile) {
+      return { success: false, error: "Provider account not found." }
+    }
+
+    await prisma.providerProfile.update({
+      where: { id: profile.id },
+      data: { hasUniversalAccess },
+    })
+
+    revalidatePath(`/admin/providers/${userId}/access`)
+    revalidatePath(`/admin/providers/${userId}`)
+    revalidatePath("/provider", "layout")
+
+    return { success: true, hasUniversalAccess }
+  } catch (err: unknown) {
+    console.error("[UPDATE_UNIVERSAL_ACCESS_ERROR]:", err)
+    return { success: false, error: "Failed to update chart access." }
+  }
+}
+
+/**
+ * Permanently deletes a provider account (meant for dummy/test accounts).
+ * Refuses while the provider still has clinical or billing history on any
+ * patient, since deleting it would silently remove that patient's records;
+ * delete the dummy patients first, or suspend the provider instead.
+ */
+export async function deleteProviderAction(userId: string) {
+  const admin = await assertAdmin()
+  if (!admin.ok) return { success: false, error: admin.error }
+
+  try {
+    const user = await prisma.user.findFirst({
+      where: { id: userId, role: "PROVIDER" },
+      select: { id: true, providerProfile: { select: { id: true } } },
+    })
+    if (!user) {
+      return { success: false, error: "Provider account not found." }
+    }
+
+    const providerId = user.providerProfile?.id
+
+    if (providerId) {
+      const [appointments, assessments, clinicalAssessments, physicianNotes, labUploads] =
+        await Promise.all([
+          prisma.appointment.count({ where: { providerId } }),
+          prisma.assessment.count({ where: { providerId } }),
+          prisma.clinicalAssessment.count({ where: { providerId } }),
+          prisma.physicianNote.count({ where: { providerId } }),
+          prisma.labResult.count({ where: { uploadedById: userId } }),
+        ])
+
+      const blockers = [
+        [appointments, "appointment"],
+        [assessments + clinicalAssessments, "assessment"],
+        [physicianNotes, "physician note"],
+        [labUploads, "lab upload"],
+      ]
+        .filter(([count]) => (count as number) > 0)
+        .map(([count, label]) => `${count} ${label}${count === 1 ? "" : "s"}`)
+
+      if (blockers.length > 0) {
+        return {
+          success: false,
+          error: `This provider still has ${blockers.join(", ")} on patient records. Delete those patients first, or suspend the provider instead.`,
+        }
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      if (providerId) {
+        await tx.availability.deleteMany({ where: { providerId } })
+        // Care team memberships cascade with the profile.
+        await tx.providerProfile.delete({ where: { id: providerId } })
+      }
+      await tx.message.deleteMany({ where: { OR: [{ senderId: userId }, { receiverId: userId }] } })
+      await tx.aiChatMessage.deleteMany({ where: { userId } })
+      await tx.user.delete({ where: { id: userId } })
+    }, { maxWait: 10_000, timeout: 20_000 })
+
+    revalidatePath("/admin/providers")
+    revalidatePath("/admin/patients", "layout")
+    revalidatePath("/admin/dashboard")
+    return { success: true }
+  } catch (err: unknown) {
+    console.error("[DELETE_PROVIDER_ERROR]:", err)
+    return { success: false, error: "Failed to delete provider." }
   }
 }
 

@@ -3,7 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import pg from "pg"
 
 /** Bump when PatientProfile or other queried models change shape (invalidates dev singleton). */
-const PRISMA_CLIENT_GENERATION = "care-team-members-v1"
+const PRISMA_CLIENT_GENERATION = "chart-notes-labs-v1"
 
 declare global {
   var prisma: undefined | PrismaClient

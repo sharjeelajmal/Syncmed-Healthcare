@@ -67,7 +67,8 @@ export default async function BillingPage({
       status: a.paymentStatus, // UNPAID, PAID, VERIFICATION_PENDING
       clinician: formatProviderDisplayName(a.provider),
       specialty: a.provider.specialty,
-      initials: `${a.provider.user.firstName[0]}${a.provider.user.lastName[0]}`
+      initials: `${a.provider.user.firstName[0]}${a.provider.user.lastName[0]}`,
+      receiptUrl: a.receiptData,
     })),
     ...secondaryInvoices.map(i => ({
       id: i.id,
@@ -78,6 +79,7 @@ export default async function BillingPage({
       clinician: `Invoice ${i.id.slice(0, 8).toUpperCase()}`,
       specialty: "Additional invoice",
       initials: "INV",
+      receiptUrl: i.receiptUrl,
     }))
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
@@ -105,7 +107,10 @@ export default async function BillingPage({
         </div>
 
         {/* Content */}
-        <BillingClient invoices={filteredItems} />
+        <BillingClient
+          invoices={filteredItems}
+          patientName={`${patient.user.firstName} ${patient.user.lastName}`}
+        />
       </div>
     </div>
   )

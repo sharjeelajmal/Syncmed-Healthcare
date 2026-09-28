@@ -55,7 +55,7 @@ export default async function NewAssessmentPage({ searchParams }: PageProps) {
           {
             OR: [{ id: patientId }, { userId: patientId }],
           },
-          providerPatientScope(sessionProvider.id),
+          await providerPatientScope(sessionProvider.id),
         ],
       },
       include: { user: true },

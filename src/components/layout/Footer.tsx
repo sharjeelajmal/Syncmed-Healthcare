@@ -94,6 +94,11 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link href="/careers" className={linkClass}>
+                  Careers
+                </Link>
+              </li>
+              <li>
                 <Link href="/#faq" className={linkClass}>
                   FAQ
                 </Link>
@@ -149,6 +154,9 @@ export const Footer = () => {
             </Link>
             <Link href="/blog" className="hover:text-[#67BA2E] transition-colors">
               Blog
+            </Link>
+            <Link href="/careers" className="hover:text-[#67BA2E] transition-colors">
+              Careers
             </Link>
             <Link
               href="/request-consultation"

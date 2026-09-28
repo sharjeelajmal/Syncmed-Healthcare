@@ -3,6 +3,8 @@ import { FileText } from "lucide-react"
 import prisma from "@/lib/prisma"
 import { RecordsListClient } from "./RecordsListClient"
 import { buildPatientHealthData } from "@/lib/patient-health-data"
+import { buildClinicalRecord, isWithinEncounterWindow, type ClinicalRecordView } from "@/lib/clinical-record"
+import { formatProviderDisplayName } from "@/lib/format-provider-name"
 import { auth } from "@/../auth"
 import { redirect } from "next/navigation"
 
@@ -20,7 +22,7 @@ export default async function PatientRecordsPage({
   }
 
   const params = await searchParams
-  const query = params?.query || ""
+  const query = (params?.query || "").trim().toLowerCase()
 
   // Fetch the real patient profile associated with the logged-in user
   const patient = await prisma.patientProfile.findUnique({
@@ -36,38 +38,73 @@ export default async function PatientRecordsPage({
     )
   }
 
-  // Fetch assessments scoped to this specific patient at the DB level
-  const assessments = await prisma.assessment.findMany({
-    where: {
-      patientId: patient.id,
-      ...(query ? {
-        OR: [
-          { provider: { user: { firstName: { contains: query, mode: 'insensitive' } } } },
-          { provider: { user: { lastName: { contains: query, mode: 'insensitive' } } } },
-          { provider: { specialty: { contains: query, mode: 'insensitive' } } }
-        ]
-      } : {})
-    },
-    orderBy: { createdAt: 'desc' },
-    include: {
-      provider: {
-        include: { user: true }
-      },
-      patient: {
-        include: { user: true }
-      },
-      medications: true,
-      diagnoses: true,
-    }
+  const providerInclude = { include: { user: true } } as const
+
+  const [assessments, clinicalAssessments, physicianNotes, labResults] = await Promise.all([
+    prisma.assessment.findMany({
+      where: { patientId: patient.id },
+      orderBy: { createdAt: 'desc' },
+      include: { provider: providerInclude, medications: true, diagnoses: true },
+    }),
+    prisma.clinicalAssessment.findMany({ where: { patientId: patient.id } }),
+    prisma.physicianNote.findMany({
+      where: { patientId: patient.id },
+      orderBy: { noteDate: 'asc' },
+      include: { provider: providerInclude },
+    }),
+    prisma.labResult.findMany({
+      where: { patientId: patient.id },
+      orderBy: { createdAt: 'desc' },
+      include: { uploadedBy: { select: { firstName: true, lastName: true, providerProfile: { select: { providerType: true } } } } },
+    }),
+  ])
+
+  const patientName = `${patient.user.firstName} ${patient.user.lastName}`
+  const oldestAssessmentId = assessments[assessments.length - 1]?.id
+
+  // Each physician note joins the assessment it was written around; the rest
+  // become their own records so no note is hidden from the patient.
+  const attachedNoteIds = new Set<string>()
+  const assessmentRecords: ClinicalRecordView[] = assessments.map((assessment) => {
+    const notes = physicianNotes.filter(
+      (n) => !attachedNoteIds.has(n.id) && isWithinEncounterWindow(assessment.createdAt, n.noteDate)
+    )
+    notes.forEach((n) => attachedNoteIds.add(n.id))
+    return buildClinicalRecord({
+      id: assessment.id,
+      date: assessment.createdAt,
+      patientName,
+      provider: assessment.provider,
+      assessment,
+      isInitialAssessment: assessment.id === oldestAssessmentId,
+      clinicalAssessments,
+      physicianNotes: notes,
+    })
   })
 
-  const allAssessmentsForHealth = query
-    ? await prisma.assessment.findMany({
-        where: { patientId: patient.id },
-        orderBy: { createdAt: 'desc' },
-        include: { medications: true, diagnoses: true },
+  const noteRecords = physicianNotes
+    .filter((n) => !attachedNoteIds.has(n.id))
+    .map((n) =>
+      buildClinicalRecord({
+        id: n.id,
+        date: n.noteDate,
+        patientName,
+        provider: n.provider,
+        assessment: null,
+        clinicalAssessments: [],
+        physicianNotes: [n],
       })
-    : assessments
+    )
+
+  const records = [...assessmentRecords, ...noteRecords]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .filter(
+      (r) =>
+        !query ||
+        r.providerName.toLowerCase().includes(query) ||
+        r.providerSpecialty.toLowerCase().includes(query) ||
+        r.id.toLowerCase().includes(query)
+    )
 
   return (
     <div className="w-full py-6 md:py-8">
@@ -85,12 +122,22 @@ export default async function PatientRecordsPage({
 
         {/* Content */}
         <RecordsListClient
-          records={assessments}
+          records={records}
+          labResults={labResults.map((l) => ({
+            id: l.id,
+            title: l.title,
+            fileUrl: l.fileUrl,
+            notes: l.notes,
+            createdAt: l.createdAt.toISOString(),
+            uploadedByName: l.uploadedBy.providerProfile
+              ? formatProviderDisplayName({ providerType: l.uploadedBy.providerProfile.providerType, user: l.uploadedBy })
+              : "SyncMed Care Team",
+          }))}
           healthData={buildPatientHealthData(
             patient.diagnoses,
             patient.activeMedications,
             patient.allergies,
-            allAssessmentsForHealth
+            assessments
           )}
         />
       </div>

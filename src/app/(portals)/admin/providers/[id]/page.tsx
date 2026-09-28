@@ -30,7 +30,7 @@ export default async function ProviderProfilePage({ params }: PageProps) {
   // Fetch stats
   const [totalPatients, totalAppointments] = await Promise.all([
     prisma.patientProfile.count({
-      where: providerPatientScope(provider.providerProfile.id),
+      where: await providerPatientScope(provider.providerProfile.id),
     }),
     prisma.appointment.count({
       where: { providerId: provider.providerProfile.id },

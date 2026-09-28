@@ -21,7 +21,7 @@ export default async function ProviderPatientsPage({ searchParams }: PageProps) 
   // Fetch Assigned Patients (Directly assigned OR via Appointments)
   const patients = await prisma.patientProfile.findMany({
     where: {
-      ...providerPatientScope(provider.id),
+      ...(await providerPatientScope(provider.id)),
       user: {
         OR: [
           { firstName: { contains: query || "", mode: "insensitive" } },

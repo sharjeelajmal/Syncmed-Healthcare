@@ -109,7 +109,10 @@ export function PatientTable({
                       )}
                     </TableCell>
                     <TableCell className="text-right px-8">
-                      <PatientTableActions patientId={patient.id} />
+                      <PatientTableActions
+                        patientId={patient.id}
+                        patientName={`${patient.firstName} ${patient.lastName}`.trim()}
+                      />
                     </TableCell>
                   </TableRow>
                 ))

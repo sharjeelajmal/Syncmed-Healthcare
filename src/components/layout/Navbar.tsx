@@ -7,8 +7,9 @@ import {
   Home, 
   Activity, 
   Crown, 
-  HelpCircle, 
-  Briefcase
+  HelpCircle,
+  Briefcase,
+  UserPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -59,7 +60,8 @@ export const Navbar = () => {
                 { name: "Home", id: "top", href: "/" },
                 { name: "Services", id: "services", href: "/services" },
                 { name: "Consultation", id: "consultation", href: "/request-consultation" },
-                { name: "Blog", id: "blog", href: "/blog" }
+                { name: "Blog", id: "blog", href: "/blog" },
+                { name: "Careers", id: "careers", href: "/careers" }
               ].map((item, i) => {
                 const isActive = pathname === item.href || (item.href === "/" && pathname === "/");
                 
@@ -122,7 +124,8 @@ export const Navbar = () => {
           { name: "Home", icon: Home, href: "/", id: "top" },
           { name: "Services", icon: Briefcase, href: "/services", id: "services" },
           { name: "Blog", icon: Activity, href: "/blog", id: "blog" },
-          { name: "Consult", icon: Crown, href: "/request-consultation", id: "consultation" }
+          { name: "Consult", icon: Crown, href: "/request-consultation", id: "consultation" },
+          { name: "Careers", icon: UserPlus, href: "/careers", id: "careers" }
         ].map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;

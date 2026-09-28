@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma"
 import { pusherServer } from "@/lib/pusher"
 import { revalidatePath } from "next/cache"
+import { auth } from "@/../auth"
 import { v2 as cloudinary } from "cloudinary"
 
 cloudinary.config({
@@ -76,6 +77,11 @@ export async function uploadReceiptAction(appointmentId: string, formData: FormD
 }
 
 export async function verifyReceiptAction(appointmentId: string, status: 'PAID' | 'UNPAID') {
+  const session = await auth()
+  if ((session?.user as { role?: string } | undefined)?.role !== "ADMIN") {
+    return { success: false, error: "Unauthorized access." }
+  }
+
   try {
     await prisma.appointment.update({
       where: { id: appointmentId },
@@ -86,6 +92,7 @@ export async function verifyReceiptAction(appointmentId: string, status: 'PAID' 
     })
 
     revalidatePath('/admin/appointments')
+    revalidatePath('/admin/patients', 'layout')
     revalidatePath('/patient/billing')
     revalidatePath('/patient', 'layout')
     
