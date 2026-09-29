@@ -160,12 +160,15 @@ export default async function PatientChartPage({ params }: PageProps) {
   const labResults = patient.labResults.map((l) => ({
     id: l.id,
     title: l.title,
-    fileUrl: l.fileUrl,
+    // Opened through the access-checked route; raw Cloudinary PDF links are blocked.
+    fileUrl: `/api/lab-results/${l.id}`,
     notes: l.notes,
     createdAt: l.createdAt.toISOString(),
     uploadedByName: l.uploadedBy.providerProfile
       ? formatProviderDisplayName({ providerType: l.uploadedBy.providerProfile.providerType, user: l.uploadedBy })
       : `${l.uploadedBy.firstName} ${l.uploadedBy.lastName}`,
+    // Mirrors deleteLabResultAction: the uploader or an admin.
+    canDelete: role === "ADMIN" || l.uploadedById === sessionUserId,
   }))
 
   return (

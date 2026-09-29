@@ -1,54 +1,17 @@
 "use server"
 
-import { randomUUID } from "node:crypto"
-import { revalidatePath } from "next/cache"
-import { v2 as cloudinary } from "cloudinary"
-import { auth } from "@/../auth"
+import { refresh, revalidatePath } from "next/cache"
 import prisma from "@/lib/prisma"
-import { isProviderLinkedToPatient } from "@/lib/care-team"
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-})
-
-// Server actions accept up to 10mb (next.config); leave room for the other fields.
-const MAX_LAB_FILE_BYTES = 9 * 1024 * 1024
+import { getChartActor } from "@/lib/chart-access"
+import { deleteRawFile, rawPublicIdFromUrl } from "@/lib/cloudinary-files"
 
 type ActionResult = { success: true } | { success: false; error: string }
 
-type ChartActor = {
-  userId: string
-  role: "ADMIN" | "PROVIDER"
-  provider: { id: string; providerType: string } | null
-}
-
-/** Admins, or providers whose roster includes the patient, may edit the chart. */
-async function getChartActor(patientProfileId: string): Promise<ChartActor | null> {
-  const session = await auth()
-  const userId = session?.user?.id
-  const role = (session?.user as { role?: string } | undefined)?.role
-  if (!userId) return null
-
-  if (role === "ADMIN") {
-    return { userId, role: "ADMIN", provider: null }
-  }
-
-  if (role !== "PROVIDER") return null
-
-  const provider = await prisma.providerProfile.findUnique({
-    where: { userId },
-    select: { id: true, providerType: true },
-  })
-  if (!provider) return null
-  if (!(await isProviderLinkedToPatient(provider.id, patientProfileId))) return null
-
-  return { userId, role: "PROVIDER", provider }
-}
-
 function revalidateChart(patientProfileId: string) {
   revalidatePath(`/provider/patients/${patientProfileId}`)
+  revalidatePath("/patient/records")
+  // Re-render whatever chart URL the clinician is on (profile or user id).
+  refresh()
 }
 
 function parseDateTime(value: string): Date | null {
@@ -145,64 +108,40 @@ export async function addDiagnosisAction(patientId: string, diagnosis: string): 
   }
 }
 
-export async function uploadLabResultAction(formData: FormData): Promise<ActionResult> {
+/**
+ * Deletes a lab result and its PDF. Allowed for admins and for the clinician
+ * who uploaded it, so one provider can't remove another's clinical record.
+ */
+export async function deleteLabResultAction(labResultId: string): Promise<ActionResult> {
   try {
-    const patientId = String(formData.get("patientId") ?? "")
-    const title = String(formData.get("title") ?? "").trim()
-    const notes = String(formData.get("notes") ?? "").trim()
-    const file = formData.get("file")
+    const lab = await prisma.labResult.findUnique({
+      where: { id: labResultId },
+      select: { id: true, patientId: true, uploadedById: true, fileUrl: true },
+    })
+    if (!lab) {
+      return { success: false, error: "This lab result no longer exists." }
+    }
 
-    const actor = await getChartActor(patientId)
+    const actor = await getChartActor(lab.patientId)
     if (!actor) {
       return { success: false, error: "You do not have access to this patient." }
     }
-    if (!title) {
-      return { success: false, error: "Title is required." }
-    }
-    if (!(file instanceof File) || file.size === 0) {
-      return { success: false, error: "Please choose a PDF file." }
-    }
-    if (file.size > MAX_LAB_FILE_BYTES) {
-      return { success: false, error: "PDF must be 9 MB or smaller." }
+    if (actor.role !== "ADMIN" && lab.uploadedById !== actor.userId) {
+      return { success: false, error: "Only the clinician who uploaded this file or an admin can delete it." }
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer())
-    // Check the file signature, not just the extension/MIME the browser reports.
-    if (buffer.subarray(0, 5).toString("latin1") !== "%PDF-") {
-      return { success: false, error: "Only PDF files can be uploaded." }
+    await prisma.labResult.delete({ where: { id: lab.id } })
+
+    // The record is already gone for users; a leftover file is only logged.
+    const publicId = rawPublicIdFromUrl(lab.fileUrl, "lab_results")
+    if (publicId && !(await deleteRawFile(publicId))) {
+      console.warn(`[DELETE_LAB_RESULT] Cloudinary file not removed: ${publicId}`)
     }
 
-    // "raw" keeps the PDF as-is; Cloudinary's image pipeline blocks PDF delivery on many plans.
-    const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: "lab_results",
-          resource_type: "raw",
-          // Raw public IDs keep their extension, so the URL opens as a PDF.
-          public_id: `${randomUUID()}.pdf`,
-        },
-        (error, result) => {
-          if (error || !result) reject(error ?? new Error("Empty upload result"))
-          else resolve(result)
-        }
-      )
-      uploadStream.end(buffer)
-    })
-
-    await prisma.labResult.create({
-      data: {
-        patientId,
-        uploadedById: actor.userId,
-        title,
-        fileUrl: uploadResult.secure_url,
-        notes: notes || null,
-      },
-    })
-
-    revalidateChart(patientId)
+    revalidateChart(lab.patientId)
     return { success: true }
   } catch (error) {
-    console.error("[UPLOAD_LAB_RESULT_ERROR]:", error)
-    return { success: false, error: "Unable to upload the lab result." }
+    console.error("[DELETE_LAB_RESULT_ERROR]:", error)
+    return { success: false, error: "Unable to delete the lab result." }
   }
 }

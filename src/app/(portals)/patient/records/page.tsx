@@ -126,7 +126,8 @@ export default async function PatientRecordsPage({
           labResults={labResults.map((l) => ({
             id: l.id,
             title: l.title,
-            fileUrl: l.fileUrl,
+            // Opened through the access-checked route; raw Cloudinary PDF links are blocked.
+            fileUrl: `/api/lab-results/${l.id}`,
             notes: l.notes,
             createdAt: l.createdAt.toISOString(),
             uploadedByName: l.uploadedBy.providerProfile

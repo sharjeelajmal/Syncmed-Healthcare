@@ -309,12 +309,19 @@ export function LeadsTable({
           <div className="p-6 bg-white space-y-6">
             <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100 max-h-96 overflow-y-auto">
               <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap font-medium">
-                {/* Career applications carry a CV link; make URLs clickable. */}
+                {/* Make URLs clickable. A career CV opens through the admin-only
+                    route, since the raw Cloudinary PDF link is blocked. */}
                 {viewingLead?.message.split(/(https:\/\/\S+)/g).map((part, i) =>
                   part.startsWith("https://") ? (
-                    <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-[#67BA2E] font-bold underline break-all">
-                      {part}
-                    </a>
+                    viewingLead.type === "career_application" && part.includes("/career_applications/") ? (
+                      <a key={i} href={`/api/leads/${viewingLead.id}/cv`} target="_blank" rel="noopener noreferrer" className="text-[#67BA2E] font-bold underline">
+                        Open CV (PDF)
+                      </a>
+                    ) : (
+                      <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-[#67BA2E] font-bold underline break-all">
+                        {part}
+                      </a>
+                    )
                   ) : (
                     <React.Fragment key={i}>{part}</React.Fragment>
                   )
