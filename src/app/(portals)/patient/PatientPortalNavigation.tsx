@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { signOut } from "next-auth/react"
+import { signOutToLogin } from "@/lib/sign-out"
 import { 
   LayoutDashboard, 
   Bell, 
@@ -144,7 +144,7 @@ export function PatientPortalNavigation({ userId }: PatientPortalNavigationProps
                 variant="outline"
                 size="sm"
                 className="ml-1 shrink-0 rounded-lg border-slate-200 font-bold transition-all hover:bg-slate-50 xl:ml-2"
-                onClick={() => signOut({ callbackUrl: "/login" })}
+                onClick={() => void signOutToLogin()}
               >
                 <LogOut className="size-4 text-red-500 xl:mr-2" />
                 <span className="hidden xl:inline">Logout</span>

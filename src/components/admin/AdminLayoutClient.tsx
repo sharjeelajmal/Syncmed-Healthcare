@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { useSession, signOut } from "next-auth/react"
+import { useSession } from "next-auth/react"
+import { signOutToLogin } from "@/lib/sign-out"
 import {
   LogOut,
   User as UserIcon,
@@ -209,7 +210,7 @@ export function AdminLayoutClient({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="cursor-pointer p-2.5 font-bold text-red-500 focus:bg-red-50 focus:text-red-600"
-                    onClick={() => signOut({ callbackUrl: "/login" })}
+                    onClick={() => void signOutToLogin()}
                   >
                     <LogOut className="mr-2 size-4" /> Logout
                   </DropdownMenuItem>

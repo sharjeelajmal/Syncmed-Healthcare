@@ -16,9 +16,11 @@ interface TimePickerProps {
   onChange: (value: string) => void
   disabled?: boolean
   placeholder?: string
+  /** Extra classes for the trigger, e.g. to match neighbouring field heights. */
+  className?: string
 }
 
-export function PremiumTimePicker({ value, onChange, disabled, placeholder = "Select time" }: TimePickerProps) {
+export function PremiumTimePicker({ value, onChange, disabled, placeholder = "Select time", className }: TimePickerProps) {
   const hasValue = Boolean(value && value.includes(":"))
   const normalizedValue = hasValue ? value : "00:00"
   // Convert 24h string to 12h components
@@ -47,7 +49,8 @@ export function PremiumTimePicker({ value, onChange, disabled, placeholder = "Se
           disabled={disabled}
           className={cn(
             "h-9 sm:h-12 w-full justify-start px-2 sm:px-4 font-bold text-slate-700 rounded-lg sm:rounded-xl border-slate-100 bg-slate-50 hover:bg-white hover:border-[#67BA2E]/40 transition-all text-[10px] sm:text-sm",
-            disabled && "opacity-30 cursor-not-allowed"
+            disabled && "opacity-30 cursor-not-allowed",
+            className
           )}
         >
           <Clock className="mr-1.5 sm:mr-2 size-3 sm:size-4 text-[#67BA2E]" />

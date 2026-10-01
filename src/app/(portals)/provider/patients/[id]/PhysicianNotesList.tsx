@@ -5,8 +5,8 @@ import { format, startOfDay, endOfDay } from "date-fns"
 import { FilePenLine } from "lucide-react"
 
 import { DISPLAY_DATE_FORMAT } from "@/lib/date-format"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { DatePickerField } from "@/components/ui/date-picker-field"
 
 export interface PhysicianNoteView {
   id: string
@@ -18,12 +18,12 @@ export interface PhysicianNoteView {
 }
 
 export function PhysicianNotesList({ notes }: { notes: PhysicianNoteView[] }) {
-  const [from, setFrom] = React.useState("")
-  const [to, setTo] = React.useState("")
+  const [from, setFrom] = React.useState<Date | undefined>()
+  const [to, setTo] = React.useState<Date | undefined>()
 
   const filtered = React.useMemo(() => {
-    const fromTime = from ? startOfDay(new Date(`${from}T00:00`)).getTime() : -Infinity
-    const toTime = to ? endOfDay(new Date(`${to}T00:00`)).getTime() : Infinity
+    const fromTime = from ? startOfDay(from).getTime() : -Infinity
+    const toTime = to ? endOfDay(to).getTime() : Infinity
     return notes.filter((n) => {
       const t = new Date(n.noteDate).getTime()
       return t >= fromTime && t <= toTime
@@ -44,14 +44,14 @@ export function PhysicianNotesList({ notes }: { notes: PhysicianNoteView[] }) {
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1">
           <label htmlFor="pn-from" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">From</label>
-          <Input id="pn-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9 rounded-lg w-40" />
+          <DatePickerField id="pn-from" size="sm" clearable value={from} onChange={setFrom} maxDate={to} placeholder="Any date" className="w-44" />
         </div>
         <div className="space-y-1">
           <label htmlFor="pn-to" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">To</label>
-          <Input id="pn-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9 rounded-lg w-40" />
+          <DatePickerField id="pn-to" size="sm" clearable value={to} onChange={setTo} minDate={from} placeholder="Any date" className="w-44" />
         </div>
         {(from || to) && (
-          <Button variant="ghost" size="sm" onClick={() => { setFrom(""); setTo("") }} className="h-9 text-xs font-bold text-slate-500">
+          <Button variant="ghost" size="sm" onClick={() => { setFrom(undefined); setTo(undefined) }} className="h-9 text-xs font-bold text-slate-500">
             Clear
           </Button>
         )}

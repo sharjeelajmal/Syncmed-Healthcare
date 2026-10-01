@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import dynamic from "next/dynamic"
-import { signOut } from "next-auth/react"
+import { signOutToLogin } from "@/lib/sign-out"
 import {
   LayoutDashboard,
   Users,
@@ -125,7 +125,7 @@ export default function ProviderPortalLayout({
               variant="outline"
               size="sm"
               className="ml-2 rounded-lg border-slate-200 font-bold transition-all hover:bg-slate-50"
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={() => void signOutToLogin()}
             >
               <LogOut className="mr-2 size-4 text-red-500" />
               <span className="hidden sm:inline">Logout</span>

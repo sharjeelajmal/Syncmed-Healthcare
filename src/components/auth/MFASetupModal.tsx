@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { useSession, signOut } from "next-auth/react"
+import { useSession } from "next-auth/react"
+import { signOutToLogin } from "@/lib/sign-out"
 import { ShieldAlert, Loader2, Copy, Check, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -71,7 +72,7 @@ export function MFASetupModal({ children }: { children?: React.ReactNode }) {
       // CRITICAL FIX: Force user to login again so NextAuth fetches mfaEnabled: true from DB
       setTimeout(async () => {
         setIsOpen(false)
-        await signOut({ callbackUrl: '/login' })
+        await signOutToLogin()
       }, 3000)
     } else {
       toast.error(res.error || "Invalid code")

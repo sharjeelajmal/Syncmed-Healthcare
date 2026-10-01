@@ -2,12 +2,14 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { format } from "date-fns"
+import { format, roundToNearestMinutes } from "date-fns"
 import { FilePenLine, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DatePickerField } from "@/components/ui/date-picker-field"
+import { PremiumTimePicker } from "@/components/ui/premium-time-picker"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -26,7 +28,7 @@ export function PhysicianNoteDialog({ patientId }: { patientId: string }) {
   const router = useRouter()
   const [open, setOpen] = React.useState(false)
   const [isPending, startTransition] = React.useTransition()
-  const [date, setDate] = React.useState("")
+  const [date, setDate] = React.useState<Date | undefined>()
   const [time, setTime] = React.useState("")
   const [chiefComplaint, setChiefComplaint] = React.useState("")
   const [assessment, setAssessment] = React.useState("")
@@ -34,8 +36,9 @@ export function PhysicianNoteDialog({ patientId }: { patientId: string }) {
 
   const resetForm = () => {
     const now = new Date()
-    setDate(format(now, "yyyy-MM-dd"))
-    setTime(format(now, "HH:mm"))
+    setDate(now)
+    // The time picker offers quarter hours, so start on the nearest one.
+    setTime(format(roundToNearestMinutes(now, { nearestTo: 15 }), "HH:mm"))
     setChiefComplaint("")
     setAssessment("")
     setPlan("")
@@ -53,8 +56,12 @@ export function PhysicianNoteDialog({ patientId }: { patientId: string }) {
       return
     }
 
+    if (!date || !time) {
+      toast.error("Please choose the encounter date and time.")
+      return
+    }
     // Built in the browser so the doctor's local time zone is preserved.
-    const noteDate = new Date(`${date}T${time || "00:00"}`)
+    const noteDate = new Date(`${format(date, "yyyy-MM-dd")}T${time}`)
     if (Number.isNaN(noteDate.getTime())) {
       toast.error("Please enter a valid date and time.")
       return
@@ -101,11 +108,15 @@ export function PhysicianNoteDialog({ patientId }: { patientId: string }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="pn-date" className={FIELD_LABEL}>Date</Label>
-              <Input id="pn-date" type="date" required value={date} onChange={(e) => setDate(e.target.value)} className="h-11 rounded-xl" />
+              <DatePickerField id="pn-date" value={date} onChange={setDate} maxDate={new Date()} placeholder="Select date" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="pn-time" className={FIELD_LABEL}>Time</Label>
-              <Input id="pn-time" type="time" required value={time} onChange={(e) => setTime(e.target.value)} className="h-11 rounded-xl" />
+              <PremiumTimePicker
+                value={time}
+                onChange={setTime}
+                className="h-11 sm:h-11 w-full sm:w-full px-4 sm:px-4 text-sm sm:text-sm rounded-xl sm:rounded-xl border-slate-200 bg-white"
+              />
             </div>
           </div>
 

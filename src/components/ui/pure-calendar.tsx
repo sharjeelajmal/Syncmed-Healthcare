@@ -7,20 +7,23 @@
    setMonth, 
    setYear, 
    isSameDay,
-   getDay
+   getDay,
+   addMonths
  } from "date-fns"
  import { cn } from "@/lib/utils"
- import { ChevronLeft } from "lucide-react"
+ import { ChevronLeft, ChevronRight } from "lucide-react"
  
  interface PureCalendarProps {
    selectedDate?: Date
    onSelect: (date: Date) => void
    minDate?: Date
    maxDate?: Date
+   /** "year" suits birth dates; "day" opens straight on the month for recent dates. */
+   initialView?: 'year' | 'month' | 'day'
  }
  
- export function PureCalendar({ selectedDate, onSelect, minDate, maxDate }: PureCalendarProps) {
-   const [view, setView] = React.useState<'year' | 'month' | 'day'>('year')
+ export function PureCalendar({ selectedDate, onSelect, minDate, maxDate, initialView = 'year' }: PureCalendarProps) {
+   const [view, setView] = React.useState<'year' | 'month' | 'day'>(initialView)
    const [activeDate, setActiveDate] = React.useState(selectedDate || new Date())
  
    const currentYear = new Date().getFullYear()
@@ -66,6 +69,7 @@
              const isDisabled = (maxDate && year > maxDate.getFullYear()) || (minDate && year < minDate.getFullYear())
              return (
                <button
+                 type="button"
                  key={year}
                  disabled={isDisabled}
                  onClick={() => handleYearSelect(year)}
@@ -90,7 +94,7 @@
      return (
        <div className="p-4 bg-white rounded-md w-full max-w-[320px] mx-auto">
          <div className="flex items-center justify-between mb-4">
-           <button onClick={() => setView('year')} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
+           <button type="button" onClick={() => setView('year')} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
              <ChevronLeft size={16} className="text-slate-400" />
            </button>
            <div className="text-xs font-black text-slate-400 uppercase tracking-widest">{activeDate.getFullYear()}</div>
@@ -103,6 +107,7 @@
              
              return (
                <button
+                 type="button"
                  key={month}
                  disabled={isDisabled}
                  onClick={() => handleMonthSelect(i)}
@@ -132,13 +137,32 @@
    return (
      <div className="p-4 bg-white rounded-md w-full max-w-[320px] mx-auto">
        <div className="flex items-center justify-between mb-4">
-         <button onClick={() => setView('month')} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
-           <ChevronLeft size={16} className="text-slate-400" />
-         </button>
-         <div className="text-xs font-black text-slate-900 uppercase tracking-widest">
+         <button
+           type="button"
+           title="Choose month"
+           onClick={() => setView('month')}
+           className="text-xs font-black text-slate-900 uppercase tracking-widest rounded-md px-2 py-1 hover:bg-slate-100 transition-colors"
+         >
            {months[activeDate.getMonth()]} {activeDate.getFullYear()}
+         </button>
+         <div className="flex items-center gap-1">
+           <button
+             type="button"
+             aria-label="Previous month"
+             onClick={() => setActiveDate(addMonths(activeDate, -1))}
+             className="p-1 hover:bg-slate-100 rounded-full transition-colors"
+           >
+             <ChevronLeft size={16} className="text-slate-500" />
+           </button>
+           <button
+             type="button"
+             aria-label="Next month"
+             onClick={() => setActiveDate(addMonths(activeDate, 1))}
+             className="p-1 hover:bg-slate-100 rounded-full transition-colors"
+           >
+             <ChevronRight size={16} className="text-slate-500" />
+           </button>
          </div>
-         <div className="w-6" />
        </div>
  
        <div className="grid grid-cols-7 mb-2 text-center">
@@ -156,6 +180,7 @@
            
            return (
              <button
+                 type="button"
                key={day}
                disabled={isDisabled}
                onClick={() => handleDaySelect(day)}
